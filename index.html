@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+  <div>
+    <form>
+      <div><input type="text" name="apple"></div>
+      <div><input type="text" name="banana"></div>
+      <div><button id="addBtn" type="button">Add</button></div>
+    </form>
+    <div id="atom"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>apple</th>
+          <th>banana</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="display: none;">
+          <td class="apple"></td>
+          <td class="banana"></td>
+        </tr>
+      </tbody>
+    </table>
+    <div id="atom"></div>
+  </div>
+  <script type="text/javascript">
+
+    var Konbi = (function () {
+      
+      function isString(v) {
+        return (typeof v) === "string";
+      }
+
+      function isObject(v) {
+        return v && !Array.isArray(v) && (typeof v) === "object";
+      }
+
+      function isPrimitive(v) {
+        if (v == null) return false; 
+        var t = typeof v;
+        return t === "string" || t === "number" || t === "boolean";
+      }
+
+      var inherits = function (base, ctor) {
+        ctor.prototype = Object.create(base.prototype);
+        ctor.prototype.constructor = ctor;
+        return ctor;
+      };
+
+      var Event = inherits(Object, function (type, target) {
+        this.type = type;
+        this.target = target;
+      });
+
+      var Dispatcher, List, Dict, ListProperty, DictProperty, PrimitiveProperty;
+
+      Dispatcher = inherits(Object, function () {
+        (function (self) {
+          var listenerRepo= {};
+          
+          self.addListener = function(eventType, fun) {
+            var listeners = listenerRepo[eventType];
+            if (!listeners) {
+              listenerRepo[eventType] = listeners = [];
+            }
+            listeners.push(fun);
+          };
+          
+          self.dispatch = function(event, args) {
+
+            var eventType;
+            if (isString(event)) {
+              eventType = event;
+            } else if(event && event.prototype.constructor === Event) {
+              eventType = event.type;
+            } else {
+              throw new Error("event parameter was bad");
+            }
+
+            var listeners = listenerRepo[eventType];
+            if (!listeners) return;
+
+            var args2 = [].concat(event, args);
+            for (var i = 0; i < listeners.length; i++) {
+              listeners[i].apply(self, args2);
+            }
+          };
+
+        })(this);
+      });
+
+      List = inherits(Dispatcher, function (array) {
+        (function (self, array) {
+
+          self.push = function (item) {
+            array.push(item);
+            self.dispatch(new Event("push", self));
+          };
+
+          self.handoverTo = function (newArray) {
+            array = newArray.splice(0, newArray.length);
+          };
+
+        })(this, array.splice(0, array.length));
+      });
+
+      Dict = inherits(Dispatcher, function (object) {
+        (function (self, object) {
+          var properties = {};
+
+          for (var name in object) {
+            if (!object.hasOwnProperty(name)) continue;
+            
+            value = object[name];
+            if (value == null || isPrimitive(value)) {
+              properties[name] = new PrimitiveProperty(object, name);
+            } else if (Array.isArray(value)) {
+              properties[name] = new ListProperty(object, name);
+            } else if (isObject(value)) {
+              properties[name] = new DictProperty(object, name);
+            } else {
+              throw new Error("Unspported type");
+            }
+          }            
+
+        })(this, object);
+      });
+
+      ListProperty = inherits(Dispatcher, function (object, prop) {
+        this.object = object;
+        this.prop = prop;
+        this.value = new List(object[prop]);
+        (function (self) {
+          Object.defineProperty(object, prop, {
+            get: function () {
+              return self.value;
+            },
+            set: function (value) {
+              if (!(value && (Array.isArray(value) || value.constructor === List))) {
+                throw new Error("Unspported type");
+              }
+              if (self.value === value) return;
+              self.value.handoverTo(value);
+              self.dispatch(new Event("change", self));
+            }
+          });
+        })(this);
+      });
+
+      DictProperty = inherits(Dispatcher, function (object, prop) {
+        this.object = object;
+        this.prop = prop;
+        this.value =  new Dict(object[prop]);
+        (function (self) {
+          Object.defineProperty(object, prop, {
+            get: function () {
+              return self.value;
+            },
+            set: function (value) {
+              if (!(value && (Array.isArray(value) || value.constructor === List))) {
+                throw new Error("Unspported type");
+              }
+              if (self.value === value) return;
+              self.value.handoverTo(value);
+              self.dispatch(new Event("change", self));
+            }
+          });
+        })(this);
+      });
+
+      PrimitiveProperty = inherits(Dispatcher, function (object, prop) {
+        this.object = object;
+        this.prop = prop;
+        this.value = object[prop];
+        (function (self) {
+          self.object = object;
+          self.prop = prop;
+          self.value = object[prop];
+          Object.defineProperty(object, prop, {
+            get: function () {
+              return self.value;
+            },
+            set: function (value) {
+              if (self.value === value) return;
+              self.value = value;
+              self.dispatch(new Event("change", self));
+            }
+          });
+        })(this);
+      });
+
+      function toDispacher(subject) {
+        if (isObject(subject)) {
+          return new Dict(subject);
+        } else if (Array.isArray(subject)) {
+          return new List(subject);
+        }
+        throw new Error("Unspported type");
+      }
+
+      var Konbi = function Konbi(entities) {
+        if (!isObject(entities)) {
+          throw new Error("The entities parameter must be an Object");
+        }
+        (function (self, dict) {
+
+          self.getEntity = function (hint) {
+            return null;
+          };
+
+          self.getElement = function (hint) {
+            var elm;
+            if (isString(hint)) {
+              if (hint.substr(0, 1) === "#") {
+                elm = document.getElementById(hint.substr(1, hint.length - 1));
+              }
+            }
+            return elm;
+          };
+
+          self.on = function (element, type, fun, options) {
+            var elm;
+            if (isString(element)) {
+              if (element.substr(0, 1) === "#") {
+                elm = document.getElementById(element.substr(1, element.length - 1));
+              }
+              if (elm == null) {
+                throw new Error("The element was not found");
+              }
+            } else {
+              elm = element;
+            }
+            elm.addEventListener(type, fun.bind(self), options);
+          }
+
+          self.listSync = function (entityHint, elementHint) {
+            var dispatcher = self.getEntity(entityHint);
+            if (dispatcher == null) {
+              throw new Error("The entity was not found");
+            }
+            dispatcher.addListener("push", function (event) {
+              // refresh
+            });
+
+
+
+            
+          };
+
+        })(this, new Dict(entities));
+      };
+
+      return Konbi;
+    })();
+    var k = new Konbi({
+      entities: {
+        atom : "",
+        list: [
+          {
+            apple: "",
+            banana: "",
+          }
+        ],
+      },
+    });
+
+
+    // k.listSync("list", "tbody");
+
+    k.on("#addBtn", "click", function (event) {
+      console.log(this);
+      this.entities.list.push({apple: "", banana: ""});
+    });
+
+
+
+    // k.bind("change", "atom", "<->", "#atom%text");
+    // k.bind("change", "list#$kid", "<->", "#id");
+    // k.bind("change", "list[*].apple", "tbody/tr[*]/td.apple", "<->");
+    // k.bind("change", "list[*].banana", "tbody/tr[*]/td.banana", "<->");
+
+
+
+
+  </script>
+
+
+
+
+</body>
+</html>
