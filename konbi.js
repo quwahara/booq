@@ -30,21 +30,49 @@
       return t === "string" || t === "number" || t === "boolean";
     }
 
-    var inherits = function (base, ctor) {
-      ctor.prototype = Object.create(base.prototype);
+    var inherits = function (super_, ctor) {
+      ctor.prototype = Object.create(super_.prototype);
+      ctor.prototype._super = super_;
       ctor.prototype.constructor = ctor;
       return ctor;
     };
 
+    var isInstanceOf = function isInstanceOf(targetCtor, expectedCtor) {
+      var super_;
+      if (!targetCtor) return false;
+      if (targetCtor === expectedCtor) return true;
+      if (targetCtor.prototype && targetCtor.prototype._super) {
+        super_ = targetCtor.prototype._super;
+      } else {
+        super_ = null;
+      }
+      while (super_) {
+        if (super_ === expectedCtor) return true;
+        if (super_.prototype && super_.prototype._super) {
+          super_ = super_.prototype._super;
+        } else {
+          super_ = null;
+        }
+      }
+      return false;
+    }
 
 
-    var Event = inherits(Object, function (type, target) {
+    var Event, PrimitivePropEvent, Dispatcher, List, Dict, ListProperty,
+      DictProperty, PrimitiveProperty;
+
+
+    Event = inherits(Object, function (type, target) {
       this.type = type;
       this.target = target;
     });
 
-    var Dispatcher, List, Dict, ListProperty, DictProperty, PrimitiveProperty;
 
+    PrimitivePropEvent = inherits(Event, function (type, target, propName, value) {
+      Event.call(this, type, target);
+      this.propName = propName;
+      this.value = value;
+    });
 
 
     Dispatcher = inherits(Object, function () {
@@ -53,7 +81,7 @@
         // listener repository
         // Holding event listener lists by event name as key.
         var _r;
-        
+
         self._r = _r = {};
 
         self.on = function (eventType, fun) {
@@ -69,7 +97,7 @@
           var eventType;
           if (isString(event)) {
             eventType = event;
-          } else if (event && event.prototype.constructor === Event) {
+          } else if (event && isInstanceOf(event.constructor, Event)) {
             eventType = event.type;
           } else {
             throw new Error("event parameter was bad");
@@ -130,8 +158,27 @@
 
           var value2, type = getType(value);
 
+          function preparePrimitiveProp(name, value) {
+            (function (name, value) {
+              Object.defineProperty(self, name, {
+                get: function () {
+                  return value;
+                },
+                set: function (value_) {
+                  var type_ = getType(value_);
+                  if (type_ != "primitive") {
+                    throw new Error("Value type must be primitive");
+                  }
+                  if (value === value_) return;
+                  value = value_;
+                  self.dispatch(new PrimitivePropEvent(name + "@change", self, name, value));
+                }
+              });
+            })(name, value);
+          }
+
           if (type === "primitive") {
-            value2 = value;
+            preparePrimitiveProp(name, value);
           } else if (type === "array") {
             value2 = new List(value);
           } else if (type === "object") {
@@ -140,45 +187,45 @@
             throw new Error("Unspported type");
           }
 
-          (function (name, value, type) {
-            Object.defineProperty(self, name, {
-              get: function () {
-                return value;
-              },
-              set: function (value_) {
+          // (function (name, value, type) {
+          //   Object.defineProperty(self, name, {
+          //     get: function () {
+          //       return value;
+          //     },
+          //     set: function (value_) {
 
-                var type_ = getType(value_),
-                  args;
+          //       var type_ = getType(value_),
+          //         args;
 
-                if (type_ != type) {
-                  throw new Error("Type of Value must be same");
-                }
+          //       if (type_ != type) {
+          //         throw new Error("Type of Value must be same");
+          //       }
 
-                if (type === "primitive") {
-                  if (value === value_) return;
-                  value = value_;
-                  self.dispatch("change");
-                } else if (type === "array") {
-                  args = {
-                    value: new List(value_),
-                    oldValue: value
-                  };
-                  value = args.value;
-                  self.dispatch("change", args);
-                } else if (type === "object") {
-                  args = {
-                    value: new Dict(value_),
-                    oldValue: value
-                  };
-                  value = args.value;
-                  self.dispatch("change", args);
-                } else {
-                  throw new Error("Unspported type");
-                }
+          //       if (type === "primitive") {
+          //         if (value === value_) return;
+          //         value = value_;
+          //         self.dispatch("change");
+          //       } else if (type === "array") {
+          //         args = {
+          //           value: new List(value_),
+          //           oldValue: value
+          //         };
+          //         value = args.value;
+          //         self.dispatch("change", args);
+          //       } else if (type === "object") {
+          //         args = {
+          //           value: new Dict(value_),
+          //           oldValue: value
+          //         };
+          //         value = args.value;
+          //         self.dispatch("change", args);
+          //       } else {
+          //         throw new Error("Unspported type");
+          //       }
 
-              }
-            });
-          })(name, value2, type);
+          //     }
+          //   });
+          // })(name, value2, type);
 
         }
         // end of prepareProp

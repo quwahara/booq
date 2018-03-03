@@ -43,8 +43,10 @@
       },
     });
 
-    k.entities.on("change", function (event) {
-      console.log("dispatched change");
+    k.entities.on("apple@change", function (event) {
+      console.log("dispatched change x");
+      console.log(event);
+      console.log(this);
     });
 
     document.getElementById("addBtn").addEventListener("click", function (event) {
