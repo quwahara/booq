@@ -1,4 +1,3 @@
-;
 (function (definition) {
   if (typeof exports === "object") {
     // CommonJS
@@ -37,9 +36,10 @@
       return ctor;
     };
 
-    var isInstanceOf = function isInstanceOf(targetCtor, expectedCtor) {
-      var super_;
-      if (!targetCtor) return false;
+    var isInstanceOf = function isInstanceOf(target, expectedCtor) {
+      var targetCtor, super_;
+      if (target == null) return false;
+      targetCtor = target.constructor;
       if (targetCtor === expectedCtor) return true;
       if (targetCtor.prototype && targetCtor.prototype._super) {
         super_ = targetCtor.prototype._super;
@@ -55,7 +55,7 @@
         }
       }
       return false;
-    }
+    };
 
 
     var Event, PrimitivePropEvent, Dispatcher, List, Dict, ListProperty,
@@ -97,7 +97,7 @@
           var eventType;
           if (isString(event)) {
             eventType = event;
-          } else if (event && isInstanceOf(event.constructor, Event)) {
+          } else if (event && isInstanceOf(event, Event)) {
             eventType = event.type;
           } else {
             throw new Error("event parameter was bad");
@@ -238,6 +238,25 @@
       })(this, object);
     });
     // end of Dict
+    (function (P) {
+      P.bind = function bind(propName, eventType, elem) {
+        (function (self) {
+          var propDispatched = false, elmDispatched = false;
+          self.on(propName + "@" + eventType, function (event) {
+            if (propDispatched) return;
+            propDispatched = true;
+            elem.value = event.value;          
+            propDispatched = false;
+          });
+          elem.addEventListener(eventType, function (event) {
+            if (elmDispatched) return;
+            elmDispatched = true;
+            self[propName] = event.value;
+            elmDispatched = false;
+          });
+        })(this);
+      };
+    })(Dict.prototype);
 
     // ListProperty = inherits(Dispatcher, function (object, prop) {
     //   this.object = object;
@@ -315,6 +334,8 @@
 
         self.entities = new Dict(options.entities);
 
+
+
         self.getEntity = function (hint) {
           return null;
         };
@@ -342,7 +363,7 @@
             elm = element;
           }
           elm.addEventListener(type, fun.bind(self), options);
-        }
+        };
 
       })(this, options);
     };
