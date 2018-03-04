@@ -18,6 +18,7 @@
     var ridMin, ridMax;
     ridMin = 100000000000000;
     ridMax = ridMin * 10 - 1;
+
     function rid() {
       return (Math.floor(Math.random() * (ridMax - ridMin + 1)) + ridMin).toString(10);
     }
@@ -181,13 +182,14 @@
 
       (function (self, object) {
 
-
         // element repository
         // Holding element lists by event name as key.
-        var _e;
+        var _e,
+          _p;
 
         self._e = _e = {};
-        
+        self._p = _p = {};
+
         function prepareProp(name, value) {
 
           var value2, type = getType(value);
@@ -220,47 +222,6 @@
           } else {
             throw new Error("Unspported type");
           }
-
-          // (function (name, value, type) {
-          //   Object.defineProperty(self, name, {
-          //     get: function () {
-          //       return value;
-          //     },
-          //     set: function (value_) {
-
-          //       var type_ = getType(value_),
-          //         args;
-
-          //       if (type_ != type) {
-          //         throw new Error("Type of Value must be same");
-          //       }
-
-          //       if (type === "primitive") {
-          //         if (value === value_) return;
-          //         value = value_;
-          //         self.dispatch("change");
-          //       } else if (type === "array") {
-          //         args = {
-          //           value: new List(value_),
-          //           oldValue: value
-          //         };
-          //         value = args.value;
-          //         self.dispatch("change", args);
-          //       } else if (type === "object") {
-          //         args = {
-          //           value: new Dict(value_),
-          //           oldValue: value
-          //         };
-          //         value = args.value;
-          //         self.dispatch("change", args);
-          //       } else {
-          //         throw new Error("Unspported type");
-          //       }
-
-          //     }
-          //   });
-          // })(name, value2, type);
-
         }
         // end of prepareProp
 
@@ -278,17 +239,18 @@
       P.assignRid = function (elem) {
         if (!elem.dataset._rid) elem.dataset._rid = rid();
       };
-      
-      P.getElements = function (eventType) {
-        var elements = this._e[eventType];
+
+      P.getElements = function (propAndEventType) {
+        var elements = this._e[propAndEventType];
         if (!elements) {
-          this._e[eventType] = elements = [];
+          this._e[propAndEventType] = elements = [];
         }
         return elements;
       };
 
-      P.holdElement = function (eventType, elem) {
-        var elements = this.getElements(eventType), element;
+      P.holdElement = function (propAndEventType, elem) {
+        var elements = this.getElements(propAndEventType),
+          element;
         for (var i = 0; i < elements.length; i++) {
           element = elements[i];
           if (element.dataset._rid === elem.dataset._rid) return false;
@@ -297,12 +259,58 @@
         return true;
       };
 
+      P.concatPropNameAndEventType = function (propName, eventType) {
+        return propName + "@" + eventType;
+      };
+
+      // P.createPropListener = function (propName, eventType, propAndEventType, elem) {
+      //   var self = this, propListenerSet;
+
+      //   propListenerSet = self._p[propNameAndEventType];
+      //   if (propListenerSet) return propListenerSet;
+
+      //   self._p[propNameAndEventType] = propListenerSet = {};
+
+      //   (function (listenerSet, propAndEventType) {
+      //     listenerSet.listener = function (event) {
+      //       var elements, element, elemPropName;
+      //       if (master === elem) return;
+      //       listenerSet.offListener();
+      //       master = self;
+      //       elements = self.getElements(eventType);
+      //       for (var i = 0; i < elements.length; i++) {
+      //         element = elements[i];
+      //         if (element.value != null) {
+      //           elemPropName = "value";
+      //         } else if (element.textContent != null) {
+      //           elemPropName = "textContent";
+      //         }
+      //         if (elemPropName) {
+      //           element[elemPropName] = event.value;
+      //         }
+      //       }
+      //       master = null;
+      //       listenerSet.onListener();
+      //     };
+      //     propListenerSet.onListener = function () {
+      //       self.on(propAndEventType, propListener);
+      //     };
+      //     propListenerSet.offListener = function () {
+      //       self.off(propAndEventType, propListener);
+      //     };
+      //   })(listenerSet, propAndEventType);
+      // };
+
       P.transmit = function (propName, eventType, elem) {
 
-        this.assignRid(elem);
-        this.holdElement(eventType, elem);
+        var propNameAndEventType;
 
-        (function (self, propName, eventType, elem) {
+        propNameAndEventType = this.concatPropNameAndEventType(propName, eventType);
+
+        this.assignRid(elem);
+        this.holdElement(propNameAndEventType, elem);
+
+        (function (self, propName, eventType, propNameAndEventType, elem) {
           var propListner, onPropListner, offPropListner,
             master;
           propListner = function (event) {
@@ -310,13 +318,13 @@
             if (master === elem) return;
             offPropListner();
             master = self;
-            elements = self.getElements(eventType);
+            elements = self.getElements(propNameAndEventType);
             for (var i = 0; i < elements.length; i++) {
               element = elements[i];
               if (element.value != null) {
-                elemPropName  = "value";
+                elemPropName = "value";
               } else if (element.textContent != null) {
-                elemPropName  = "textContent";
+                elemPropName = "textContent";
               }
               if (elemPropName) {
                 element[elemPropName] = event.value;
@@ -326,55 +334,63 @@
             onPropListner();
           };
           onPropListner = function () {
-            self.on(propName + "@" + eventType, propListner);
+            self.on(propNameAndEventType, propListner);
           };
           offPropListner = function () {
-            self.off(propName + "@" + eventType, propListner);
+            self.off(propNameAndEventType, propListner);
           };
           onPropListner();
-        })(this, propName, eventType, elem);
+        })(this, propName, eventType, propNameAndEventType, elem);
       };
+
       P.transceive = function (propName, eventType, elem) {
 
-        this.assignRid(elem);
-        this.holdElement(eventType, elem);
+        var propNameAndEventType;
 
-        (function (self, propName, eventType, elem) {
+        propNameAndEventType = this.concatPropNameAndEventType(propName, eventType);
+
+        this.assignRid(elem);
+        this.holdElement(propNameAndEventType, elem);
+
+        (function (self, propName, eventType, propNameAndEventType, elem) {
           var propListner, onPropListner, offPropListner,
             elemListener, addElemListener, removeElemListener,
-            master;
+            masterObject, masterPropName, masterElem;
           propListner = function (event) {
-            if (master === elem) return;
             offPropListner();
-            master = self;
-            elements = self.getElements(eventType);
+            masterObject = event.target;
+            masterPropName = event.propName;
+            elements = self.getElements(propNameAndEventType);
             for (var i = 0; i < elements.length; i++) {
               element = elements[i];
+              if (masterElem === element) continue;
               if (element.value != null) {
-                elemPropName  = "value";
+                elemPropName = "value";
               } else if (element.textContent != null) {
-                elemPropName  = "textContent";
+                elemPropName = "textContent";
               }
               if (elemPropName) {
                 element[elemPropName] = event.value;
               }
             }
-            master = null;
+            masterPropName = null;
+            masterObject = null;
             onPropListner();
           };
           elemListener = function (event) {
-            if (master === self) return;
             removeElemListener();
-            master = event.target;
-            self[propName] = event.target.value;
-            master = null;
+            masterElem = event.target;
+            if (!(self === masterObject && propName === masterPropName)) {
+              self[propName] = event.target.value;
+            }
+            masterElem = null;
             addElemListener();
           };
           onPropListner = function () {
-            self.on(propName + "@" + eventType, propListner);
+            self.on(propNameAndEventType, propListner);
           };
           offPropListner = function () {
-            self.off(propName + "@" + eventType, propListner);
+            self.off(propNameAndEventType, propListner);
           };
           addElemListener = function () {
             elem.addEventListener(eventType, elemListener);
@@ -384,8 +400,10 @@
           };
           onPropListner();
           addElemListener();
-        })(this, propName, eventType, elem);
+        })(this, propName, eventType, propNameAndEventType, elem);
       };
+
+
     })(Dict.prototype);
 
     var Konbi = function Konbi(options) {
