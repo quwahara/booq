@@ -181,6 +181,13 @@
 
       (function (self, object) {
 
+
+        // element repository
+        // Holding element lists by event name as key.
+        var _e;
+
+        self._e = _e = {};
+        
         function prepareProp(name, value) {
 
           var value2, type = getType(value);
@@ -267,7 +274,71 @@
     // end of Dict
     // begin of Dict.prototype
     (function (P) {
-      P.clasp = function (propName, eventType, elem) {
+
+      P.assignRid = function (elem) {
+        if (!elem.dataset._rid) elem.dataset._rid = rid();
+      };
+      
+      P.getElements = function (eventType) {
+        var elements = this._e[eventType];
+        if (!elements) {
+          this._e[eventType] = elements = [];
+        }
+        return elements;
+      };
+
+      P.holdElement = function (eventType, elem) {
+        var elements = this.getElements(eventType), element;
+        for (var i = 0; i < elements.length; i++) {
+          element = elements[i];
+          if (element.dataset._rid === elem.dataset._rid) return false;
+        }
+        elements.push(elem);
+        return true;
+      };
+
+      P.transmit = function (propName, eventType, elem) {
+
+        this.assignRid(elem);
+        this.holdElement(eventType, elem);
+
+        (function (self, propName, eventType, elem) {
+          var propListner, onPropListner, offPropListner,
+            master;
+          propListner = function (event) {
+            var elements, element, elemPropName;
+            if (master === elem) return;
+            offPropListner();
+            master = self;
+            elements = self.getElements(eventType);
+            for (var i = 0; i < elements.length; i++) {
+              element = elements[i];
+              if (element.value != null) {
+                elemPropName  = "value";
+              } else if (element.textContent != null) {
+                elemPropName  = "textContent";
+              }
+              if (elemPropName) {
+                element[elemPropName] = event.value;
+              }
+            }
+            master = null;
+            onPropListner();
+          };
+          onPropListner = function () {
+            self.on(propName + "@" + eventType, propListner);
+          };
+          offPropListner = function () {
+            self.off(propName + "@" + eventType, propListner);
+          };
+          onPropListner();
+        })(this, propName, eventType, elem);
+      };
+      P.transceive = function (propName, eventType, elem) {
+
+        this.assignRid(elem);
+        this.holdElement(eventType, elem);
+
         (function (self, propName, eventType, elem) {
           var propListner, onPropListner, offPropListner,
             elemListener, addElemListener, removeElemListener,
@@ -276,7 +347,18 @@
             if (master === elem) return;
             offPropListner();
             master = self;
-            elem.value = event.value;
+            elements = self.getElements(eventType);
+            for (var i = 0; i < elements.length; i++) {
+              element = elements[i];
+              if (element.value != null) {
+                elemPropName  = "value";
+              } else if (element.textContent != null) {
+                elemPropName  = "textContent";
+              }
+              if (elemPropName) {
+                element[elemPropName] = event.value;
+              }
+            }
             master = null;
             onPropListner();
           };

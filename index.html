@@ -13,6 +13,9 @@
         <input id="appleText" type="text" name="apple">
       </div>
       <div>
+        <div id="appleDiv"></div>
+      </div>
+      <div>
         <input type="text" name="banana">
       </div>
       <div>
@@ -42,8 +45,8 @@
         apple: "",
       },
     });
-    k.entities.clasp("apple", "change", document.getElementById("appleText"));
-
+    k.entities.transmit("apple", "change", document.getElementById("appleDiv"));
+    k.entities.transceive("apple", "change", document.getElementById("appleText"));
 
     // k.entities.on("apple@change", function (event) {
     //   console.log("dispatched change x");
