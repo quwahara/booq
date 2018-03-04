@@ -15,6 +15,13 @@
   'use strict';
   return (function () {
 
+    var ridMin, ridMax;
+    ridMin = 100000000000000;
+    ridMax = ridMin * 10 - 1;
+    function rid() {
+      return (Math.floor(Math.random() * (ridMax - ridMin + 1)) + ridMin).toString(10);
+    }
+
     function isString(v) {
       return (typeof v) === "string";
     }
@@ -85,11 +92,31 @@
         self._r = _r = {};
 
         self.on = function (eventType, fun) {
-          var listeners = _r[eventType];
+          var listeners, listener;
+          listeners = _r[eventType];
           if (!listeners) {
             _r[eventType] = listeners = [];
           }
+          for (var i = 0; i < listeners.length; i++) {
+            listener = listeners[i];
+            if (listener === fun) return false;
+          }
           listeners.push(fun);
+          return true;
+        };
+
+        self.off = function (eventType, fun) {
+          var listeners, listener;
+          listeners = _r[eventType];
+          if (!listeners) return false;
+          for (var i = 0; i < listeners.length; i++) {
+            listener = listeners[i];
+            if (listener === fun) {
+              listeners.splice(0, 1);
+              return true;
+            }
+          }
+          return false;
         };
 
         self.dispatch = function (event, args) {
@@ -238,91 +265,46 @@
       })(this, object);
     });
     // end of Dict
+    // begin of Dict.prototype
     (function (P) {
-      P.bind = function bind(propName, eventType, elem) {
-        (function (self) {
-          var propDispatched = false, elmDispatched = false;
-          self.on(propName + "@" + eventType, function (event) {
-            if (propDispatched) return;
-            propDispatched = true;
-            elem.value = event.value;          
-            propDispatched = false;
-          });
-          elem.addEventListener(eventType, function (event) {
-            if (elmDispatched) return;
-            elmDispatched = true;
-            self[propName] = event.value;
-            elmDispatched = false;
-          });
-        })(this);
+      P.clasp = function (propName, eventType, elem) {
+        (function (self, propName, eventType, elem) {
+          var propListner, onPropListner, offPropListner,
+            elemListener, addElemListener, removeElemListener,
+            master;
+          propListner = function (event) {
+            if (master === elem) return;
+            offPropListner();
+            master = self;
+            elem.value = event.value;
+            master = null;
+            onPropListner();
+          };
+          elemListener = function (event) {
+            if (master === self) return;
+            removeElemListener();
+            master = event.target;
+            self[propName] = event.target.value;
+            master = null;
+            addElemListener();
+          };
+          onPropListner = function () {
+            self.on(propName + "@" + eventType, propListner);
+          };
+          offPropListner = function () {
+            self.off(propName + "@" + eventType, propListner);
+          };
+          addElemListener = function () {
+            elem.addEventListener(eventType, elemListener);
+          };
+          removeElemListener = function () {
+            elem.removeEventListener(eventType, elemListener);
+          };
+          onPropListner();
+          addElemListener();
+        })(this, propName, eventType, elem);
       };
     })(Dict.prototype);
-
-    // ListProperty = inherits(Dispatcher, function (object, prop) {
-    //   this.object = object;
-    //   this.prop = prop;
-    //   this.value = new List(object[prop]);
-    //   (function (self) {
-    //     Object.defineProperty(object, prop, {
-    //       get: function () {
-    //         return self.value;
-    //       },
-    //       set: function (value) {
-    //         if (!(value && (Array.isArray(value) || value.constructor === List))) {
-    //           throw new Error("Unspported type");
-    //         }
-    //         if (self.value === value) return;
-    //         self.value.handoverTo(value);
-    //         self.dispatch(new Event("change", self));
-    //       }
-    //     });
-    //   })(this);
-    // });
-
-    // DictProperty = inherits(Dispatcher, function (object, prop) {
-    //   this.object = object;
-    //   this.prop = prop;
-    //   this.value =  new Dict(object[prop]);
-    //   (function (self) {
-    //     Object.defineProperty(object, prop, {
-    //       get: function () {
-    //         return self.value;
-    //       },
-    //       set: function (value) {
-    //         if (!(value && (Array.isArray(value) || value.constructor === List))) {
-    //           throw new Error("Unspported type");
-    //         }
-    //         if (self.value === value) return;
-    //         self.value.handoverTo(value);
-    //         self.dispatch(new Event("change", self));
-    //       }
-    //     });
-    //   })(this);
-    // });
-
-    // PrimitiveProperty = inherits(Dispatcher, function (object, prop) {
-    //   (function (self, object, prop, value) {
-    //     Object.defineProperty(object, prop, {
-    //       get: function () {
-    //         return value;
-    //       },
-    //       set: function (value_) {
-    //         if (value === value_) return;
-    //         value = value_;
-    //         dispatch(new Event("change", object));
-    //       }
-    //     });
-    //   })(this, object, prop, object[prop]);
-    // });
-
-    // function toDispacher(subject) {
-    //   if (isObject(subject)) {
-    //     return new Dict(subject);
-    //   } else if (Array.isArray(subject)) {
-    //     return new List(subject);
-    //   }
-    //   throw new Error("Unspported type");
-    // }
 
     var Konbi = function Konbi(options) {
 
@@ -333,37 +315,6 @@
       (function (self, options) {
 
         self.entities = new Dict(options.entities);
-
-
-
-        self.getEntity = function (hint) {
-          return null;
-        };
-
-        self.getElement = function (hint) {
-          var elm;
-          if (isString(hint)) {
-            if (hint.substr(0, 1) === "#") {
-              elm = document.getElementById(hint.substr(1, hint.length - 1));
-            }
-          }
-          return elm;
-        };
-
-        self.on = function (element, type, fun, options) {
-          var elm;
-          if (isString(element)) {
-            if (element.substr(0, 1) === "#") {
-              elm = document.getElementById(element.substr(1, element.length - 1));
-            }
-            if (elm == null) {
-              throw new Error("The element was not found");
-            }
-          } else {
-            elm = element;
-          }
-          elm.addEventListener(type, fun.bind(self), options);
-        };
 
       })(this, options);
     };

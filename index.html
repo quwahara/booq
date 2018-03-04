@@ -42,14 +42,16 @@
         apple: "",
       },
     });
+    k.entities.clasp("apple", "change", document.getElementById("appleText"));
 
-    k.entities.on("apple@change", function (event) {
-      console.log("dispatched change x");
-      console.log(event);
-      console.log(this);
 
-      document.getElementById("appleText").value = event.value;
-    });
+    // k.entities.on("apple@change", function (event) {
+    //   console.log("dispatched change x");
+    //   console.log(event);
+    //   console.log(this);
+
+    //   document.getElementById("appleText").value = event.value;
+    // });
 
     document.getElementById("addBtn").addEventListener("click", function (event) {
       k.entities.apple = (new Date()).toISOString();
@@ -58,6 +60,8 @@
     // document.getElementById("appleText").addEventListener("change", function (event) {
     //   console.log(event);
     // });
+
+
 
     console.log(k);
   </script>
