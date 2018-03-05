@@ -20,7 +20,7 @@
     ridMax = ridMin * 10 - 1;
 
     function rid() {
-      return (Math.floor(Math.random() * (ridMax - ridMin + 1)) + ridMin).toString(10);
+      return "_" + (Math.floor(Math.random() * (ridMax - ridMin + 1)) + ridMin).toString(10);
     }
 
     function isString(v) {
@@ -174,7 +174,60 @@
       }
     }
 
+    Dict2 = inherits(Dispatcher, function (object) {
 
+      Dispatcher.call(this);
+
+      var self = this;
+
+      Object.defineProperty(this, "_meta", {
+        enumerable: false,
+        configurable: false,
+        writable: false,
+        value: {
+          origin: object,
+        },
+      });
+      
+      function prepareProp(self, object, name) {
+        var rid_, meta;
+        rid_ = rid();
+        meta = {
+          rid: rid_,
+          type_: getType(object[name]),
+          setters: {},
+        };
+        meta.setters[rid_] = function (value) {
+          object[name] = value;
+        };
+        self._meta[name] = meta;
+        preparePrimitiveProp(self, object, name);
+      }
+
+      function preparePrimitiveProp(self, object, name) {
+        (function (self, object, name) {
+          Object.defineProperty(self, name, {
+            get: function () {
+              return object[name];
+            },
+            set: function (value_) {
+              var type_ = getType(value_);
+              if (type_ != "primitive") {
+                throw new Error("Value type must be primitive");
+              }
+              if (object[name] === value_) return;
+              object[name] = value_;
+            }
+          });
+        })(self, object, name);
+      }
+
+      for (var name in object) {
+        if (!object.hasOwnProperty(name)) continue;
+        prepareProp(this, object, name);
+      }
+
+    });
 
     Dict = inherits(Dispatcher, function (object) {
 
@@ -317,9 +370,8 @@
 
         var propNameAndEventType;
 
+        this.assignRid(elem.dataset);
         propNameAndEventType = this.concatPropNameAndEventType(propName, eventType);
-
-        this.assignRid(elem);
         this.holdElement(propNameAndEventType, elem);
 
         (function (self, propName, eventType, propNameAndEventType, elem) {
@@ -359,12 +411,10 @@
 
         var propNameAndEventType;
 
-        this.assignRid(elem);
+        this.assignRid(elem.dataset);
 
         propNameAndEventType = this.concatPropNameAndEventType(propName, eventType);
         this.holdElement(propNameAndEventType, elem);
-
-
 
         (function (self, propName, eventType, propNameAndEventType, elem) {
           var propListner, onPropListner, offPropListner,
