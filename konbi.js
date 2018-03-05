@@ -182,13 +182,18 @@
 
       (function (self, object) {
 
+        var 
         // element repository
         // Holding element lists by event name as key.
-        var _e,
-          _p;
+        _elr,
+        // Dispatching context repository
+        _dcr,
+        // property event listener repository
+        _plr;
 
-        self._e = _e = {};
-        self._p = _p = {};
+        self._elr = _elr = {};
+        self._dcr = _dcr = {};
+        self._plr = _plr = {};
 
         function prepareProp(name, value) {
 
@@ -240,16 +245,12 @@
         if (!elem.dataset._rid) elem.dataset._rid = rid();
       };
 
-      P.getElements = function (propAndEventType) {
-        var elements = this._e[propAndEventType];
-        if (!elements) {
-          this._e[propAndEventType] = elements = [];
-        }
-        return elements;
+      P.concatPropNameAndEventType = function (propName, eventType) {
+        return propName + "@" + eventType;
       };
 
-      P.holdElement = function (propAndEventType, elem) {
-        var elements = this.getElements(propAndEventType),
+      P.holdElement = function (propNameAndEventType, elem) {
+        var elements = this.getElements(propNameAndEventType),
           element;
         for (var i = 0; i < elements.length; i++) {
           element = elements[i];
@@ -259,47 +260,58 @@
         return true;
       };
 
-      P.concatPropNameAndEventType = function (propName, eventType) {
-        return propName + "@" + eventType;
+      P.getElements = function (propNameAndEventType) {
+        var elements = this._elr[propNameAndEventType];
+        if (!elements) {
+          this._elr[propNameAndEventType] = elements = [];
+        }
+        return elements;
       };
 
-      // P.createPropListener = function (propName, eventType, propAndEventType, elem) {
-      //   var self = this, propListenerSet;
+      P.getDispatchingCtx = function (propNameAndEventType) {
+        var dispatchingCtx = this._dcr[propNameAndEventType];
+        if (!dispatchingCtx) {
+          this._dcr[propNameAndEventType] = dispatchingCtx = {
+            propNameAndEventType: null,
+            targetElement: null,
+            targetObject: null,
+            targetPropName: null,
+          };
+        }
+        return dispatchingCtx;
+      };
 
-      //   propListenerSet = self._p[propNameAndEventType];
-      //   if (propListenerSet) return propListenerSet;
-
-      //   self._p[propNameAndEventType] = propListenerSet = {};
-
-      //   (function (listenerSet, propAndEventType) {
-      //     listenerSet.listener = function (event) {
-      //       var elements, element, elemPropName;
-      //       if (master === elem) return;
-      //       listenerSet.offListener();
-      //       master = self;
-      //       elements = self.getElements(eventType);
-      //       for (var i = 0; i < elements.length; i++) {
-      //         element = elements[i];
-      //         if (element.value != null) {
-      //           elemPropName = "value";
-      //         } else if (element.textContent != null) {
-      //           elemPropName = "textContent";
-      //         }
-      //         if (elemPropName) {
-      //           element[elemPropName] = event.value;
-      //         }
-      //       }
-      //       master = null;
-      //       listenerSet.onListener();
-      //     };
-      //     propListenerSet.onListener = function () {
-      //       self.on(propAndEventType, propListener);
-      //     };
-      //     propListenerSet.offListener = function () {
-      //       self.off(propAndEventType, propListener);
-      //     };
-      //   })(listenerSet, propAndEventType);
-      // };
+      P.preparePropEventListener = function (propNameAndEventType) {
+        var listener, dispatchingCtx;
+        listener = this._plr[propNameAndEventType];
+        if (!listener) {
+          dispatchingCtx = this.getDispatchingCtx(propNameAndEventType);
+          listener = (function (self, propNameAndEventType, ctx) {
+            var isHandling = false;
+            return function (event) {
+              if (isHandling) return;
+              isHandling = true;
+              var elements, element;
+              elements = self.getElements(propNameAndEventType);
+              for (var i = 0; i < elements.length; i++) {
+                element = elements[i];
+                if (ctx.targetElement === element) continue;
+                if (element.value != null) {
+                  elemPropName = "value";
+                } else if (element.textContent != null) {
+                  elemPropName = "textContent";
+                }
+                if (elemPropName) {
+                  element[elemPropName] = event.value;
+                }
+              }
+              isHandling = false;
+            };
+          })(this, propNameAndEventType, dispatchingCtx);
+          this._plr[propNameAndEventType] = listener;
+          this.on(propNameAndEventType, listener);
+        }
+      };
 
       P.transmit = function (propName, eventType, elem) {
 
@@ -347,10 +359,12 @@
 
         var propNameAndEventType;
 
-        propNameAndEventType = this.concatPropNameAndEventType(propName, eventType);
-
         this.assignRid(elem);
+
+        propNameAndEventType = this.concatPropNameAndEventType(propName, eventType);
         this.holdElement(propNameAndEventType, elem);
+
+
 
         (function (self, propName, eventType, propNameAndEventType, elem) {
           var propListner, onPropListner, offPropListner,
