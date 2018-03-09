@@ -31,6 +31,10 @@
       return v && !Array.isArray(v) && (typeof v) === "object";
     }
 
+    function isFunction(fun) {
+      return fun && {}.toString.call(fun) === '[object Function]';
+    }
+
     function isPrimitive(v) {
       if (v == null) return false;
       var t = typeof v;
@@ -174,11 +178,13 @@
       }
     }
 
-    Dict2 = inherits(Dispatcher, function (object) {
+    Dict2 = inherits(Object, function (object) {
 
       Dispatcher.call(this);
 
       var self = this;
+
+      self._rid = rid();
 
       Object.defineProperty(this, "_meta", {
         enumerable: false,
@@ -186,21 +192,35 @@
         writable: false,
         value: {
           origin: object,
+          props: {},
         },
       });
+
+      self.set = function (src, propName, value) {
+        var propInfo, listener, setter;
+        if (this._meta.origin[propName] === value) return;
+        this._meta.origin[propName] = value;
+        propInfo = this._meta.props[propName];
+        if (!propInfo) return;
+        for (var i = 0; i < propInfo.listeners.length; i++) {
+          listener = propInfo.listeners[i];
+          if (listener === src) continue;
+          setter = propInfo.setters[listener._rid];
+          if (!setter) continue;
+          setter(value);
+        }
+      };
       
       function prepareProp(self, object, name) {
-        var rid_, meta;
+        var rid_, propInfo;
         rid_ = rid();
-        meta = {
+        propInfo = {
           rid: rid_,
           type_: getType(object[name]),
           setters: {},
         };
-        meta.setters[rid_] = function (value) {
-          object[name] = value;
-        };
-        self._meta[name] = meta;
+
+        self._meta.props[name] = propInfo;
         preparePrimitiveProp(self, object, name);
       }
 

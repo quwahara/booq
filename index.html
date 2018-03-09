@@ -40,16 +40,97 @@
     <div id="atom"></div>
   </div>
   <script type="text/javascript">
-    var k = new Konbi({
-      entities: {
-        apple: "",
-      },
+    // var k = new Konbi({
+    //   entities: {
+    //     apple: "",
+    //   },
+    // });
+    // k.entities.transmit("apple", "change", document.getElementById("appleDiv"));
+    // k.entities.transceive("apple", "change", document.getElementById("appleText"));
+    // document.getElementById("addBtn").addEventListener("click", function (event) {
+    //   k.entities.apple = (new Date()).toISOString();
+    // });
+
+    var ridMin, ridMax, repo;
+    ridMin = 100000000000000;
+    ridMax = ridMin * 10 - 1;
+
+    function rid() {
+      return "_" + (Math.floor(Math.random() * (ridMax - ridMin + 1)) + ridMin).toString(10);
+    }
+
+    function mergeRid(obj) {
+      if (!obj._rid) {
+        obj._rid = rid();
+      }
+      return obj._rid;
+    }
+
+    repo = {};
+
+    Trax = function Trax(decl) {
+      var r;
+      r = repo[mergeRid(this)] = {};
+      r.decl = decl;
+      this.initDecl(decl);
+    };
+    (function (P) {
+
+      function preparePrimitiveProp(self, decl, name) {
+        (function (self, decl, name) {
+          Object.defineProperty(self, name, {
+            get: function () {
+              return decl[name];
+            },
+            set: function (value) {
+              var pi;
+              if (decl[name] === value) return;
+              decl[name] = value;
+              pi = repo[self._rid].pis[name];
+              for (var i = 0; i < pi.setters.length; ++i) {
+                pi.setters[i](self, value);
+              }
+            }
+          });
+        })(self, decl, name);
+      
+      }
+
+      P.initDecl = function (decl) {
+        for (var name in decl) {
+          if (!decl.hasOwnProperty(name)) continue;
+          prepareProp(this, decl, name);
+        }
+      };
+
+      P.transceiveOn = function (eventType, propName) {
+        var self = this, doc, elem, elemRid, elemSetter, propInfo;
+        doc = this.doc;
+        elem = doc.getElementByName(propName);
+        elemRid = mergeRid(elem.dataset);
+        // Switch setterFunction depending on the elemnt type
+        if (true) {
+          elemSetter = (function (elem) {
+            return function (src, value) {
+              if (src === elem) return;
+              elem.value = value;
+            };
+          })(elem);
+        }
+        propInfo = self.propInfos[propName];
+        propInfo.setters.push(elemSetter);
+      };
+
+    })(Trax.prototype);
+
+    var t;
+    t = new Trax({
+      apple: "",
     });
-    k.entities.transmit("apple", "change", document.getElementById("appleDiv"));
-    k.entities.transceive("apple", "change", document.getElementById("appleText"));
-    document.getElementById("addBtn").addEventListener("click", function (event) {
-      k.entities.apple = (new Date()).toISOString();
-    });
+    t.transceiveOn("change", "apple");
+
+
+
   </script>
 </body>
 
