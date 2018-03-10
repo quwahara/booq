@@ -10,6 +10,9 @@
   <div>
     <form>
       <div>
+        <input id="apple" type="text" name="apple">
+      </div>
+      <div>
         <input id="appleText" type="text" name="apple">
       </div>
       <div>
@@ -51,7 +54,7 @@
     //   k.entities.apple = (new Date()).toISOString();
     // });
 
-    var ridMin, ridMax, repo;
+    var ridMin, ridMax, repos;
     ridMin = 100000000000000;
     ridMax = ridMin * 10 - 1;
 
@@ -63,62 +66,158 @@
       if (!obj._rid) {
         obj._rid = rid();
       }
-      return obj._rid;
+      return obj;
     }
 
-    repo = {};
+    function isInputValue(elem) {
+      if (!elem || elem.tagName !== "INPUT") return false;
+      if (elem.type && elem.type === "text") return true;
+      return false;
+    }
+
+    repos = {};
 
     Trax = function Trax(decl) {
       var r;
-      r = repo[mergeRid(this)] = {};
+      r = repos[mergeRid(this)._rid] = {};
+      r.doc = document;
       r.decl = decl;
-      this.initDecl(decl);
+      // property infos
+      r.pis = {};
+      this.initDecl(r);
     };
     (function (P) {
 
-      function preparePrimitiveProp(self, decl, name) {
-        (function (self, decl, name) {
-          Object.defineProperty(self, name, {
-            get: function () {
-              return decl[name];
-            },
-            set: function (value) {
-              var pi;
-              if (decl[name] === value) return;
-              decl[name] = value;
-              pi = repo[self._rid].pis[name];
-              for (var i = 0; i < pi.setters.length; ++i) {
-                pi.setters[i](self, value);
-              }
-            }
-          });
-        })(self, decl, name);
-      
-      }
-
-      P.initDecl = function (decl) {
+      P.initDecl = function (r) {
+        var decl, pi;
+        decl = r.decl;
         for (var name in decl) {
           if (!decl.hasOwnProperty(name)) continue;
-          prepareProp(this, decl, name);
+          pi = preparePropInfo(r, name);
+          preparePrimitiveProp(this, pi);
         }
       };
 
-      P.transceiveOn = function (eventType, propName) {
-        var self = this, doc, elem, elemRid, elemSetter, propInfo;
-        doc = this.doc;
-        elem = doc.getElementByName(propName);
-        elemRid = mergeRid(elem.dataset);
+      function preparePropInfo(r, propName) {
+        var pi = mergeRid({
+          decl: r.decl,
+          propName: propName,
+          value: r.decl[propName],
+          // setter infos
+          sis: [],
+          cast: function (event) {
+            var sis, si, i, len;
+            sis = this.sis;
+            len = sis.length;
+            for (var i = 0; i < len; ++i) {
+              si = sis[i];
+              if (si._rid === event.target._rid) continue;
+              si.setter(event);
+            }
+          },
+          setValue: function (v) {
+            this.value = v;
+            this.decl[this.propName] = v;
+          },
+          setter: function (event) {
+            this.setValue(event.target.value);
+          },
+          addSetterInfo: function (si) {
+            this.sis.push(si);
+          },
+        });
+        pi.addSetterInfo(pi);
+        r.pis[propName] = pi;
+        return pi;
+      }
+
+      function preparePrimitiveProp(self, pi) {
+        (function (self, pi) {
+          Object.defineProperty(self, pi.propName, {
+            get: function () {
+              return pi.value;
+            },
+            set: function (value) {
+              if (pi.value === value) return;
+              pi.setValue(value);
+              pi.cast({target: pi});
+            }
+          });
+        })(self, pi);
+      }
+
+      P.rx = function (propName, elemId) {
+        var elem, elemRid, elemSi, r, pi;
+        r = repos[this._rid];
+        elem = r.doc.getElementById(elemId);
+        if (!elem) return false;
+
+        elemRid = mergeRid(elem)._rid;
+        elemSi = {
+          _rid: elemRid,
+          elem: elem,
+        };
         // Switch setterFunction depending on the elemnt type
-        if (true) {
-          elemSetter = (function (elem) {
-            return function (src, value) {
-              if (src === elem) return;
-              elem.value = value;
-            };
-          })(elem);
+        if (isInputValue(elem)) {
+          elemSi.setter = function (event) {
+            this.elem.value = event.target.value;
+          };
+        } else {
+          elemSi.setter = function (event) {
+            this.elem.textContent = event.target.value;
+          };
         }
-        propInfo = self.propInfos[propName];
-        propInfo.setters.push(elemSetter);
+        pi = r.pis[propName];
+        if (pi) {
+          pi.addSetterInfo(elemSi);
+        }
+      }
+
+      P.trxOn = function (eventType, propName) {
+        var self = this, doc, elem, elemRid, elemSi, r, pi;
+        r = repos[self._rid];
+        if (!r || !r.doc) return false;
+        doc = r.doc;
+        elem = doc.getElementById(propName);
+        if (!elem) return false;
+
+        elemRid = mergeRid(elem)._rid;
+        // Switch setterFunction depending on the elemnt type
+        if (isInputValue(elem)) {
+          elemSi = {
+            _rid: elemRid,
+            elem: elem,
+            setter: function (event) {
+              this.elem.value = event.target.value;
+            },
+          };
+        } else {
+          elemSi = {
+            _rid: elemRid,
+            elem: elem,
+            setter: function (event) {
+              this.elem.textContent = event.target.value;
+            },
+          };
+        }
+        if (true) {
+          elemSi = {
+            _rid: elemRid,
+            elem: elem,
+            setter: function (event) {
+              this.elem.value = event.target.value;
+            },
+          };
+        }
+        pi = r.pis[propName];
+        if (elemSi && pi) {
+          pi.addSetterInfo(elemSi);
+        }
+        (function (pi) {
+          elem.addEventListener(eventType, function (event) {
+            pi.cast(event);
+          });
+        })(pi);
       };
 
     })(Trax.prototype);
@@ -127,9 +226,12 @@
     t = new Trax({
       apple: "",
     });
-    t.transceiveOn("change", "apple");
+    t.trxOn("change", "apple");
+    t.rx("apple", "appleDiv");
 
-
+    document.getElementById("addBtn").addEventListener("click", function (event) {
+      t.apple = (new Date()).toISOString();
+    });
 
   </script>
 </body>
