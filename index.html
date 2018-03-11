@@ -18,6 +18,8 @@
       </div>
       <div>
         <div id="appleDiv"></div>
+        <div class="apple"></div>
+        <div class="apple"></div>
       </div>
       <div>
         <input type="text" name="banana">
@@ -35,7 +37,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr style="display: none;">
+        <tr style="">
           <td class="apple"></td>
           <td class="banana"></td>
         </tr>
@@ -48,8 +50,8 @@
     t = new Trax({
       apple: "",
     });
-    t.trxOn("change", "apple");
-    t.rx("apple", "appleDiv");
+    t.trx("apple");
+    t.tx("apple", "#appleDiv .apple");
 
     document.getElementById("addBtn").addEventListener("click", function (event) {
       t.apple = (new Date()).toISOString();
