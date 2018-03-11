@@ -65,45 +65,71 @@
       return array;
     }
 
-    function ensureElements(queryOrElems) {
-      var i, elems2, spls, spl, elem2, tmpElems;
+    function map(ary, fun) {
+      var i, ary2 = [];
+      for (i = 0; i < ary.length; i++) {
+        ary2.push(fun(ary[i]));
+      }
+      return ary2;
+    }
+
+    function parseQryOrElems(qryOrElems) {
+      var i, ees, qryEvtSpls, qryEvt, elem2, qry, evt, tmpElems;
+
+      // element and eventType
+      function ee(elem, eventType) {
+        eventType = eventType || "change";
+        return {
+          elem: elem,
+          eventType: eventType,
+        };
+      }
+
+      // element and eventType callback
+      function eec(eventType) {
+        return function (elem) {
+          return ee(elem, eventType);
+        };
+      }
       
-      if (queryOrElems instanceof HTMLElement) {
-        return [queryOrElems];
+      if (qryOrElems instanceof HTMLElement) {
+        return [ee(qryOrElems)];
       }
 
-      if (queryOrElems instanceof HTMLCollection) {
-        return toArray(queryOrElems);
+      if (qryOrElems instanceof HTMLCollection) {
+        return map(toArray(qryOrElems), ee);
       }
 
-      if (!isString(queryOrElems)) {
+      if (!isString(qryOrElems)) {
         throw Error("The elems was not supported type");
       }
 
-      elems2 = [];
-      spls = queryOrElems.trim().split(/\s/);
-      for (i = 0; i < spls.length; i++) {
-        spl = spls[i];
-        if (spl.indexOf("#") == 0) {
-          elem2 = document.getElementById(spl.substr(1));
+      ees = [];
+      qryEvtSpls = qryOrElems.trim().split(/\s/);
+      for (i = 0; i < qryEvtSpls.length; i++) {
+        qryEvt = qryEvtSpls[i].split("@", 2);
+        qry = qryEvt[0];
+        evt = qryEvt[1];
+        if (qry.indexOf("#") == 0) {
+          elem2 = document.getElementById(qry.substr(1));
           if (elem2) {
-            elems2.push(elem2);
+            ees.push(ee(elem2, evt));
           }
-        } else if (spl.indexOf(".") === 0) {
-          tmpElems = document.getElementsByClassName(spl.substr(1));
+        } else if (qry.indexOf(".") === 0) {
+          tmpElems = document.getElementsByClassName(qry.substr(1));
           if (tmpElems) {
-            elems2 = [].concat(elems2, toArray(tmpElems));
+            ees = [].concat(ees, map(toArray(tmpElems), eec(evt)));
           }
-        } else if ((/[\w]+/).test(spl)) {
-          tmpElems = document.getElementsByTagName(spl);
+        } else if ((/[\w]+/).test(qry)) {
+          tmpElems = document.getElementsByTagName(qry);
           if (tmpElems) {
-            elems2 = [].concat(elems2, toArray(tmpElems));
+            ees = [].concat(ees, map(toArray(tmpElems), eec(evt)));
           }
         } else {
-          throw Error("The elems was not supported format");
+          throw Error("The query was not supported format");
         }
       }
-      return elems2;
+      return ees;
     }
 
     repos = {};
@@ -198,7 +224,7 @@
 
       // transmit object property value to DOM element
       P.tx = function (propName, qryOrElems) {
-        var r, pi, elems, i;
+        var r, pi;
         if (arguments.length === 1) {
           qryOrElems = propName;
         }
@@ -207,15 +233,14 @@
         if (!pi) {
           throw new Error("No property of '" + propName + "'");
         }
-        elems = ensureElements(qryOrElems);
-        for (i = 0; i < elems.length; i++) {
-          pi.addSetterInfo(setterInfo(elems[i]));
-        }
+        map(parseQryOrElems(qryOrElems), function (ee) {
+          pi.addSetterInfo(setterInfo(ee.elem));
+        });
       };
 
       // receive value to object property from Dom element
       P.rx = function (propName, qryOrElems) {
-        var r, pi, elems, i, elem;
+        var r, pi;
         if (arguments.length === 1) {
           qryOrElems = propName;
         }
@@ -224,15 +249,13 @@
         if (!pi) {
           throw new Error("No property of '" + propName + "'");
         }
-        elems = ensureElements(qryOrElems);
-        for (i = 0; i < elems.length; i++) {
-          elem = elems[i];
-          (function (elem, pi) {
-            elem.addEventListener("change", function (event) {
+        map(parseQryOrElems(qryOrElems), function (ee) {
+          (function (ee, pi) {
+            ee.elem.addEventListener(ee.eventType, function (event) {
               pi.cast(event);
             });
-          })(elem, pi);
-        }
+          })(ee, pi);
+        });
       };
 
       // transmit object property value to DOM element
@@ -247,21 +270,19 @@
         if (!pi) {
           throw new Error("No property of '" + propName + "'");
         }
-        elems = ensureElements(qryOrElems);
-        for (i = 0; i < elems.length; i++) {
-          elem = elems[i];
-          pi.addSetterInfo(setterInfo(elem));
-          (function (elem, pi) {
-            elem.addEventListener("change", function (event) {
+        map(parseQryOrElems(qryOrElems), function (ee) {
+          pi.addSetterInfo(setterInfo(ee.elem));
+          (function (ee, pi) {
+            ee.elem.addEventListener(ee.eventType, function (event) {
               pi.cast(event);
             });
-          })(elem, pi);
-        }
+          })(ee, pi);
+        });
       };
 
     })(Trax.prototype);
 
-    Trax.release = "0.0.3";
+    Trax.release = "0.0.7";
 
     return Trax;
   })();
