@@ -36,6 +36,26 @@
       return t === "string" || t === "number" || t === "boolean";
     }
 
+    function map(ary, fun) {
+      var i, len, ary2 = [];
+      for (i = 0, len = ary.length; i < len; i++) {
+        ary2.push(fun(ary[i]));
+      }
+      return ary2;
+    }
+
+    function toArray(arrayLike) {
+      var i, array = [];
+      for (i = 0; i < arrayLike.length; i++) {
+        if (arrayLike.item) {
+          array.push(arrayLike.item(0));
+        } else {
+          array.push(arrayLike[i]);
+        }
+      }
+      return array;
+    }
+
     function rid() {
       return "_" + (Math.floor(Math.random() * (ridMax - ridMin + 1)) + ridMin).toString(10);
     }
@@ -51,26 +71,6 @@
       if (!elem || elem.tagName !== "INPUT") return false;
       if (elem.type && elem.type === "text") return true;
       return false;
-    }
-
-    function toArray(arrayLike) {
-      var i, array = [];
-      for (i = 0; i < arrayLike.length; i++) {
-        if (arrayLike.item) {
-          array.push(arrayLike.item(0));
-        } else {
-          array.push(arrayLike[i]);
-        }
-      }
-      return array;
-    }
-
-    function map(ary, fun) {
-      var i, ary2 = [];
-      for (i = 0; i < ary.length; i++) {
-        ary2.push(fun(ary[i]));
-      }
-      return ary2;
     }
 
     function parseQryOrElems(qryOrElems) {
@@ -222,16 +222,20 @@
         };
       }
 
-      // transmit object property value to DOM element
-      P.tx = function (propName, qryOrElems) {
-        var r, pi;
-        if (arguments.length === 1) {
-          qryOrElems = propName;
-        }
-        r = repos[this._rid];
+      function loadPropertyInfo(r, propName) {
+        var pi;
         pi = r.pis[propName];
         if (!pi) {
           throw new Error("No property of '" + propName + "'");
+        }
+        return pi;
+      }
+
+      // transmit object property value to DOM element
+      P.tx = function (propName, qryOrElems) {
+        var pi = loadPropertyInfo(repos[this._rid], propName);
+        if (arguments.length === 1) {
+          qryOrElems = propName;
         }
         map(parseQryOrElems(qryOrElems), function (ee) {
           pi.addSetterInfo(setterInfo(ee.elem));
@@ -240,14 +244,9 @@
 
       // receive value to object property from Dom element
       P.rx = function (propName, qryOrElems) {
-        var r, pi;
+        var pi = loadPropertyInfo(repos[this._rid], propName);
         if (arguments.length === 1) {
           qryOrElems = propName;
-        }
-        r = repos[this._rid];
-        pi = r.pis[propName];
-        if (!pi) {
-          throw new Error("No property of '" + propName + "'");
         }
         map(parseQryOrElems(qryOrElems), function (ee) {
           (function (ee, pi) {
@@ -261,14 +260,9 @@
       // transmit object property value to DOM element
       // receive value to object property from Dom element
       P.trx = function (propName, qryOrElems) {
-        var r, pi, elems, i, elem;
+        var pi = loadPropertyInfo(repos[this._rid], propName);
         if (arguments.length === 1) {
           qryOrElems = propName;
-        }
-        r = repos[this._rid];
-        pi = r.pis[propName];
-        if (!pi) {
-          throw new Error("No property of '" + propName + "'");
         }
         map(parseQryOrElems(qryOrElems), function (ee) {
           pi.addSetterInfo(setterInfo(ee.elem));
@@ -282,7 +276,7 @@
 
     })(Trax.prototype);
 
-    Trax.release = "0.0.7";
+    Trax.release = "0.0.8";
 
     return Trax;
   })();
