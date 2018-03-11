@@ -37,7 +37,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr style="">
+        <tr>
           <td class="apple"></td>
           <td class="banana"></td>
         </tr>
@@ -50,7 +50,7 @@
     t = new Trax({
       apple: "",
     });
-    t.trx("apple");
+    t.trx("apple", "#appleText");
     t.tx("apple", "#appleDiv .apple");
 
     document.getElementById("addBtn").addEventListener("click", function (event) {

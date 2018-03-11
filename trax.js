@@ -8,8 +8,7 @@
   } else {
     // <script>
     Trax = definition();
-    console.log(">3");
-    console.log(Trax);
+    console.log(Trax.release);
   }
 })(function () {
   'use strict';
@@ -95,8 +94,8 @@
           if (tmpElems) {
             elems2 = [].concat(elems2, toArray(tmpElems));
           }
-        } else if ((/[\w]+/).text(spl)) {
-          tmpElems = document.etElementsByTagName(spl);
+        } else if ((/[\w]+/).test(spl)) {
+          tmpElems = document.getElementsByTagName(spl);
           if (tmpElems) {
             elems2 = [].concat(elems2, toArray(tmpElems));
           }
@@ -178,23 +177,6 @@
         })(self, pi);
       }
 
-      // transmit object property value to DOM element
-      P.tx = function (propName, qryOrElems) {
-        var r, pi, elems, i;
-        if (arguments.length === 1) {
-          qryOrElems = propName;
-        }
-        r = repos[this._rid];
-        pi = r.pis[propName];
-        if (!pi) {
-          throw new Error("No property of '" + propName + "'");
-        }
-        elems = ensureElements(qryOrElems);
-        for (i = 0; i < elems.length; i++) {
-          pi.addSetterInfo(prepareSetterInfo(elems[i]));
-        }
-      };
-
       function prepareSetterInfo(elem) {
         var setter;
         // Switch setterFunction depending on the elemnt type
@@ -214,54 +196,50 @@
         };
       }
 
-      P.trx = function (propName) {
-        var self = this, doc, elem, elemRid, elemSi, r, pi;
-        r = repos[self._rid];
-        if (!r || !r.doc) return false;
-        doc = r.doc;
-        elem = doc.getElementById(propName);
-        if (!elem) return false;
-
-        elemRid = mergeRid(elem)._rid;
-        // Switch setterFunction depending on the elemnt type
-        if (isInputValue(elem)) {
-          elemSi = {
-            _rid: elemRid,
-            elem: elem,
-            setter: function (event) {
-              this.elem.value = event.target.value;
-            },
-          };
-        } else {
-          elemSi = {
-            _rid: elemRid,
-            elem: elem,
-            setter: function (event) {
-              this.elem.textContent = event.target.value;
-            },
-          };
+      // transmit object property value to DOM element
+      P.tx = function (propName, qryOrElems) {
+        var r, pi, elems, i;
+        if (arguments.length === 1) {
+          qryOrElems = propName;
         }
-        if (true) {
-          elemSi = {
-            _rid: elemRid,
-            elem: elem,
-            setter: function (event) {
-              this.elem.value = event.target.value;
-            },
-          };
-        }
+        r = repos[this._rid];
         pi = r.pis[propName];
-        if (elemSi && pi) {
-          pi.addSetterInfo(elemSi);
+        if (!pi) {
+          throw new Error("No property of '" + propName + "'");
         }
-        (function (pi) {
-          elem.addEventListener("change", function (event) {
-            pi.cast(event);
-          });
-        })(pi);
+        elems = ensureElements(qryOrElems);
+        for (i = 0; i < elems.length; i++) {
+          pi.addSetterInfo(prepareSetterInfo(elems[i]));
+        }
+      };
+
+      // transmit object property value to DOM element
+      // receive value to object property from Dom element
+      P.trx = function (propName, qryOrElems) {
+        var r, pi, elems, i, elem;
+        if (arguments.length === 1) {
+          qryOrElems = propName;
+        }
+        r = repos[this._rid];
+        pi = r.pis[propName];
+        if (!pi) {
+          throw new Error("No property of '" + propName + "'");
+        }
+        elems = ensureElements(qryOrElems);
+        for (i = 0; i < elems.length; i++) {
+          elem = elems[i];
+          pi.addSetterInfo(prepareSetterInfo(elem));
+          (function (elem, pi) {
+            elem.addEventListener("change", function (event) {
+              pi.cast(event);
+            });
+          })(elem, pi);
+        }
       };
 
     })(Trax.prototype);
+
+    Trax.release = "0.0.3";
 
     return Trax;
   })();
