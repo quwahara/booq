@@ -177,7 +177,7 @@
         })(self, pi);
       }
 
-      function prepareSetterInfo(elem) {
+      function setterInfo(elem) {
         var setter;
         // Switch setterFunction depending on the elemnt type
         if (isInputValue(elem)) {
@@ -209,7 +209,29 @@
         }
         elems = ensureElements(qryOrElems);
         for (i = 0; i < elems.length; i++) {
-          pi.addSetterInfo(prepareSetterInfo(elems[i]));
+          pi.addSetterInfo(setterInfo(elems[i]));
+        }
+      };
+
+      // receive value to object property from Dom element
+      P.rx = function (propName, qryOrElems) {
+        var r, pi, elems, i, elem;
+        if (arguments.length === 1) {
+          qryOrElems = propName;
+        }
+        r = repos[this._rid];
+        pi = r.pis[propName];
+        if (!pi) {
+          throw new Error("No property of '" + propName + "'");
+        }
+        elems = ensureElements(qryOrElems);
+        for (i = 0; i < elems.length; i++) {
+          elem = elems[i];
+          (function (elem, pi) {
+            elem.addEventListener("change", function (event) {
+              pi.cast(event);
+            });
+          })(elem, pi);
         }
       };
 
@@ -228,7 +250,7 @@
         elems = ensureElements(qryOrElems);
         for (i = 0; i < elems.length; i++) {
           elem = elems[i];
-          pi.addSetterInfo(prepareSetterInfo(elem));
+          pi.addSetterInfo(setterInfo(elem));
           (function (elem, pi) {
             elem.addEventListener("change", function (event) {
               pi.cast(event);

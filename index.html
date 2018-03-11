@@ -11,12 +11,16 @@
   <div>
     <form>
       <div>
-        <input id="apple" type="text" name="apple">
+        <input id="apple" type="text" name="apple">apple
       </div>
       <div>
-        <input id="appleText" type="text" name="apple">
+        <input id="appleText" type="text" name="apple">trx appleText
       </div>
       <div>
+        <input id="appleText2" type="text" name="apple">rx appleText2
+      </div>
+      <div>
+        <div>tx</div>
         <div id="appleDiv"></div>
         <div class="apple"></div>
         <div class="apple"></div>
@@ -50,8 +54,9 @@
     t = new Trax({
       apple: "",
     });
-    t.trx("apple", "#appleText");
     t.tx("apple", "#appleDiv .apple");
+    t.rx("apple", "#appleText2");
+    t.trx("apple", "#appleText");
 
     document.getElementById("addBtn").addEventListener("click", function (event) {
       t.apple = (new Date()).toISOString();
