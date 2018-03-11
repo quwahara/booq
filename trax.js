@@ -14,7 +14,7 @@
   'use strict';
   return (function () {
 
-    var ridMin, ridMax, repos, Trax;
+    var ridMin, ridMax, repos, Trax, List, arrayByDecl;
     ridMin = 100000000000000;
     ridMax = ridMin * 10 - 1;
 
@@ -134,8 +134,31 @@
 
     repos = {};
 
+    List = function (decl) {
+      var r;
+      r = repos[mergeRid(this)._rid] = {};
+      r.decl = decl;
+      // item infos
+      r.iis = [];
+      this.initDecl(r);
+    };
+    (function (P) {
+
+      P.initDecl = function (r) {
+        
+      };
+
+      P.push = function (item) {
+        
+      };
+
+    })(List.prototype);
+
     Trax = function Trax(decl) {
       var r;
+      if (!isObject(decl)) {
+        throw Error("decl must be an Object");
+      }
       r = repos[mergeRid(this)._rid] = {};
       r.doc = document;
       r.decl = decl;
@@ -146,12 +169,17 @@
     (function (P) {
 
       P.initDecl = function (r) {
-        var decl, pi;
+        var decl, v, pi;
         decl = r.decl;
         for (var name in decl) {
           if (!decl.hasOwnProperty(name)) continue;
-          pi = preparePropInfo(r, name);
-          preparePrimitiveProp(this, pi);
+          v = decl[name];
+          if (isPrimitive(v)) {
+            pi = preparePropInfo(r, name);
+            preparePrimitiveProp(this, pi);
+          } else if (isArray(v)) {
+
+          }
         }
       };
 
@@ -276,7 +304,58 @@
 
     })(Trax.prototype);
 
-    Trax.release = "0.0.8";
+    function deepClone(target, memories) {
+      var name, v, cloneObj, cloneAry, i, len;
+      memories = memories || [];
+      if (isObject(target)) {
+        memories.push(target);
+        cloneObj = {};
+        for (name in target) {
+          if (!target.hasOwnProperty(name)) continue;
+          v = target[name];
+          if (memories.indexOf(v) > 0) continue;
+          cloneObj[name] = deepClone(v, memories);
+        }
+        return cloneObj;
+      } else if (isArray(target)) {
+        memories.push(target);
+        cloneAry = [];
+        for (i = 0, len = target.length; i < len; ++i) {
+          v = target[i];
+          if (memories.indexOf(v) > 0) continue;
+          cloneAry.push(deepClone(v, memories));
+        }
+      } else {
+        return target;
+      }
+    }
+
+    // arrayByDecl create an array that cat create array item 
+    // consist of declearation object
+    //
+    // arrayByDecl is introduced to support in the case of:
+    //  * You want to declare a structure of an item in array.
+    //  * But in th beging of page loading, the array must be empty.
+    //
+    // The parameter must be an Object.
+    // The Object is to represent decl for Trax.
+    // The returned array will be modified to:
+    //  * add _createItem method. The method create new Trax consists of the Object.
+    arrayByDecl = Trax.arrayByDecl = function arrayByDecl(decl) {
+      if (decl == null) throw Error("The parameter was null");
+      if (!isObject(decl)) throw Error("The parameter was not an object");
+
+      var array = [];
+      array._createItem = (function (decl) {
+        return function() {
+          return new Trax(deepClone(decl));
+        };
+      })(decl);
+      
+      return array;
+    };
+
+    Trax.release = "0.0.9";
 
     return Trax;
   })();

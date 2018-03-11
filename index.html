@@ -50,9 +50,13 @@
     <div id="atom"></div>
   </div>
   <script type="text/javascript">
-    var t;
+    var t, arrayByDecl = Trax.arrayByDecl;
     t = new Trax({
       apple: "",
+      choco: arrayByDecl({
+        milk: "",
+        cacao: "",
+      }),
     });
     t.tx("apple", "#appleDiv .apple");
     t.rx("apple", "#appleText2@keyup");
