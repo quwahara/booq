@@ -137,7 +137,9 @@
     List = function (decl) {
       var r;
       r = repos[mergeRid(this)._rid] = {};
-      r.decl = decl;
+      r.plane = [];
+      r.traxes = [];
+      r.decl = deepClone(decl);
       // item infos
       r.iis = [];
       this.initDecl(r);
@@ -148,7 +150,13 @@
         
       };
 
+      P.createItem = function () {
+        return new Trax(deepClone(this.decl));
+      }
+
       P.push = function (item) {
+        r.traxes.push(item);
+        
         
       };
 
