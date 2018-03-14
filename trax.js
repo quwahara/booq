@@ -134,14 +134,36 @@
 
     repos = {};
 
-    List = function (decl) {
+    List = function (arrayHasDecl) {
       var r;
-      r = repos[mergeRid(this)._rid] = {};
-      r.plane = [];
-      r.traxes = [];
-      r.decl = deepClone(decl);
-      // item infos
-      r.iis = [];
+      r = repos[mergeRid(this)._rid] = {
+        sis: [],
+        cast: function (event) {
+          var sis, si, i, len;
+          sis = this.sis;
+          len = sis.length;
+          console.log("casted");
+          // for (i = 0; i < len; ++i) {
+          //   si = sis[i];
+          //   if (si._rid === event.target._rid) continue;
+          //   si.setter(event);
+          // }
+        },
+        setValue: function (v) {
+          // this.value = v;
+          // this.decl[this.propName] = v;
+        },
+        setter: function (event) {
+          console.log(event);
+          // this.setValue(event.target.value);
+        },
+        addSetterInfo: function (si) {
+          this.sis.push(si);
+        },
+        decl: arrayHasDecl[0],
+        value: arrayHasDecl,
+      };
+      arrayHasDecl.slice(0, arrayHasDecl.length);
       this.initDecl(r);
     };
     (function (P) {
@@ -151,13 +173,16 @@
       };
 
       P.createItem = function () {
-        return new Trax(deepClone(this.decl));
-      }
+        var r;
+        r = repos[mergeRid(this)._rid];
+        return new Trax(deepClone(r.decl));
+      };
 
       P.push = function (item) {
-        r.traxes.push(item);
-        
-        
+        var r;
+        r = repos[mergeRid(this)._rid];
+        r.value.push(item);
+        r.cast({ target: this });
       };
 
     })(List.prototype);
@@ -177,22 +202,26 @@
     (function (P) {
 
       P.initDecl = function (r) {
-        var decl, v, pi;
+        var decl, name, v, pi, ls;
         decl = r.decl;
-        for (var name in decl) {
+        for (name in decl) {
           if (!decl.hasOwnProperty(name)) continue;
           v = decl[name];
           if (isPrimitive(v)) {
-            pi = preparePropInfo(r, name);
+            pi = preparePropInfo(r, name, true, false);
             preparePrimitiveProp(this, pi);
-          } else if (isArray(v)) {
-
+          } else if (Array.isArray(v)) {
+            decl[name] = new List(v);
+            pi = preparePropInfo(r, name, false, true);
+            preparePrimitiveProp(this, pi);
           }
         }
       };
 
-      function preparePropInfo(r, propName) {
+      function preparePropInfo(r, propName, isPrimitive, isArray) {
         var pi = mergeRid({
+          isPrimitive: isPrimitive,
+          isArray: isArray,
           decl: r.decl,
           propName: propName,
           value: r.decl[propName],
@@ -258,6 +287,25 @@
         };
       }
 
+      function setterInfoForArray(elem) {
+        var setter;
+        // Switch setterFunction depending on the elemnt type
+        if (isInputValue(elem)) {
+          setter = function (event) {
+            console.log("setterInfoForArray");
+          };
+        } else {
+          setter = function (event) {
+            console.log("setterInfoForArray");
+          };
+        }
+        return {
+          _rid: mergeRid(elem)._rid,
+          elem: elem,
+          setter: setter,
+        };
+      }
+
       function loadPropertyInfo(r, propName) {
         var pi;
         pi = r.pis[propName];
@@ -274,7 +322,17 @@
           qryOrElems = propName;
         }
         map(parseQryOrElems(qryOrElems), function (ee) {
-          pi.addSetterInfo(setterInfo(ee.elem));
+          var si;
+          if (pi.isPrimitive) {
+            si = setterInfo(ee.elem);
+          } else if (pi.isArray) {
+            si = setterInfoForArray(ee.elem);
+          } else {
+            si = null;
+          }
+          if (si) {
+            pi.addSetterInfo(si);
+          }
         });
       };
 
@@ -325,7 +383,7 @@
           cloneObj[name] = deepClone(v, memories);
         }
         return cloneObj;
-      } else if (isArray(target)) {
+      } else if (Array.isArray(target)) {
         memories.push(target);
         cloneAry = [];
         for (i = 0, len = target.length; i < len; ++i) {

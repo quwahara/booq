@@ -30,6 +30,7 @@
       </div>
       <div>
         <button id="addBtn" type="button">Add</button>
+        <button id="addBtn2" type="button">Add2</button>
       </div>
     </form>
     <div id="atom"></div>
@@ -53,10 +54,10 @@
     var t, arrayByDecl = Trax.arrayByDecl;
     t = new Trax({
       apple: "",
-      choco: arrayByDecl({
+      choco: [{
         milk: "",
         cacao: "",
-      }),
+      }],
     });
 
     t.tx("choco", "#chocoTr");
@@ -67,6 +68,12 @@
 
     document.getElementById("addBtn").addEventListener("click", function (event) {
       t.apple = (new Date()).toISOString();
+    });
+    document.getElementById("addBtn2").addEventListener("click", function (event) {
+      var item;
+      item = t.choco.createItem();
+      console.log(item);
+      t.choco.push(item);
     });
   </script>
 </body>
