@@ -169,7 +169,6 @@
     (function (P) {
 
       P.initDecl = function (r) {
-        
       };
 
       P.createItem = function () {
@@ -182,7 +181,8 @@
         var r;
         r = repos[mergeRid(this)._rid];
         r.value.push(item);
-        r.cast({ target: this });
+        console.log("List push");
+        r.pi.cast({ target: this });
       };
 
     })(List.prototype);
@@ -208,20 +208,19 @@
           if (!decl.hasOwnProperty(name)) continue;
           v = decl[name];
           if (isPrimitive(v)) {
-            pi = preparePropInfo(r, name, true, false);
+            pi = preparePropInfo(r, name);
             preparePrimitiveProp(this, pi);
           } else if (Array.isArray(v)) {
-            decl[name] = new List(v);
-            pi = preparePropInfo(r, name, false, true);
+            ls = new List(v);
+            pi = prepareListPropInfo(r, name, ls);
             preparePrimitiveProp(this, pi);
           }
         }
       };
 
-      function preparePropInfo(r, propName, isPrimitive, isArray) {
+      function preparePropInfo(r, propName) {
         var pi = mergeRid({
-          isPrimitive: isPrimitive,
-          isArray: isArray,
+          isPrimitive: true,
           decl: r.decl,
           propName: propName,
           value: r.decl[propName],
@@ -268,6 +267,44 @@
         })(self, pi);
       }
 
+      function prepareListPropInfo(r, propName, value) {
+        var pi, listRepo;
+        pi = mergeRid({
+          isArray: true,
+          decl: r.decl,
+          propName: propName,
+          value: value,
+          // setter infos
+          sis: [],
+          cast: function (event) {
+            console.log("cast in listPropInfo");
+            var sis, si, i, len;
+            sis = this.sis;
+            len = sis.length;
+            for (i = 0; i < len; ++i) {
+              si = sis[i];
+              if (si._rid === event.target._rid) continue;
+              si.setter(event);
+            }
+          },
+          setValue: function (v) {
+            console.log("setValue in listPropInfo");
+          },
+          setter: function (event) {
+            console.log("setter in listPropInfo");
+          },
+          addSetterInfo: function (si) {
+            this.sis.push(si);
+          },
+        });
+        pi.addSetterInfo(pi);
+        r.pis[propName] = pi;
+        listRepo = repos[value._rid];
+        listRepo.pi = pi;
+        
+        return pi;
+      }
+
       function setterInfo(elem) {
         var setter;
         // Switch setterFunction depending on the elemnt type
@@ -288,6 +325,8 @@
       }
 
       function setterInfoForArray(elem) {
+        console.log("setterInfoForArray call");
+        
         var setter;
         // Switch setterFunction depending on the elemnt type
         if (isInputValue(elem)) {
