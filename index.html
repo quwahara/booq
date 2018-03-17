@@ -37,14 +37,14 @@
     <table>
       <thead>
         <tr>
-          <th>apple</th>
-          <th>banana</th>
+          <th>mild</th>
+          <th>cacao</th>
         </tr>
       </thead>
       <tbody>
         <tr id="chocoTr">
-          <td class="apple"></td>
-          <td class="banana"></td>
+          <td class="milk">milk</td>
+          <td class="cacao">cacao</td>
         </tr>
       </tbody>
     </table>
@@ -62,16 +62,25 @@
 
     t.tx("choco", "#chocoTr");
 
-    t.tx("apple", "#appleDiv .apple");
-    t.rx("apple", "#appleText2@keyup");
-    t.trx("apple", "#appleText");
+    // t.tx("apple", "#appleDiv .apple");
+    // t.rx("apple", "#appleText2@keyup");
+    // t.trx("apple", "#appleText");
 
     document.getElementById("addBtn").addEventListener("click", function (event) {
       t.apple = (new Date()).toISOString();
     });
+
+    var counter = (function () {
+      var i = 0;
+      return function () {
+        return ++i;
+      };
+    })();
+
     document.getElementById("addBtn2").addEventListener("click", function (event) {
       var item;
       item = t.choco.createItem();
+      item.milk = "bin: " + counter();
       console.log(item);
       t.choco.push(item);
     });

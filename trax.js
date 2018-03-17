@@ -44,6 +44,15 @@
       return ary2;
     }
 
+    function mapByProp(target, fun, thisArg) {
+      var name;
+      for (name in target) {
+        if (!target.hasOwnProperty(name)) continue;
+        fun.call(thisArg, name, target[name], target);
+      }
+      return target;
+    }
+
     function toArray(arrayLike) {
       var i, array = [];
       for (i = 0; i < arrayLike.length; i++) {
@@ -133,6 +142,25 @@
     }
 
     repos = {};
+
+    function setRepo(target, repo) {
+      repos[target._rid] = repo;
+      return repo;
+    }
+
+    function mergeRepo(target, repo) {
+      var t2, r2, r3;
+      t2 = mergeRid(target);
+      r2 = repos[t2._rid];
+      if (r2) return r2;
+      r3 = repo || {};
+      repos[ t2._rid] = r3;
+      return r3;
+    }
+
+    function getRepo(target) {
+      return repos[target._rid];
+    }
 
     List = function (arrayHasDecl) {
       var r;
@@ -255,6 +283,7 @@
       function preparePrimitiveProp(self, pi) {
         (function (self, pi) {
           Object.defineProperty(self, pi.propName, {
+            enumerable: true,
             get: function () {
               return pi.value;
             },
@@ -324,10 +353,22 @@
         };
       }
 
+      function removeAllChild(parent) {
+        while (parent.firstChild) {
+          parent.removeChild(parent.firstChild);
+        }
+        return parent;
+      }
+
       function setterInfoForArray(elem) {
         console.log("setterInfoForArray call");
-        
-        var setter;
+        var r, si, parentNode, importNode, setter;
+
+        parentNode = elem.parentNode;
+        importNode = document.importNode(elem, /* deep */ true);
+        importNode.id = undefined;
+        removeAllChild(parentNode);
+
         // Switch setterFunction depending on the elemnt type
         if (isInputValue(elem)) {
           setter = function (event) {
@@ -335,14 +376,37 @@
           };
         } else {
           setter = function (event) {
-            console.log("setterInfoForArray");
+            console.log("setterInfoForArray", event);
+            var r, ar, i, item, importNode, editElem;
+            r = getRepo(event.target);
+            ar = r.value;
+            removeAllChild(this.parentNode);
+            editElem = function(name, value, object) {
+              var selected, e2;
+              e2 = importNode.querySelector("." + name);
+              if (!e2) return;
+              if (isInputValue(e2)) {
+                e2.value = value;
+              } else {
+                e2.textContent = value;
+              }
+            };
+            for (i = 0; i < ar.length; i++) {
+              item = ar[i];
+              console.log(item, item.milk);
+              importNode = document.importNode(this.importNode, /* deep */ true);
+              mapByProp(item, editElem, importNode);
+              this.parentNode.appendChild(importNode);
+            }
           };
-        }
-        return {
-          _rid: mergeRid(elem)._rid,
-          elem: elem,
-          setter: setter,
         };
+        si = mergeRid({
+          parentNode: parentNode,
+          importNode: importNode,
+          setter: setter,
+        });
+
+        return si;
       }
 
       function loadPropertyInfo(r, propName) {
