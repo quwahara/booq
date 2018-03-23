@@ -163,7 +163,8 @@
     }
 
     List = function (arrayHasDecl) {
-      var r;
+      var decl, r;
+      decl = arrayHasDecl.splice(0, arrayHasDecl.length)[0];
       r = repos[mergeRid(this)._rid] = {
         sis: [],
         cast: function (event) {
@@ -188,10 +189,9 @@
         addSetterInfo: function (si) {
           this.sis.push(si);
         },
-        decl: arrayHasDecl[0],
+        decl: decl,
         value: arrayHasDecl,
       };
-      arrayHasDecl.slice(0, arrayHasDecl.length);
       this.initDecl(r);
     };
     (function (P) {
