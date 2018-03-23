@@ -366,11 +366,12 @@
 
         parentNode = elem.parentNode;
         importNode = document.importNode(elem, /* deep */ true);
-        importNode.id = undefined;
+        importNode.removeAttribute("id");
         removeAllChild(parentNode);
+        parentNode.innerHTML = ""; 
 
         // Switch setterFunction depending on the elemnt type
-        if (isInputValue(elem)) {
+        if (isInputValue(importNode)) {
           setter = function (event) {
             console.log("setterInfoForArray");
           };
@@ -393,13 +394,13 @@
             };
             for (i = 0; i < ar.length; i++) {
               item = ar[i];
-              console.log(item, item.milk);
+              console.log(i, item, item.milk);
               importNode = document.importNode(this.importNode, /* deep */ true);
               mapByProp(item, editElem, importNode);
               this.parentNode.appendChild(importNode);
             }
           };
-        };
+        }
         si = mergeRid({
           parentNode: parentNode,
           importNode: importNode,
