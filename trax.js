@@ -82,65 +82,6 @@
       return false;
     }
 
-    function parseQryOrElems(qryOrElems) {
-      var i, ees, qryEvtSpls, qryEvt, elem2, qry, evt, tmpElems;
-
-      // element and eventType
-      function ee(elem, eventType) {
-        eventType = eventType || "change";
-        return {
-          elem: elem,
-          eventType: eventType,
-        };
-      }
-
-      // element and eventType callback
-      function eec(eventType) {
-        return function (elem) {
-          return ee(elem, eventType);
-        };
-      }
-      
-      if (qryOrElems instanceof HTMLElement) {
-        return [ee(qryOrElems)];
-      }
-
-      if (qryOrElems instanceof HTMLCollection) {
-        return map(toArray(qryOrElems), ee);
-      }
-
-      if (!isString(qryOrElems)) {
-        throw Error("The elems was not supported type");
-      }
-
-      ees = [];
-      qryEvtSpls = qryOrElems.trim().split(/\s/);
-      for (i = 0; i < qryEvtSpls.length; i++) {
-        qryEvt = qryEvtSpls[i].split("@", 2);
-        qry = qryEvt[0];
-        evt = qryEvt[1];
-        if (qry.indexOf("#") == 0) {
-          elem2 = document.getElementById(qry.substr(1));
-          if (elem2) {
-            ees.push(ee(elem2, evt));
-          }
-        } else if (qry.indexOf(".") === 0) {
-          tmpElems = document.getElementsByClassName(qry.substr(1));
-          if (tmpElems) {
-            ees = [].concat(ees, map(toArray(tmpElems), eec(evt)));
-          }
-        } else if ((/[\w]+/).test(qry)) {
-          tmpElems = document.getElementsByTagName(qry);
-          if (tmpElems) {
-            ees = [].concat(ees, map(toArray(tmpElems), eec(evt)));
-          }
-        } else {
-          throw Error("The query was not supported format");
-        }
-      }
-      return ees;
-    }
-
     repos = {};
 
     function setRepo(target, repo) {
@@ -421,55 +362,52 @@
 
       // transmit object property value to DOM element
       P.tx = function (propName, qryOrElems) {
-        var pi = loadPropertyInfo(repos[this._rid], propName);
+        var pi, selecteds, i, len, elem, si;
+
+        pi = loadPropertyInfo(repos[this._rid], propName);
         if (arguments.length === 1) {
           qryOrElems = propName;
         }
-        map(parseQryOrElems(qryOrElems), function (ee) {
-          var si;
+
+        selecteds = document.querySelectorAll(qryOrElems);
+        for (i = 0, len = selecteds.length; i < len; ++i) {
+          elem = selecteds.item(i);
           if (pi.isPrimitive) {
-            si = setterInfo(ee.elem);
+            si = setterInfo(elem);
           } else if (pi.isArray) {
-            si = setterInfoForArray(ee.elem);
+            si = setterInfoForArray(elem);
           } else {
             si = null;
           }
           if (si) {
             pi.addSetterInfo(si);
           }
-        });
+        }
       };
 
       // receive value to object property from Dom element
       P.rx = function (propName, qryOrElems) {
-        var pi = loadPropertyInfo(repos[this._rid], propName);
+        var pi, i, len, selecteds, elem;
+        pi = loadPropertyInfo(repos[this._rid], propName);
         if (arguments.length === 1) {
           qryOrElems = propName;
         }
-        map(parseQryOrElems(qryOrElems), function (ee) {
-          (function (ee, pi) {
-            ee.elem.addEventListener(ee.eventType, function (event) {
+        selecteds = document.querySelectorAll(qryOrElems);
+        for (i = 0, len = selecteds.length; i < len; ++i) {
+          elem = selecteds.item(i);
+          (function (elem, pi) {
+            elem.addEventListener("change", function (event) {
               pi.cast(event);
             });
-          })(ee, pi);
-        });
+          })(elem, pi);
+        }
       };
 
       // transmit object property value to DOM element
       // receive value to object property from Dom element
       P.trx = function (propName, qryOrElems) {
-        var pi = loadPropertyInfo(repos[this._rid], propName);
-        if (arguments.length === 1) {
-          qryOrElems = propName;
-        }
-        map(parseQryOrElems(qryOrElems), function (ee) {
-          pi.addSetterInfo(setterInfo(ee.elem));
-          (function (ee, pi) {
-            ee.elem.addEventListener(ee.eventType, function (event) {
-              pi.cast(event);
-            });
-          })(ee, pi);
-        });
+        this.rx(propName, qryOrElems);
+        this.tx(propName, qryOrElems);
       };
 
     })(Trax.prototype);
@@ -525,7 +463,7 @@
       return array;
     };
 
-    Trax.release = "0.0.9";
+    Trax.release = "0.0.11";
 
     return Trax;
   })();
