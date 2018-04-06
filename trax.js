@@ -361,15 +361,11 @@
       }
 
       // transmit object property value to DOM element
-      P.tx = function (propName, qryOrElems) {
+      P.tx = function (propName, query) {
         var pi, selecteds, i, len, elem, si;
 
         pi = loadPropertyInfo(repos[this._rid], propName);
-        if (arguments.length === 1) {
-          qryOrElems = propName;
-        }
-
-        selecteds = document.querySelectorAll(qryOrElems);
+        selecteds = querySelecteds(propName, arguments.length === 1 ? false : query);
         for (i = 0, len = selecteds.length; i < len; ++i) {
           elem = selecteds.item(i);
           if (pi.isPrimitive) {
@@ -386,13 +382,11 @@
       };
 
       // receive value to object property from Dom element
-      P.rx = function (propName, qryOrElems) {
+      P.rx = function (propName, query) {
         var pi, i, len, selecteds, elem;
+
         pi = loadPropertyInfo(repos[this._rid], propName);
-        if (arguments.length === 1) {
-          qryOrElems = propName;
-        }
-        selecteds = document.querySelectorAll(qryOrElems);
+        selecteds = querySelecteds(propName, arguments.length === 1 ? false : query);
         for (i = 0, len = selecteds.length; i < len; ++i) {
           elem = selecteds.item(i);
           (function (elem, pi) {
@@ -403,11 +397,22 @@
         }
       };
 
+      function querySelecteds(propName, query) {
+        var ls;
+        if (query) {
+          return document.querySelectorAll(query);
+        } else {
+          ls = document.querySelectorAll("." + propName);
+          if (ls.length > 0) return ls;
+          return document.querySelectorAll("#" + propName);
+        }
+      }
+
       // transmit object property value to DOM element
       // receive value to object property from Dom element
-      P.trx = function (propName, qryOrElems) {
-        this.rx(propName, qryOrElems);
-        this.tx(propName, qryOrElems);
+      P.trx = function (propName, query) {
+        this.rx(propName, query);
+        this.tx(propName, query);
       };
 
     })(Trax.prototype);
