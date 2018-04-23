@@ -36,6 +36,13 @@
       return t === "string" || t === "number" || t === "boolean";
     }
 
+    function isListType(obj) {
+      var proto;
+      if (obj == null) return;
+      proto = Object.getPrototypeOf(obj)
+      return proto && proto.constructor === List;
+    }
+
     function map(ary, fun) {
       var i, len, ary2 = [];
       for (i = 0, len = ary.length; i < len; i++) {
@@ -79,6 +86,13 @@
     function isInputValue(elem) {
       if (!elem || elem.tagName !== "INPUT") return false;
       if (elem.type && elem.type === "text") return true;
+      return false;
+    }
+
+    function hasChangeEvent(elem) {
+      if (!elem) return false;
+      if (elem.tagName === "SELECT") return true;
+      if (elem.tagName === "INPUT") return true;
       return false;
     }
 
@@ -361,11 +375,11 @@
       }
 
       // transmit object property value to DOM element
-      P.tx = function (propName, query) {
+      P.tx = function (propName, query, docRoot) {
         var pi, selecteds, i, len, elem, si;
 
         pi = loadPropertyInfo(repos[this._rid], propName);
-        selecteds = querySelecteds(propName, arguments.length === 1 ? false : query);
+        selecteds = querySelecteds(propName, query || false, docRoot);
         for (i = 0, len = selecteds.length; i < len; ++i) {
           elem = selecteds.item(i);
           if (pi.isPrimitive) {
@@ -382,37 +396,57 @@
       };
 
       // receive value to object property from Dom element
-      P.rx = function (propName, query) {
-        var pi, i, len, selecteds, elem;
+      P.rx = function (propName, query, docRoot) {
+        var pi, i, j, len, decl, name, selecteds, r, elem;
 
         pi = loadPropertyInfo(repos[this._rid], propName);
-        selecteds = querySelecteds(propName, arguments.length === 1 ? false : query);
+        selecteds = querySelecteds(propName, query || false, docRoot);
         for (i = 0, len = selecteds.length; i < len; ++i) {
           elem = selecteds.item(i);
-          (function (elem, pi) {
-            elem.addEventListener("change", function (event) {
-              pi.cast(event);
-            });
-          })(elem, pi);
+          if (hasChangeEvent(elem)) {
+            (function (elem, pi) {
+              elem.addEventListener("change", function (event) {
+                pi.cast(event);
+              });
+            })(elem, pi);
+          }
+
+          if (isListType(pi.value)) {
+            r = repos[pi.value._rid];
+            r.lateBindInfo = {
+              rootDoc: elem
+            };
+          }
         }
       };
 
-      function querySelecteds(propName, query) {
+      function querySelecteds(propName, query, elem) {
         var ls;
         if (query) {
-          return document.querySelectorAll(query);
+          return elem.querySelectorAll(query);
         } else {
-          ls = document.querySelectorAll("." + propName);
+          ls = elem.querySelectorAll("." + propName);
           if (ls.length > 0) return ls;
-          return document.querySelectorAll("#" + propName);
+          return elem.querySelectorAll("#" + propName);
         }
       }
 
+      // function querySelecteds(propName, query) {
+      //   var ls;
+      //   if (query) {
+      //     return document.querySelectorAll(query);
+      //   } else {
+      //     ls = document.querySelectorAll("." + propName);
+      //     if (ls.length > 0) return ls;
+      //     return document.querySelectorAll("#" + propName);
+      //   }
+      // }
+
       // transmit object property value to DOM element
       // receive value to object property from Dom element
-      P.trx = function (propName, query) {
-        this.rx(propName, query);
-        this.tx(propName, query);
+      P.trx = function (propName, query, docRoot) {
+        this.rx(propName, query, docRoot);
+        this.tx(propName, query, docRoot);
       };
 
     })(Trax.prototype);
