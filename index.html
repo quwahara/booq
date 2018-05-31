@@ -3,86 +3,69 @@
 
 <head>
   <title></title>
-  <!-- <script src="konbi.js"></script> -->
   <script src="trax.js"></script>
 </head>
 
 <body>
   <div>
-    <form>
-      <div>
-        <input id="apple" type="text" name="apple">apple
-      </div>
-      <div>
-        <input id="appleText" type="text" name="apple">trx appleText
-      </div>
-      <div>
-        <input id="appleText2" type="text" name="apple">rx appleText2
-      </div>
-      <div>
-        <div>tx</div>
-        <div id="appleDiv"></div>
-        <div class="apple"></div>
-        <div class="apple"></div>
-      </div>
-      <div>
-        <input type="text" name="banana">
-      </div>
-      <div>
-        <button id="addBtn" type="button">Add</button>
-        <button id="addBtn2" type="button">Add2</button>
-      </div>
-    </form>
-    <div id="atom"></div>
-    <table>
-      <thead>
-        <tr>
-          <th>mild</th>
-          <th>cacao</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr id="chocoTr">
-          <td class="milk">milk</td>
-          <td class="cacao">cacao</td>
-        </tr>
-      </tbody>
-    </table>
-    <div id="atom"></div>
+    <div>
+      <button type="button" id="b1">b1</button>
+      <button type="button" id="b2">b2</button>
+    </div>
+    <div>
+      <input type="text" class="tableName">
+    </div>
+    <div>
+      <table>
+        <thead>
+          <tr>
+            <th>fieldName</th>
+            <th>type</th>
+          </tr>
+        </thead>
+        <tbody class="fields">
+          <tr>
+            <td class="fieldName"></td>
+            <td class="type"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="div2">
+      <span class="tableName"></span>
+    </div>
   </div>
-  <script type="text/javascript">
-    var t, arrayByDecl = Trax.arrayByDecl;
-    t = new Trax({
-      apple: "",
-      choco: [{
-        milk: "",
-        cacao: "",
-      }],
+  <script>
+    var xo;
+    xo = new Trax.Xobject({
+      tableName: "",
+      fields: [{
+        fieldName: "",
+        type: "",
+      }]
     });
+    xo._bind("tableName");
+    xo._bind("tableName", document.getElementById("div2"));
+    xo._bind("fields");
 
-    t.tx("choco", "#chocoTr");
+    // var field;
+    // console.log("b1-click");
+    // field = xo.fields.newItem();
+    // field.fieldName = new Date().toISOString();
+    // field.type = "String";
+    // xo.fields.push(field);
 
-    // t.tx("apple", "#appleDiv .apple");
-    // t.rx("apple", "#appleText2@keyup");
-    // t.trx("apple", "#appleText");
-
-    document.getElementById("addBtn").addEventListener("click", function (event) {
-      t.apple = (new Date()).toISOString();
+    document.getElementById("b1").addEventListener("click", function (event) {
+      var field;
+      console.log("b1-click");
+      field = xo.fields.newItem();
+      field.fieldName = new Date().toISOString();
+      field.type = "String";
+      xo.fields.push(field);
     });
-
-    var counter = (function () {
-      var i = 0;
-      return function () {
-        return ++i;
-      };
-    })();
-
-    document.getElementById("addBtn2").addEventListener("click", function (event) {
-      var item;
-      item = t.choco.createItem();
-      item.milk = "bin: " + counter();
-      console.log(item);
-      t.choco.push(item);
+    document.getElementById("b2").addEventListener("click", function (event) {
+      console.log("b2-click");
+      xo.tableName = new Date().toISOString();
     });
   </script>
 </body>

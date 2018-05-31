@@ -14,7 +14,12 @@
   'use strict';
   return (function () {
 
-    var ridMin, ridMax, repos, Trax, List, arrayByDecl;
+    var repos, proxies;
+    var Parray, Pi, PropInfo, Aelem, ElemReciever, Trax;
+    var Xobject, Xarray;
+    var Yarray, YeachElem, Yelem, YinputElem, Yobject, YplainElem, YtreeElem;
+
+    var ridMin, ridMax;
     ridMin = 100000000000000;
     ridMax = ridMin * 10 - 1;
 
@@ -24,6 +29,10 @@
 
     function isObject(v) {
       return v && !Array.isArray(v) && (typeof v) === "object";
+    }
+
+    function isArray(v) {
+      return Array.isArray(v);
     }
 
     function isFunction(fun) {
@@ -36,40 +45,28 @@
       return t === "string" || t === "number" || t === "boolean";
     }
 
-    function isListType(obj) {
+    function isInputValue(elem) {
+      if (!elem || elem.tagName !== "INPUT") return false;
+      if (elem.type && elem.type === "text") return true;
+      return false;
+    }
+
+    function isXobject(target) {
       var proto;
-      if (obj == null) return;
-      proto = Object.getPrototypeOf(obj)
-      return proto && proto.constructor === List;
+      if (target == null) return;
+      proto = Object.getPrototypeOf(target);
+      return proto && proto.constructor === Xobject;
     }
 
-    function map(ary, fun) {
-      var i, len, ary2 = [];
-      for (i = 0, len = ary.length; i < len; i++) {
-        ary2.push(fun(ary[i]));
-      }
-      return ary2;
+    function isXarray(target) {
+      var proto;
+      if (target == null) return;
+      proto = Object.getPrototypeOf(target);
+      return proto && proto.constructor === Xarray;
     }
 
-    function mapByProp(target, fun, thisArg) {
-      var name;
-      for (name in target) {
-        if (!target.hasOwnProperty(name)) continue;
-        fun.call(thisArg, name, target[name], target);
-      }
-      return target;
-    }
-
-    function toArray(arrayLike) {
-      var i, array = [];
-      for (i = 0; i < arrayLike.length; i++) {
-        if (arrayLike.item) {
-          array.push(arrayLike.item(0));
-        } else {
-          array.push(arrayLike[i]);
-        }
-      }
-      return array;
+    function clone(origin) {
+      return JSON.parse(JSON.stringify(origin));
     }
 
     function rid() {
@@ -83,424 +80,300 @@
       return obj;
     }
 
-    function isInputValue(elem) {
-      if (!elem || elem.tagName !== "INPUT") return false;
-      if (elem.type && elem.type === "text") return true;
-      return false;
+    proxies = {};
+
+    function setProxy(target, proxy) {
+      proxies[target._rid] = proxy;
+      return proxy;
     }
 
-    function hasChangeEvent(elem) {
-      if (!elem) return false;
-      if (elem.tagName === "SELECT") return true;
-      if (elem.tagName === "INPUT") return true;
-      return false;
+    function getProxy(target) {
+      return proxies[target._rid];
     }
 
-    repos = {};
-
-    function setRepo(target, repo) {
-      repos[target._rid] = repo;
-      return repo;
-    }
-
-    function mergeRepo(target, repo) {
-      var t2, r2, r3;
-      t2 = mergeRid(target);
-      r2 = repos[t2._rid];
-      if (r2) return r2;
-      r3 = repo || {};
-      repos[ t2._rid] = r3;
-      return r3;
-    }
-
-    function getRepo(target) {
-      return repos[target._rid];
-    }
-
-    List = function (arrayHasDecl) {
-      var decl, r;
-      decl = arrayHasDecl.splice(0, arrayHasDecl.length)[0];
-      r = repos[mergeRid(this)._rid] = {
-        sis: [],
-        cast: function (event) {
-          var sis, si, i, len;
-          sis = this.sis;
-          len = sis.length;
-          console.log("casted");
-          // for (i = 0; i < len; ++i) {
-          //   si = sis[i];
-          //   if (si._rid === event.target._rid) continue;
-          //   si.setter(event);
-          // }
-        },
-        setValue: function (v) {
-          // this.value = v;
-          // this.decl[this.propName] = v;
-        },
-        setter: function (event) {
-          console.log(event);
-          // this.setValue(event.target.value);
-        },
-        addSetterInfo: function (si) {
-          this.sis.push(si);
-        },
-        decl: decl,
-        value: arrayHasDecl,
-      };
-      this.initDecl(r);
+    Xobject = function Xobject(objectDecl) {
+      if (!isObject(objectDecl)) throw Error("The parameter was not an object");
+      xobject_init(this, objectDecl);
     };
-    (function (P) {
 
-      P.initDecl = function (r) {
-      };
-
-      P.createItem = function () {
-        var r;
-        r = repos[mergeRid(this)._rid];
-        return new Trax(deepClone(r.decl));
-      };
-
-      P.push = function (item) {
-        var r;
-        r = repos[mergeRid(this)._rid];
-        r.value.push(item);
-        console.log("List push");
-        r.pi.cast({ target: this });
-      };
-
-    })(List.prototype);
-
-    Trax = function Trax(decl) {
-      var r;
-      if (!isObject(decl)) {
-        throw Error("decl must be an Object");
-      }
-      r = repos[mergeRid(this)._rid] = {};
-      r.doc = document;
-      r.decl = decl;
-      // property infos
-      r.pis = {};
-      this.initDecl(r);
-    };
-    (function (P) {
-
-      P.initDecl = function (r) {
-        var decl, name, v, pi, ls;
-        decl = r.decl;
-        for (name in decl) {
-          if (!decl.hasOwnProperty(name)) continue;
-          v = decl[name];
-          if (isPrimitive(v)) {
-            pi = preparePropInfo(r, name);
-            preparePrimitiveProp(this, pi);
-          } else if (Array.isArray(v)) {
-            ls = new List(v);
-            pi = prepareListPropInfo(r, name, ls);
-            preparePrimitiveProp(this, pi);
-          }
+    function xobject_init(self, objectDecl) {
+      var yo, name, value, parray;
+      yo = setProxy(mergeRid(self), new Yobject(self, objectDecl));
+      for (name in objectDecl) {
+        if (!objectDecl.hasOwnProperty(name)) continue;
+        if (name === "_rid") continue;
+        if (name === "_bind") continue;
+        value = objectDecl[name];
+        if (isArray(value)) {
+          yo.pis[name] = new PropInfo(self, name, new Xarray(value));
+        } else if (isPrimitive(value)) {
+          yo.pis[name] = new PropInfo(self, name, value);
+        } else {
+          throw Error("Not implemented");
         }
-      };
-
-      function preparePropInfo(r, propName) {
-        var pi = mergeRid({
-          isPrimitive: true,
-          decl: r.decl,
-          propName: propName,
-          value: r.decl[propName],
-          // setter infos
-          sis: [],
-          cast: function (event) {
-            var sis, si, i, len;
-            sis = this.sis;
-            len = sis.length;
-            for (i = 0; i < len; ++i) {
-              si = sis[i];
-              if (si._rid === event.target._rid) continue;
-              si.setter(event);
-            }
-          },
-          setValue: function (v) {
-            this.value = v;
-            this.decl[this.propName] = v;
-          },
-          setter: function (event) {
-            this.setValue(event.target.value);
-          },
-          addSetterInfo: function (si) {
-            this.sis.push(si);
-          },
-        });
-        pi.addSetterInfo(pi);
-        r.pis[propName] = pi;
-        return pi;
       }
+      return self;
+    }
 
-      function preparePrimitiveProp(self, pi) {
-        (function (self, pi) {
-          Object.defineProperty(self, pi.propName, {
+    Xobject.prototype = {
+      _bind: function (prop, rootElem) {
+        var yo = getProxy(this);
+        var pi = yo.pis[prop];
+        if (!pi) throw Error("The property was not found.:" + prop);
+        rootElem = rootElem || document;
+        var elem = rootElem.querySelector("." + prop);
+        if (!elem) return null;
+
+        var yelem;
+        if (isXarray(pi.value)) {
+          var yarray = getProxy(pi.value);
+          yelem = setProxy(mergeRid(elem), new YeachElem(elem));
+          yarray.addSub(yelem);
+        } else if (isXobject(pi.value)) {
+          var yobject = getProxy(pi.value);
+          yelem = setProxy(mergeRid(elem), new YtreeElem(elem));
+          yobject.addSub(yelem);
+        } else if (isPrimitive(pi.value)) {
+          if (isInputValue(elem)) {
+            yelem = setProxy(mergeRid(elem), new YinputElem(elem, pi));
+          } else {
+            yelem = setProxy(mergeRid(elem), new YplainElem(elem));
+          }
+          pi.addSub(yelem);
+        } else {
+          throw Error("not implemented");
+        }
+        return yelem;
+      }
+    };
+
+    Xobject.prototype.constructor = Xobject;
+
+    Yobject = function Yobject(xobject, objectDecl) {
+      this.xobject = xobject;
+      this.objectDecl = objectDecl;
+      this.pis = {};
+    };
+
+    Yobject.prototype = {
+      addSub: function () {
+
+      },
+    };
+
+    PropInfo = function PropInfo(subject, name, value) {
+      this.init(subject, name, value);
+    };
+
+    PropInfo.prototype = {
+      init: function (subject, name, value) {
+        this.subs = [];
+        this.subs.push(this);
+        this.subject = subject;
+        this.name = name;
+        this.value = value;
+        (function (self) {
+          Object.defineProperty(self.subject, self.name, {
             enumerable: true,
             get: function () {
-              return pi.value;
+              return self.value;
             },
             set: function (value) {
-              if (pi.value === value) return;
-              pi.setValue(value);
-              pi.cast({ target: pi });
+              if (self.value === value) return;
+              self.value = value;
+              self.publish();
             }
           });
-        })(self, pi);
-      }
-
-      function prepareListPropInfo(r, propName, value) {
-        var pi, listRepo;
-        pi = mergeRid({
-          isArray: true,
-          decl: r.decl,
-          propName: propName,
-          value: value,
-          // setter infos
-          sis: [],
-          cast: function (event) {
-            console.log("cast in listPropInfo");
-            var sis, si, i, len;
-            sis = this.sis;
-            len = sis.length;
-            for (i = 0; i < len; ++i) {
-              si = sis[i];
-              if (si._rid === event.target._rid) continue;
-              si.setter(event);
-            }
-          },
-          setValue: function (v) {
-            console.log("setValue in listPropInfo");
-          },
-          setter: function (event) {
-            console.log("setter in listPropInfo");
-          },
-          addSetterInfo: function (si) {
-            this.sis.push(si);
-          },
-        });
-        pi.addSetterInfo(pi);
-        r.pis[propName] = pi;
-        listRepo = repos[value._rid];
-        listRepo.pi = pi;
-        
-        return pi;
-      }
-
-      function setterInfo(elem) {
-        var setter;
-        // Switch setterFunction depending on the elemnt type
-        if (isInputValue(elem)) {
-          setter = function (event) {
-            this.elem.value = event.target.value;
-          };
-        } else {
-          setter = function (event) {
-            this.elem.textContent = event.target.value;
-          };
+        })(this);
+      },
+      addSub: function (proxy) {
+        this.subs.push(proxy);
+      },
+      publish: function () {
+        this.tx(this, this.value);
+      },
+      tx: function (src, value) {
+        for (var i = 0; i < this.subs.length; ++i) {
+          var sub = this.subs[i];
+          if (sub === src) continue;
+          sub.rx(src, value);
         }
-        return {
-          _rid: mergeRid(elem)._rid,
-          elem: elem,
-          setter: setter,
-        };
-      }
+      },
+      rx: function (src, value) {
+        if (src === this) return;
+        this.value = value;
+      },
+    };
 
-      function removeAllChild(parent) {
-        while (parent.firstChild) {
-          parent.removeChild(parent.firstChild);
+    PropInfo.prototype.constructor = PropInfo;
+
+    YeachElem = function YeachElem(parentElem) {
+      this.init(parentElem);
+    };
+
+    YeachElem.prototype = {
+      init: function (parentElem) {
+        this.parentElem = parentElem;
+        if (parentElem.children.length) {
+          var firstChildElem = parentElem.children.item(0);
+          this.childElemTempl = document.importNode(firstChildElem, /* deep */ true);
+          this.childElemTempl.removeAttribute("id");
         }
-        return parent;
-      }
-
-      function setterInfoForArray(elem) {
-        console.log("setterInfoForArray call");
-        var r, si, parentNode, importNode, setter;
-
-        parentNode = elem.parentNode;
-        importNode = document.importNode(elem, /* deep */ true);
-        importNode.removeAttribute("id");
-        removeAllChild(parentNode);
-        parentNode.innerHTML = ""; 
-
-        // Switch setterFunction depending on the elemnt type
-        if (isInputValue(importNode)) {
-          setter = function (event) {
-            console.log("setterInfoForArray");
-          };
-        } else {
-          setter = function (event) {
-            console.log("setterInfoForArray", event);
-            var r, ar, i, item, importNode, editElem;
-            r = getRepo(event.target);
-            ar = r.value;
-            removeAllChild(this.parentNode);
-            editElem = function(name, value, object) {
-              var selected, e2;
-              e2 = importNode.querySelector("." + name);
-              if (!e2) return;
-              if (isInputValue(e2)) {
-                e2.value = value;
-              } else {
-                e2.textContent = value;
-              }
-            };
-            for (i = 0; i < ar.length; i++) {
-              item = ar[i];
-              console.log(i, item, item.milk);
-              importNode = document.importNode(this.importNode, /* deep */ true);
-              mapByProp(item, editElem, importNode);
-              this.parentNode.appendChild(importNode);
-            }
-          };
-        }
-        si = mergeRid({
-          parentNode: parentNode,
-          importNode: importNode,
-          setter: setter,
-        });
-
-        return si;
-      }
-
-      function loadPropertyInfo(r, propName) {
-        var pi;
-        pi = r.pis[propName];
-        if (!pi) {
-          throw new Error("No property of '" + propName + "'");
-        }
-        return pi;
-      }
-
-      // transmit object property value to DOM element
-      P.tx = function (propName, query, docRoot) {
-        var pi, selecteds, i, len, elem, si;
-
-        pi = loadPropertyInfo(repos[this._rid], propName);
-        selecteds = querySelecteds(propName, query || false, docRoot);
-        for (i = 0, len = selecteds.length; i < len; ++i) {
-          elem = selecteds.item(i);
-          if (pi.isPrimitive) {
-            si = setterInfo(elem);
-          } else if (pi.isArray) {
-            si = setterInfoForArray(elem);
-          } else {
-            si = null;
-          }
-          if (si) {
-            pi.addSetterInfo(si);
-          }
-        }
-      };
-
-      // receive value to object property from Dom element
-      P.rx = function (propName, query, docRoot) {
-        var pi, i, j, len, decl, name, selecteds, r, elem;
-
-        pi = loadPropertyInfo(repos[this._rid], propName);
-        selecteds = querySelecteds(propName, query || false, docRoot);
-        for (i = 0, len = selecteds.length; i < len; ++i) {
-          elem = selecteds.item(i);
-          if (hasChangeEvent(elem)) {
-            (function (elem, pi) {
-              elem.addEventListener("change", function (event) {
-                pi.cast(event);
+        this.eraseChildren();
+      },
+      each: function (yarray) {
+        var xobject, childElem;
+        this.eraseChildren();
+        for (var i = 0; i < yarray.items.length; ++i) {
+          xobject = yarray.items[i];
+          childElem = document.importNode(this.childElemTempl, /* deep */ true);
+          this.parentElem.appendChild(childElem);
+          var name;
+          var yobject = getProxy(xobject);
+          var yelem = setProxy(mergeRid(childElem), new YtreeElem(childElem));
+          var bounds = [];
+          var boundYelem;
+          for (name in xobject) {
+            if (!xobject.hasOwnProperty(name)) continue;
+            if (name === "_rid") continue;
+            if (name === "_bind") continue;
+            boundYelem = xobject._bind(name, childElem);
+            if (boundYelem) {
+              bounds.push({
+                name: name,
+                yelem: boundYelem
               });
-            })(elem, pi);
+            }
           }
-
-          if (isListType(pi.value)) {
-            r = repos[pi.value._rid];
-            r.lateBindInfo = {
-              rootDoc: elem
-            };
+          for (var j = 0; j < bounds.length; ++j) {
+            var bound = bounds[j];
+            var pi = yobject.pis[bound.name];
+            pi.publish();
           }
         }
-      };
+      },
+      eraseChildren: function () {
+        removeAllChild(this.parentElem);
+        this.parentElem.innerHTML = "";
+      }
+    };
 
-      function querySelecteds(propName, query, elem) {
-        var ls;
-        if (query) {
-          return elem.querySelectorAll(query);
+    YeachElem.prototype.constructor = YeachElem;
+
+    YtreeElem = function YtreeElem(parentElem) {
+      this.init(parentElem);
+    };
+
+    YtreeElem.prototype = {
+      init: function (parentElem) {
+        this.parentElem = parentElem;
+      }
+    };
+
+    YtreeElem.prototype.constructor = YtreeElem;
+
+    YinputElem = function YinputElem(elem, propInfo) {
+      this.init(elem, propInfo);
+    };
+
+    YinputElem.prototype = {
+      init: function (elem, propInfo) {
+        this.elem = elem;
+        this.propInfo = propInfo;
+        (function (self) {
+          self.elem.addEventListener("change", function (e) {
+            propInfo.tx(self, e.target.value);
+          });
+        })(this);
+      },
+      rx: function (src, value) {
+        if (src === this) return;
+        this.elem.value = value;
+      }
+    };
+
+    YinputElem.prototype.constructor = YinputElem;
+
+    YplainElem = function YplainElem(elem) {
+      this.init(elem);
+    };
+
+    YplainElem.prototype = {
+      init: function (elem) {
+        this.elem = elem;
+      },
+      rx: function (src, value) {
+        if (src === this) return;
+        this.elem.textContent = value;
+      }
+    };
+
+    YplainElem.prototype.constructor = YplainElem;
+
+    Xarray = function (arrayDecl) {
+      var proxy = setProxy(this, new Yarray(this, arrayDecl));
+    };
+
+    Xarray.prototype = {
+      newItem: function () {
+        var proxy, cloned;
+        proxy = getProxy(this);
+        cloned = clone(proxy.itemDecl);
+        if (isObject(cloned)) {
+          return new Xobject(cloned);
+        } else if (isArray(cloned)) {
+          return new Xarray(cloned);
         } else {
-          ls = elem.querySelectorAll("." + propName);
-          if (ls.length > 0) return ls;
-          return elem.querySelectorAll("#" + propName);
+          throw Error("Not implemented");
         }
+      },
+      push: function (item) {
+        var proxy;
+        proxy = getProxy(this);
+        proxy.items.push(mergeRid(item));
+        proxy.publish();
+      },
+    };
+
+    Xarray.prototype.constructor = Xarray;
+
+    Yarray = function Yarray(subject, arrayDecl) {
+      this.subs = [];
+      this.items = [];
+      this.subject = subject;
+      this.itemDecl = arrayDecl.splice(0, 1)[0];
+      this.arrayDecl = arrayDecl;
+    };
+
+    Yarray.prototype = {
+      addSub: function (sub) {
+        if (-1 === this.subs.indexOf(sub)) {
+          this.subs.push(sub);
+        }
+      },
+      publish: function () {
+        for (var i = 0; i < this.subs.length; ++i) {
+          var yeachElem = this.subs[i];
+          yeachElem.each(this);
+        }
+      },
+    };
+
+    Yarray.prototype.constructor = Yarray;
+
+    function removeAllChild(parent) {
+      while (parent.firstChild) {
+        parent.removeChild(parent.firstChild);
       }
-
-      // function querySelecteds(propName, query) {
-      //   var ls;
-      //   if (query) {
-      //     return document.querySelectorAll(query);
-      //   } else {
-      //     ls = document.querySelectorAll("." + propName);
-      //     if (ls.length > 0) return ls;
-      //     return document.querySelectorAll("#" + propName);
-      //   }
-      // }
-
-      // transmit object property value to DOM element
-      // receive value to object property from Dom element
-      P.trx = function (propName, query, docRoot) {
-        this.rx(propName, query, docRoot);
-        this.tx(propName, query, docRoot);
-      };
-
-    })(Trax.prototype);
-
-    function deepClone(target, memories) {
-      var name, v, cloneObj, cloneAry, i, len;
-      memories = memories || [];
-      if (isObject(target)) {
-        memories.push(target);
-        cloneObj = {};
-        for (name in target) {
-          if (!target.hasOwnProperty(name)) continue;
-          v = target[name];
-          if (memories.indexOf(v) > 0) continue;
-          cloneObj[name] = deepClone(v, memories);
-        }
-        return cloneObj;
-      } else if (Array.isArray(target)) {
-        memories.push(target);
-        cloneAry = [];
-        for (i = 0, len = target.length; i < len; ++i) {
-          v = target[i];
-          if (memories.indexOf(v) > 0) continue;
-          cloneAry.push(deepClone(v, memories));
-        }
-      } else {
-        return target;
-      }
+      return parent;
     }
 
-    // arrayByDecl create an array that cat create array item 
-    // consist of declearation object
-    //
-    // arrayByDecl is introduced to support in the case of:
-    //  * You want to declare a structure of an item in array.
-    //  * But in th beging of page loading, the array must be empty.
-    //
-    // The parameter must be an Object.
-    // The Object is to represent decl for Trax.
-    // The returned array will be modified to:
-    //  * add _createItem method. The method create new Trax consists of the Object.
-    arrayByDecl = Trax.arrayByDecl = function arrayByDecl(decl) {
-      if (decl == null) throw Error("The parameter was null");
-      if (!isObject(decl)) throw Error("The parameter was not an object");
+    Trax = {
 
-      var array = [];
-      array._createItem = (function (decl) {
-        return function() {
-          return new Trax(deepClone(decl));
-        };
-      })(decl);
-      
-      return array;
     };
+
+    Trax.Xobject = Xobject;
+    Trax.Xarray = Xarray;
 
     Trax.release = "0.0.11";
 
