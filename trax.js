@@ -46,8 +46,13 @@
     }
 
     function isInputValue(elem) {
-      if (!elem || elem.tagName !== "INPUT") return false;
-      if (elem.type && elem.type === "text") return true;
+      if (!elem) return false;
+      var tn = elem.tagName;
+      if (tn === "INPUT") {
+        if (elem.type && elem.type === "text") return true;
+      } else if (tn === "SELECT") {
+        return true;
+      }
       return false;
     }
 
@@ -75,7 +80,13 @@
 
     function mergeRid(obj) {
       if (!obj._rid) {
-        obj._rid = rid();
+        // obj._rid = rid();
+        Object.defineProperty(obj, '_rid', {
+          enumerable: false,
+          configurable: false,
+          writable: false,
+          value: rid()
+        });
       }
       return obj;
     }
@@ -333,6 +344,10 @@
         proxy.items.push(mergeRid(item));
         proxy.publish();
       },
+      toJSON: function () {
+        var proxy = getProxy(this);
+        return proxy.items;
+      }
     };
 
     Xarray.prototype.constructor = Xarray;
