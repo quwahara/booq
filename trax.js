@@ -13,6 +13,12 @@
 })(function () {
   'use strict';
   return (function () {
+    var TC_NIL = 0;
+    var TC_PIMITIVE = 1;
+    var TC_ARRAY = 2;
+    var TC_OBJECT = 4;
+    var TC_XARRAY = 2 + 16;
+    var TC_XOBJECT = 4 + 16;
 
     var repos, proxies;
     var Parray, Pi, PropInfo, Aelem, ElemReciever, Trax;
@@ -70,8 +76,34 @@
       return proto && proto.constructor === Xarray;
     }
 
+    function typeCode(v) {
+      if (isXarray(v)) {
+        return TC_XARRAY;
+      } else if (isXobject(v)) {
+        return TC_XOBJECT;
+      } else if (isPrimitive(v)) {
+          return TC_PIMITIVE;
+      } else if (isArray(v)) {
+        return TC_ARRAY;
+      } else if (isObject(v)) {
+        return TC_OBJECT;
+      } else {
+        return TC_NIL;
+      }
+    }
+
     function clone(origin) {
       return JSON.parse(JSON.stringify(origin));
+    }
+
+    function extend(v) {
+      if (isObject(v)) {
+        return new Xobject(v);
+      } else if (isArray(v)) {
+        return new Xarray(v);
+      } else {
+        throw Error("Not implemented");
+      }
     }
 
     function rid() {
@@ -116,9 +148,11 @@
         if (name === "_bind") continue;
         value = objectDecl[name];
         if (isArray(value)) {
-          yo.pis[name] = new PropInfo(self, name, new Xarray(value));
+          var xarray = new Xarray(value);
+          var yarray = getProxy(xarray);
+          yo.pis[name] = new PropInfo(self, name, xarray, yarray);
         } else if (isPrimitive(value)) {
-          yo.pis[name] = new PropInfo(self, name, value);
+          yo.pis[name] = new PropInfo(self, name, value, null);
         } else {
           throw Error("Not implemented");
         }
@@ -172,17 +206,20 @@
       },
     };
 
-    PropInfo = function PropInfo(subject, name, value) {
-      this.init(subject, name, value);
+    PropInfo = function PropInfo(subject, name, value, proxy) {
+      this.init(subject, name, value, proxy);
     };
 
     PropInfo.prototype = {
-      init: function (subject, name, value) {
+      init: function (subject, name, value, proxy) {
         this.subs = [];
         this.subs.push(this);
         this.subject = subject;
         this.name = name;
         this.value = value;
+        this.proxy = proxy;
+        this.typeCode = typeCode(this.value);
+
         (function (self) {
           Object.defineProperty(self.subject, self.name, {
             enumerable: true,
@@ -191,8 +228,18 @@
             },
             set: function (value) {
               if (self.value === value) return;
-              self.value = value;
-              self.publish();
+              if (self.typeCode === TC_PIMITIVE) {
+                if (typeCode(value) !== TC_PIMITIVE)
+                  throw Error("Type unmatch");
+                self.value = value;
+                self.publish();
+              } else if (self.typeCode === TC_XARRAY) {
+                if (typeCode(value) !== TC_ARRAY)
+                  throw Error("Type unmatch");
+                self.proxy.replaceWith(value);
+              } else {
+                throw Error("Not implemented");
+              }
             }
           });
         })(this);
@@ -330,13 +377,7 @@
         var proxy, cloned;
         proxy = getProxy(this);
         cloned = clone(proxy.itemDecl);
-        if (isObject(cloned)) {
-          return new Xobject(cloned);
-        } else if (isArray(cloned)) {
-          return new Xarray(cloned);
-        } else {
-          throw Error("Not implemented");
-        }
+        return extend(cloned);
       },
       push: function (item) {
         var proxy;
@@ -371,6 +412,14 @@
           var yeachElem = this.subs[i];
           yeachElem.each(this);
         }
+      },
+      replaceWith: function (array) {
+        var items = [];
+        for (var i = 0; i < array.length; i++) {
+          items.push(extend(array[i]));
+        }
+        this.items = items;
+        this.publish();
       },
     };
 
