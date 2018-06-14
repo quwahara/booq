@@ -184,11 +184,37 @@
           } else {
             yelem = setProxy(mergeRid(elem), new YplainElem(elem));
           }
-          pi.addSub(yelem);
+          pi.addBindee(yelem);
         } else {
           throw Error("not implemented");
         }
         return yelem;
+      },
+      _each: function (prop, callback, opts) {
+        
+        var yo = getProxy(this);
+        var pi = yo.pis[prop];
+        if (!pi) throw Error("The property was not found.:" + prop);
+        if (!isXarray(pi.value))  throw Error("The property was not xarray.:" + prop);
+        var yarray = getProxy(pi.value);
+        
+        opts = opts || {};
+        var rootElem = opts.rootElem || document;
+        var query = opts.query || ("." + prop);
+        var elem = rootElem.querySelector(query);
+        if (!elem) return null;
+        
+        var yeachElem = setProxy(mergeRid(elem), new YeachElem(elem, callback));
+        yarray.addSub(yeachElem);
+      },
+      _listenTo: function (prop, callback) {
+
+        var yo = getProxy(this);
+        var pi = yo.pis[prop];
+        if (!pi) throw Error("The property was not found.:" + prop);
+        if (!isPrimitive(pi.value))  throw Error("The property was not primitives.:" + prop);
+
+        pi.addListeners(callback);
       }
     };
 
@@ -212,8 +238,12 @@
 
     PropInfo.prototype = {
       init: function (subject, name, value, proxy) {
-        this.subs = [];
-        this.subs.push(this);
+        // this.subs = [];
+        // this.subs.push(this);
+        this.bindees = [];
+        this.bindees.push(this);
+        this.listeners = [];
+
         this.subject = subject;
         this.name = name;
         this.value = value;
@@ -244,17 +274,29 @@
           });
         })(this);
       },
-      addSub: function (proxy) {
-        this.subs.push(proxy);
+      addBindee: function (proxyElem) {
+        if (-1 === this.bindees.indexOf(proxyElem)) {
+          this.bindees.push(proxyElem);
+          proxyElem.rx(this, this.value);
+        }
       },
+      addListeners: function (callback) {
+        if (-1 === this.listeners.indexOf(callback)) {
+          this.listeners.push(callback);
+          callback(this.value);
+        }
+      },
+      // addSub: function (proxyElem) {
+      //   this.subs.push(proxyElem);
+      // },
       publish: function () {
         this.tx(this, this.value);
       },
       tx: function (src, value) {
-        for (var i = 0; i < this.subs.length; ++i) {
-          var sub = this.subs[i];
-          if (sub === src) continue;
-          sub.rx(src, value);
+        for (var i = 0; i < this.bindees.length; ++i) {
+          var bindee = this.bindees[i];
+          if (bindee === src) continue;
+          bindee.rx(src, value);
         }
       },
       rx: function (src, value) {
@@ -265,13 +307,14 @@
 
     PropInfo.prototype.constructor = PropInfo;
 
-    YeachElem = function YeachElem(parentElem) {
-      this.init(parentElem);
+    YeachElem = function YeachElem(parentElem, callback) {
+      this.init(parentElem, callback);
     };
 
     YeachElem.prototype = {
-      init: function (parentElem) {
+      init: function (parentElem, callback) {
         this.parentElem = parentElem;
+        this.callback = callback;
         if (parentElem.children.length) {
           var firstChildElem = parentElem.children.item(0);
           this.childElemTempl = document.importNode(firstChildElem, /* deep */ true);
@@ -286,28 +329,7 @@
           xobject = yarray.items[i];
           childElem = document.importNode(this.childElemTempl, /* deep */ true);
           this.parentElem.appendChild(childElem);
-          var name;
-          var yobject = getProxy(xobject);
-          var yelem = setProxy(mergeRid(childElem), new YtreeElem(childElem));
-          var bounds = [];
-          var boundYelem;
-          for (name in xobject) {
-            if (!xobject.hasOwnProperty(name)) continue;
-            if (name === "_rid") continue;
-            if (name === "_bind") continue;
-            boundYelem = xobject._bind(name, childElem);
-            if (boundYelem) {
-              bounds.push({
-                name: name,
-                yelem: boundYelem
-              });
-            }
-          }
-          for (var j = 0; j < bounds.length; ++j) {
-            var bound = bounds[j];
-            var pi = yobject.pis[bound.name];
-            pi.publish();
-          }
+          this.callback(childElem, xobject);
         }
       },
       eraseChildren: function () {
