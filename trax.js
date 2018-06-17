@@ -19,15 +19,8 @@
     var TC_OBJECT = 4;
     var TC_XARRAY = 2 + 16;
     var TC_XOBJECT = 4 + 16;
-
-    var repos, proxies;
-    var Parray, Pi, PropInfo, Aelem, ElemReciever, Trax;
-    var Xobject, Xarray;
-    var Yarray, YeachElem, YinputElem, Yobject, YplainElem, YtreeElem;
-
-    var ridMin, ridMax;
-    ridMin = 100000000000000;
-    ridMax = ridMin * 10 - 1;
+    var RID_MIN = 100000000000000;
+    var RID_MAX = RID_MIN * 10 - 1;
 
     function isString(v) {
       return (typeof v) === "string";
@@ -107,12 +100,11 @@
     }
 
     function rid() {
-      return "_" + (Math.floor(Math.random() * (ridMax - ridMin + 1)) + ridMin).toString(10);
+      return "_" + (Math.floor(Math.random() * (RID_MAX - RID_MIN + 1)) + RID_MIN).toString(10);
     }
 
     function mergeRid(obj) {
       if (!obj._rid) {
-        // obj._rid = rid();
         Object.defineProperty(obj, '_rid', {
           enumerable: false,
           configurable: false,
@@ -123,7 +115,7 @@
       return obj;
     }
 
-    proxies = {};
+    var proxies = {};
 
     function setProxy(target, proxy) {
       proxies[target._rid] = proxy;
@@ -136,10 +128,9 @@
       } else {
         return null;
       }
-      // return proxies[target._rid];
     }
 
-    Xobject = function Xobject(objectDecl) {
+    var Xobject = function Xobject(objectDecl) {
       if (!isObject(objectDecl)) throw Error("The parameter was not an object");
       xobject_init(this, objectDecl);
     };
@@ -169,36 +160,32 @@
       _bind: function (prop, opts) {
         var yo = getProxy(this);
         var pi = yo.pis[prop];
+
         if (!pi) throw Error("The property was not found.:" + prop);
+
+        if (!isPrimitive(pi.value)) {
+          throw Error("_bind supports only primitive type.");
+        }
 
         opts = opts || {};
         var rootElem = opts.rootElem || Trax.ctx.elem;
         var elem = rootElem.querySelector("." + prop);
         if (!elem) return null;
 
-        var yelem;
-        if (isXarray(pi.value)) {
-          var yarray = getProxy(pi.value);
-          yelem = setProxy(mergeRid(elem), new YeachElem(elem));
-          yarray.addSub(yelem);
-        } else if (isXobject(pi.value)) {
-          var yobject = getProxy(pi.value);
-          yelem = setProxy(mergeRid(elem), new YtreeElem(elem));
-          yobject.addSub(yelem);
-        } else if (isPrimitive(pi.value)) {
-          if (isInputValue(elem)) {
-            yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem).initAsInput().addPropInfoForInput(pi, null));
-          } else {
-            yelem = setProxy(mergeRid(elem), new YplainElem(elem));
-          }
-          pi.addBindee(yelem);
-        } else {
-          throw Error("not implemented");
+        if (!isInputValue(elem)) {
+          throw Error("_bind supports only inputable tags.");
         }
-        return yelem;
+
+        var yelem = getProxy(elem);
+        if (!yelem) {
+          yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem).initAsBind());
+        }
+        var eventName = opts.eventName || "change";
+        yelem.addPropInfoForBind(pi, eventName);
+
+        return this;
       },
       _each: function (prop, callback, opts) {
-
         var yo = getProxy(this);
         var pi = yo.pis[prop];
         if (!pi) throw Error("The property was not found.:" + prop);
@@ -211,7 +198,6 @@
         var elem = rootElem.querySelector(query);
         if (!elem) return null;
 
-        // var yeachElem = setProxy(mergeRid(elem), new YeachElem(elem, callback));
         var yelem = getProxy(elem);
         if (!yelem) {
           yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem).initAsEach());
@@ -241,19 +227,16 @@
 
     Xobject.prototype.constructor = Xobject;
 
-    Yobject = function Yobject(xobject, objectDecl) {
+    var Yobject = function Yobject(xobject, objectDecl) {
       this.xobject = xobject;
       this.objectDecl = objectDecl;
       this.pis = {};
     };
 
     Yobject.prototype = {
-      addSub: function () {
-
-      },
     };
 
-    PropInfo = function PropInfo(subject, name, value, proxy) {
+    var PropInfo = function PropInfo(subject, name, value, proxy) {
       this.init(subject, name, value, proxy);
     };
 
@@ -350,7 +333,7 @@
           childElem = document.importNode(this.childElemTempl, /* deep */ true);
           this.elem.appendChild(childElem);
           for (var j = 0; j < this.callbacksForEach.length; ++j) {
-            newCtx(childElem, j);
+            newCtx(childElem, i, xobject);
             var f = this.callbacksForEach[j];
             f.call(childElem, xobject);
             releaseCtx();
@@ -376,22 +359,24 @@
         if (src === this) return;
         for (var i = 0; i < this.callbacksForTrnasmit.length; ++i) {
           var callback = this.callbacksForTrnasmit[i];
-          newCtx(this.elem, -1);
+          newCtx(this.elem, -1, value);
           callback.call(this.elem, value);
           releaseCtx();
         }
       },
-      // Input functions
-      initAsInput: function () {
+      // Bind functions
+      initAsBind: function () {
         this.initAsTransmit();
+        this.addCallbackForTransmit(function (value) {
+          this.value = value;
+        });
         this.propInfosForInput = [];
         return this;
       },
-      addPropInfoForInput: function (propInfo, eventName) {
+      addPropInfoForBind: function (propInfo, eventName) {
         if (-1 === this.propInfosForInput.indexOf(propInfo)) {
           this.propInfosForInput.push(propInfo);
         }
-        eventName = eventName || "change";
         (function (self, propInfo, eventName) {
           self.elem.addEventListener(eventName, function (e) {
             propInfo.transmit(self, e.target.value);
@@ -399,65 +384,11 @@
         })(this, propInfo, eventName);
         return this;
       },
-      rxInput: function (src, value) {
-        if (src === this) return;
-        this.elem.value = value;
-      },
     };
 
     Yelem.prototype.constructor = Yelem;
 
-    YtreeElem = function YtreeElem(parentElem) {
-      this.init(parentElem);
-    };
-
-    YtreeElem.prototype = {
-      init: function (parentElem) {
-        this.parentElem = parentElem;
-      }
-    };
-
-    YtreeElem.prototype.constructor = YtreeElem;
-
-    YinputElem = function YinputElem(elem, propInfo) {
-      this.init(elem, propInfo);
-    };
-
-    YinputElem.prototype = {
-      init: function (elem, propInfo) {
-        this.elem = elem;
-        this.propInfo = propInfo;
-        (function (self) {
-          self.elem.addEventListener("change", function (e) {
-            propInfo.transmit(self, e.target.value);
-          });
-        })(this);
-      },
-      rx: function (src, value) {
-        if (src === this) return;
-        this.elem.value = value;
-      }
-    };
-
-    YinputElem.prototype.constructor = YinputElem;
-
-    YplainElem = function YplainElem(elem) {
-      this.init(elem);
-    };
-
-    YplainElem.prototype = {
-      init: function (elem) {
-        this.elem = elem;
-      },
-      rx: function (src, value) {
-        if (src === this) return;
-        this.elem.textContent = value;
-      }
-    };
-
-    YplainElem.prototype.constructor = YplainElem;
-
-    Xarray = function (arrayDecl) {
+    var Xarray = function (arrayDecl) {
       var proxy = setProxy(mergeRid(this), new Yarray(this, arrayDecl));
     };
 
@@ -482,7 +413,7 @@
 
     Xarray.prototype.constructor = Xarray;
 
-    Yarray = function Yarray(subject, arrayDecl) {
+    var Yarray = function Yarray(subject, arrayDecl) {
       this.subs = [];
       this.items = [];
       this.subject = subject;
@@ -521,16 +452,17 @@
       return parent;
     }
 
-    Trax = {
+    var Trax = {
 
     };
 
     var ctxStack = [];
     
-    function newCtx(elem, index) {
+    function newCtx(elem, index, item) {
       var ctx = {
         elem: elem,
         index: index,
+        item: item
       };
       ctxStack.push(ctx);
       return ctx;
@@ -540,7 +472,8 @@
       return ctxStack.pop();
     }
 
-    newCtx(document, -1);
+    // Root context
+    newCtx(document, -1, null);
 
     Object.defineProperty(Trax, "ctx", {
       enumerable: true,
@@ -552,7 +485,7 @@
     Trax.Xobject = Xobject;
     Trax.Xarray = Xarray;
 
-    Trax.release = "0.0.16";
+    Trax.release = "0.0.17";
 
     return Trax;
   })();
