@@ -23,7 +23,7 @@
     var repos, proxies;
     var Parray, Pi, PropInfo, Aelem, ElemReciever, Trax;
     var Xobject, Xarray;
-    var Yarray, YeachElem, Yelem, YinputElem, Yobject, YplainElem, YtreeElem;
+    var Yarray, YeachElem, YinputElem, Yobject, YplainElem, YtreeElem;
 
     var ridMin, ridMax;
     ridMin = 100000000000000;
@@ -82,7 +82,7 @@
       } else if (isXobject(v)) {
         return TC_XOBJECT;
       } else if (isPrimitive(v)) {
-          return TC_PIMITIVE;
+        return TC_PIMITIVE;
       } else if (isArray(v)) {
         return TC_ARRAY;
       } else if (isObject(v)) {
@@ -131,7 +131,12 @@
     }
 
     function getProxy(target) {
-      return proxies[target._rid];
+      if (target._rid) {
+        return proxies[target._rid];
+      } else {
+        return null;
+      }
+      // return proxies[target._rid];
     }
 
     Xobject = function Xobject(objectDecl) {
@@ -161,11 +166,13 @@
     }
 
     Xobject.prototype = {
-      _bind: function (prop, rootElem) {
+      _bind: function (prop, opts) {
         var yo = getProxy(this);
         var pi = yo.pis[prop];
         if (!pi) throw Error("The property was not found.:" + prop);
-        rootElem = rootElem || document;
+
+        opts = opts || {};
+        var rootElem = opts.rootElem || Trax.ctx.elem;
         var elem = rootElem.querySelector("." + prop);
         if (!elem) return null;
 
@@ -180,7 +187,7 @@
           yobject.addSub(yelem);
         } else if (isPrimitive(pi.value)) {
           if (isInputValue(elem)) {
-            yelem = setProxy(mergeRid(elem), new YinputElem(elem, pi));
+            yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem).initAsInput().addPropInfoForInput(pi, null));
           } else {
             yelem = setProxy(mergeRid(elem), new YplainElem(elem));
           }
@@ -191,31 +198,45 @@
         return yelem;
       },
       _each: function (prop, callback, opts) {
-        
+
         var yo = getProxy(this);
         var pi = yo.pis[prop];
         if (!pi) throw Error("The property was not found.:" + prop);
-        if (!isXarray(pi.value))  throw Error("The property was not xarray.:" + prop);
+        if (!isXarray(pi.value)) throw Error("The property was not xarray.:" + prop);
         var yarray = getProxy(pi.value);
-        
+
         opts = opts || {};
-        var rootElem = opts.rootElem || document;
+        var rootElem = opts.rootElem || Trax.ctx.elem;
         var query = opts.query || ("." + prop);
         var elem = rootElem.querySelector(query);
         if (!elem) return null;
-        
-        var yeachElem = setProxy(mergeRid(elem), new YeachElem(elem, callback));
-        yarray.addSub(yeachElem);
-      },
-      _listenTo: function (prop, callback) {
 
+        // var yeachElem = setProxy(mergeRid(elem), new YeachElem(elem, callback));
+        var yelem = getProxy(elem);
+        if (!yelem) {
+          yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem).initAsEach());
+        }
+        yelem.addCallbackForEach(callback);
+        yarray.addSub(yelem);
+      },
+      _transmit: function (prop, callback, opts) {
         var yo = getProxy(this);
         var pi = yo.pis[prop];
         if (!pi) throw Error("The property was not found.:" + prop);
-        if (!isPrimitive(pi.value))  throw Error("The property was not primitives.:" + prop);
 
-        pi.addListeners(callback);
-      }
+        opts = opts || {};
+        var rootElem = opts.rootElem || Trax.ctx.elem;
+        var query = opts.query || ("." + prop);
+        var elem = rootElem.querySelector(query);
+        if (!elem) return null;
+
+        var yelem = getProxy(elem);
+        if (!yelem) {
+          yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem).initAsTransmit());
+        }
+        yelem.addCallbackForTransmit(callback);
+        pi.addBindee(yelem);
+      },
     };
 
     Xobject.prototype.constructor = Xobject;
@@ -238,11 +259,8 @@
 
     PropInfo.prototype = {
       init: function (subject, name, value, proxy) {
-        // this.subs = [];
-        // this.subs.push(this);
         this.bindees = [];
         this.bindees.push(this);
-        this.listeners = [];
 
         this.subject = subject;
         this.name = name;
@@ -277,29 +295,20 @@
       addBindee: function (proxyElem) {
         if (-1 === this.bindees.indexOf(proxyElem)) {
           this.bindees.push(proxyElem);
-          proxyElem.rx(this, this.value);
+          proxyElem.handleTransmit(this, this.value);
         }
       },
-      addListeners: function (callback) {
-        if (-1 === this.listeners.indexOf(callback)) {
-          this.listeners.push(callback);
-          callback(this.value);
-        }
-      },
-      // addSub: function (proxyElem) {
-      //   this.subs.push(proxyElem);
-      // },
       publish: function () {
-        this.tx(this, this.value);
+        this.transmit(this, this.value);
       },
-      tx: function (src, value) {
+      transmit: function (src, value) {
         for (var i = 0; i < this.bindees.length; ++i) {
           var bindee = this.bindees[i];
           if (bindee === src) continue;
-          bindee.rx(src, value);
+          bindee.handleTransmit(src, value);
         }
       },
-      rx: function (src, value) {
+      handleTransmit: function (src, value) {
         if (src === this) return;
         this.value = value;
       },
@@ -307,20 +316,31 @@
 
     PropInfo.prototype.constructor = PropInfo;
 
-    YeachElem = function YeachElem(parentElem, callback) {
-      this.init(parentElem, callback);
+    var Yelem = function Yelem() {
     };
 
-    YeachElem.prototype = {
-      init: function (parentElem, callback) {
-        this.parentElem = parentElem;
-        this.callback = callback;
-        if (parentElem.children.length) {
-          var firstChildElem = parentElem.children.item(0);
+    Yelem.prototype = {
+      init: function (elem) {
+        this.elem = elem;
+        return this;
+      },
+      // Each functions
+      initAsEach: function () {
+        var elem = this.elem;
+        this.callbacksForEach = [];
+        if (elem.children.length) {
+          var firstChildElem = elem.children.item(0);
           this.childElemTempl = document.importNode(firstChildElem, /* deep */ true);
           this.childElemTempl.removeAttribute("id");
         }
         this.eraseChildren();
+        return this;
+      },
+      addCallbackForEach: function (callback) {
+        if (-1 === this.callbacksForEach.indexOf(callback)) {
+          this.callbacksForEach.push(callback);
+        }
+        return this;
       },
       each: function (yarray) {
         var xobject, childElem;
@@ -328,17 +348,64 @@
         for (var i = 0; i < yarray.items.length; ++i) {
           xobject = yarray.items[i];
           childElem = document.importNode(this.childElemTempl, /* deep */ true);
-          this.parentElem.appendChild(childElem);
-          this.callback(childElem, xobject);
+          this.elem.appendChild(childElem);
+          for (var j = 0; j < this.callbacksForEach.length; ++j) {
+            newCtx(childElem, j);
+            var f = this.callbacksForEach[j];
+            f.call(childElem, xobject);
+            releaseCtx();
+          }
         }
       },
       eraseChildren: function () {
-        removeAllChild(this.parentElem);
-        this.parentElem.innerHTML = "";
-      }
+        removeAllChild(this.elem);
+        this.elem.innerHTML = "";
+      },
+      // Transmit functions
+      initAsTransmit: function () {
+        this.callbacksForTrnasmit = [];
+        return this;
+      },
+      addCallbackForTransmit: function (callback) {
+        if (-1 === this.callbacksForTrnasmit.indexOf(callback)) {
+          this.callbacksForTrnasmit.push(callback);
+        }
+        return this;
+      },
+      handleTransmit: function (src, value) {
+        if (src === this) return;
+        for (var i = 0; i < this.callbacksForTrnasmit.length; ++i) {
+          var callback = this.callbacksForTrnasmit[i];
+          newCtx(this.elem, -1);
+          callback.call(this.elem, value);
+          releaseCtx();
+        }
+      },
+      // Input functions
+      initAsInput: function () {
+        this.initAsTransmit();
+        this.propInfosForInput = [];
+        return this;
+      },
+      addPropInfoForInput: function (propInfo, eventName) {
+        if (-1 === this.propInfosForInput.indexOf(propInfo)) {
+          this.propInfosForInput.push(propInfo);
+        }
+        eventName = eventName || "change";
+        (function (self, propInfo, eventName) {
+          self.elem.addEventListener(eventName, function (e) {
+            propInfo.transmit(self, e.target.value);
+          });
+        })(this, propInfo, eventName);
+        return this;
+      },
+      rxInput: function (src, value) {
+        if (src === this) return;
+        this.elem.value = value;
+      },
     };
 
-    YeachElem.prototype.constructor = YeachElem;
+    Yelem.prototype.constructor = Yelem;
 
     YtreeElem = function YtreeElem(parentElem) {
       this.init(parentElem);
@@ -362,7 +429,7 @@
         this.propInfo = propInfo;
         (function (self) {
           self.elem.addEventListener("change", function (e) {
-            propInfo.tx(self, e.target.value);
+            propInfo.transmit(self, e.target.value);
           });
         })(this);
       },
@@ -391,7 +458,7 @@
     YplainElem.prototype.constructor = YplainElem;
 
     Xarray = function (arrayDecl) {
-      var proxy = setProxy(this, new Yarray(this, arrayDecl));
+      var proxy = setProxy(mergeRid(this), new Yarray(this, arrayDecl));
     };
 
     Xarray.prototype = {
@@ -431,8 +498,8 @@
       },
       publish: function () {
         for (var i = 0; i < this.subs.length; ++i) {
-          var yeachElem = this.subs[i];
-          yeachElem.each(this);
+          var yelem = this.subs[i];
+          yelem.each(this);
         }
       },
       replaceWith: function (array) {
@@ -458,10 +525,34 @@
 
     };
 
+    var ctxStack = [];
+    
+    function newCtx(elem, index) {
+      var ctx = {
+        elem: elem,
+        index: index,
+      };
+      ctxStack.push(ctx);
+      return ctx;
+    }
+
+    function releaseCtx() {
+      return ctxStack.pop();
+    }
+
+    newCtx(document, -1);
+
+    Object.defineProperty(Trax, "ctx", {
+      enumerable: true,
+      get: function () {
+        return ctxStack[ctxStack.length - 1];
+      }
+    });
+
     Trax.Xobject = Xobject;
     Trax.Xarray = Xarray;
 
-    Trax.release = "0.0.11";
+    Trax.release = "0.0.16";
 
     return Trax;
   })();
