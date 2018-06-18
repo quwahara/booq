@@ -220,6 +220,13 @@
         if (!yelem) {
           yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem).initAsTransmit());
         }
+        if (!callback) {
+          callback = (function (elem) {
+            return function (value) {
+              elem.textContent = value;
+            };
+          })(yelem.elem);
+        }
         yelem.addCallbackForTransmit(callback);
         pi.addBindee(yelem);
       },
@@ -373,15 +380,25 @@
         this.propInfosForInput = [];
         return this;
       },
+      bindCallback: function (value) {
+        this.value = value;
+      },
       addPropInfoForBind: function (propInfo, eventName) {
         if (-1 === this.propInfosForInput.indexOf(propInfo)) {
           this.propInfosForInput.push(propInfo);
         }
+
+        // Send value
         (function (self, propInfo, eventName) {
           self.elem.addEventListener(eventName, function (e) {
             propInfo.transmit(self, e.target.value);
           });
         })(this, propInfo, eventName);
+
+        // Receive value
+        this.addCallbackForTransmit(this.bindCallback);
+        propInfo.addBindee(this);
+
         return this;
       },
     };
