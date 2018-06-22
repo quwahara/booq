@@ -147,6 +147,10 @@
           var xarray = new Xarray(value);
           var yarray = getProxy(xarray);
           yo.pis[name] = new PropInfo(self, name, xarray, yarray);
+        } else if (isObject(value)) {
+          var xobject = new Xobject(value);
+          var yobject = getProxy(xobject);
+          yo.pis[name] = new PropInfo(self, name, xobject, yobject);
         } else if (isPrimitive(value)) {
           yo.pis[name] = new PropInfo(self, name, value, null);
         } else {
@@ -241,6 +245,15 @@
     };
 
     Yobject.prototype = {
+      replaceWith: function (object) {
+        var name;
+        var decl = this.objectDecl;
+        var xobject = this.xobject;
+        for (name in decl) {
+          if (!decl.hasOwnProperty(name)) continue;
+          xobject[name] = object[name];
+        }
+      }
     };
 
     var PropInfo = function PropInfo(subject, name, value, proxy) {
@@ -271,6 +284,10 @@
                   throw Error("Type unmatch");
                 self.value = value;
                 self.publish();
+              } else if (self.typeCode === TC_XOBJECT) {
+                if (typeCode(value) !== TC_OBJECT)
+                  throw Error("Type unmatch");
+                self.proxy.replaceWith(value);
               } else if (self.typeCode === TC_XARRAY) {
                 if (typeCode(value) !== TC_ARRAY)
                   throw Error("Type unmatch");
