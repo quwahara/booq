@@ -256,6 +256,63 @@
       }
     };
 
+    var Xarray = function (arrayDecl) {
+      var proxy = setProxy(mergeRid(this), new Yarray(this, arrayDecl));
+    };
+
+    Xarray.prototype = {
+      newItem: function () {
+        var proxy, cloned;
+        proxy = getProxy(this);
+        cloned = clone(proxy.itemDecl);
+        return extend(cloned);
+      },
+      push: function (item) {
+        var proxy;
+        proxy = getProxy(this);
+        proxy.items.push(mergeRid(item));
+        proxy.publish();
+      },
+      toJSON: function () {
+        var proxy = getProxy(this);
+        return proxy.items;
+      }
+    };
+
+    Xarray.prototype.constructor = Xarray;
+
+    var Yarray = function Yarray(subject, arrayDecl) {
+      this.subs = [];
+      this.items = [];
+      this.subject = subject;
+      this.itemDecl = arrayDecl.splice(0, 1)[0];
+      this.arrayDecl = arrayDecl;
+    };
+
+    Yarray.prototype = {
+      addSub: function (sub) {
+        if (-1 === this.subs.indexOf(sub)) {
+          this.subs.push(sub);
+        }
+      },
+      publish: function () {
+        for (var i = 0; i < this.subs.length; ++i) {
+          var yelem = this.subs[i];
+          yelem.each(this);
+        }
+      },
+      replaceWith: function (array) {
+        var items = [];
+        for (var i = 0; i < array.length; i++) {
+          items.push(extend(array[i]));
+        }
+        this.items = items;
+        this.publish();
+      },
+    };
+
+    Yarray.prototype.constructor = Yarray;
+
     var PropInfo = function PropInfo(subject, name, value, proxy) {
       this.init(subject, name, value, proxy);
     };
@@ -421,63 +478,6 @@
     };
 
     Yelem.prototype.constructor = Yelem;
-
-    var Xarray = function (arrayDecl) {
-      var proxy = setProxy(mergeRid(this), new Yarray(this, arrayDecl));
-    };
-
-    Xarray.prototype = {
-      newItem: function () {
-        var proxy, cloned;
-        proxy = getProxy(this);
-        cloned = clone(proxy.itemDecl);
-        return extend(cloned);
-      },
-      push: function (item) {
-        var proxy;
-        proxy = getProxy(this);
-        proxy.items.push(mergeRid(item));
-        proxy.publish();
-      },
-      toJSON: function () {
-        var proxy = getProxy(this);
-        return proxy.items;
-      }
-    };
-
-    Xarray.prototype.constructor = Xarray;
-
-    var Yarray = function Yarray(subject, arrayDecl) {
-      this.subs = [];
-      this.items = [];
-      this.subject = subject;
-      this.itemDecl = arrayDecl.splice(0, 1)[0];
-      this.arrayDecl = arrayDecl;
-    };
-
-    Yarray.prototype = {
-      addSub: function (sub) {
-        if (-1 === this.subs.indexOf(sub)) {
-          this.subs.push(sub);
-        }
-      },
-      publish: function () {
-        for (var i = 0; i < this.subs.length; ++i) {
-          var yelem = this.subs[i];
-          yelem.each(this);
-        }
-      },
-      replaceWith: function (array) {
-        var items = [];
-        for (var i = 0; i < array.length; i++) {
-          items.push(extend(array[i]));
-        }
-        this.items = items;
-        this.publish();
-      },
-    };
-
-    Yarray.prototype.constructor = Yarray;
 
     function removeAllChild(parent) {
       while (parent.firstChild) {
