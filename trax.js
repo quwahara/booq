@@ -22,6 +22,28 @@
     var RID_MIN = 100000000000000;
     var RID_MAX = RID_MIN * 10 - 1;
 
+    function toArray(list) {
+      var ar = [];
+      var len = list.length;
+      for (var i = 0; i < len; ++i) {
+        ar.push(list.item(i));
+      }
+      return ar;
+    }
+
+    function arrayContains(ar, item) {
+      for (var i = 0; i < ar.length; ++i) {
+        if (ar[i] === item) return true;
+      }
+      return false;
+    }
+
+    var spaceRex = /\s+/;
+
+    function splitBySpace(v) {
+      return (v || "").toString().trim().split(spaceRex);
+    }
+
     function isString(v) {
       return (typeof v) === "string";
     }
@@ -184,8 +206,21 @@
         if (!yelem) {
           yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem).initAsBind());
         }
-        var eventName = opts.eventName || "change";
-        yelem.addPropInfoForBind(pi, eventName);
+        opts.eventName = opts.eventName || "change";
+
+        if (opts.validations) {
+          var vs = opts.validations;
+          opts.validationsOpts = opts.validationsOpts || {};
+          var vOpts = opts.validationsOpts;
+          vOpts.rootElem = vOpts.rootElem ||
+          (elem.parentElement && elem.parentElement.parentElement) ||
+          elem.parentElement;
+          vOpts.selector = vOpts.selector || (Trax.Cnf.sbPrefix + prop + Trax.Cnf.sbPostfix);
+          vOpts.elems = [elem].concat(toArray(vOpts.rootElem.querySelectorAll(vOpts.selector)));
+          pi.addYelemForValidation(yelem);
+        }
+
+        yelem.addBindInfo(pi, opts);
 
         return this;
       },
@@ -232,8 +267,26 @@
           })(yelem.elem);
         }
         yelem.addCallbackForTransmit(callback);
-        pi.addBindee(yelem);
+        pi.addTransmittee(yelem);
       },
+      _validate: function () {
+        var yo = getProxy(this);
+        var resultAcc = [];
+        for (var name in yo.pis) {
+          if (!yo.pis.hasOwnProperty(name)) continue;
+          var pi = yo.pis[name];
+          if (pi.typeCode === TC_PIMITIVE) {
+            resultAcc = resultAcc.concat(pi.validate());
+          } else if (pi.typeCode === TC_XOBJECT) {
+            resultAcc = resultAcc.concat(pi.value._validate());
+          } else if (pi.typeCode === TC_XARRAY) {
+            resultAcc = resultAcc.concat(pi.value._validate());
+          } else {
+            throw Error("Not implemented");
+          }
+        }
+        return resultAcc;
+      }
     };
 
     Xobject.prototype.constructor = Xobject;
@@ -276,6 +329,16 @@
       toJSON: function () {
         var proxy = getProxy(this);
         return proxy.items;
+      },
+      _validate: function () {
+        var proxy = getProxy(this);
+        var resultAcc = [];
+        for (var i = 0; i < proxy.items.length; ++i) {
+          var item = proxy.items[i];
+          if (typeCode(item) !== TC_XOBJECT) continue;
+          resultAcc = resultAcc.concat(item._validate());
+        }
+        return resultAcc;
       }
     };
 
@@ -319,8 +382,9 @@
 
     PropInfo.prototype = {
       init: function (subject, name, value, proxy) {
-        this.bindees = [];
-        this.bindees.push(this);
+        this.transmittees = [];
+        this.transmittees.push(this);
+        this.yelemsForValidation = [];
 
         this.subject = subject;
         this.name = name;
@@ -356,9 +420,9 @@
           });
         })(this);
       },
-      addBindee: function (proxyElem) {
-        if (-1 === this.bindees.indexOf(proxyElem)) {
-          this.bindees.push(proxyElem);
+      addTransmittee: function (proxyElem) {
+        if (-1 === this.transmittees.indexOf(proxyElem)) {
+          this.transmittees.push(proxyElem);
           proxyElem.handleTransmit(this, this.value);
         }
       },
@@ -366,16 +430,27 @@
         this.transmit(this, this.value);
       },
       transmit: function (src, value) {
-        for (var i = 0; i < this.bindees.length; ++i) {
-          var bindee = this.bindees[i];
-          if (bindee === src) continue;
-          bindee.handleTransmit(src, value);
+        for (var i = 0; i < this.transmittees.length; ++i) {
+          var transmittee = this.transmittees[i];
+          if (transmittee === src) continue;
+          transmittee.handleTransmit(src, value);
         }
       },
       handleTransmit: function (src, value) {
         if (src === this) return;
         this.value = value;
       },
+      addYelemForValidation: function (yelem) {
+        this.yelemsForValidation.push(yelem);
+      },
+      validate: function() {
+        var resultAcc = [];
+        for (var i = 0; i < this.yelemsForValidation.length; ++i) {
+          var yelem = this.yelemsForValidation[i];
+          resultAcc = resultAcc.concat(yelem.validate());
+        }
+        return resultAcc;
+      }
     };
 
     PropInfo.prototype.constructor = PropInfo;
@@ -451,28 +526,114 @@
         this.addCallbackForTransmit(function (value) {
           this.value = value;
         });
-        this.propInfosForInput = [];
+        this.bindInfos = [];
+        this.optsForBind = [];
         return this;
       },
       bindCallback: function (value) {
         this.value = value;
       },
-      addPropInfoForBind: function (propInfo, eventName) {
-        if (-1 === this.propInfosForInput.indexOf(propInfo)) {
-          this.propInfosForInput.push(propInfo);
-        }
+      addBindInfo: function (propInfo, opts) {
+
+        this.bindInfos.push({
+          "propInfo": propInfo,
+          "opts": opts
+        });
 
         // Send value
         (function (self, propInfo, eventName) {
           self.elem.addEventListener(eventName, function (e) {
             propInfo.transmit(self, e.target.value);
           });
-        })(this, propInfo, eventName);
+        })(this, propInfo, opts.eventName);
 
         // Receive value
         this.addCallbackForTransmit(this.bindCallback);
-        propInfo.addBindee(this);
+        propInfo.addTransmittee(this);
 
+        if (opts) {
+          this.optsForBind.push(opts);
+          if (opts.validationsOpts) {
+            var vOpts = opts.validationsOpts;
+            vOpts.statusYelems = [];
+            for (var i = 0; i < vOpts.elems.length; ++i) {
+              var elem = vOpts.elems[i];
+              var yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem).initAsStatus());
+              vOpts.statusYelems.push(yelem);
+            }
+          }
+        }
+
+        return this;
+      },
+      validate: function() {
+        var results = [];
+        for (var i = 0; i < this.bindInfos.length; ++i) {
+          var bi = this.bindInfos[i];
+          if (!bi.opts.validations) continue;
+          var pi = bi.propInfo;
+          var vs = bi.opts.validations;
+          var vOpts = bi.opts.validationsOpts;
+          for (var j = 0; j < vs.length; ++j) {
+            var v = vs[0];
+            var result = {
+              status: [],
+            };
+            results.push(result);
+            v.call(pi.subject, result, pi.value, pi.name, vOpts.elems);
+            for (var k = 0; k < vOpts.statusYelems.length; ++k) {
+              var statusYelem = vOpts.statusYelems[k];
+              statusYelem.applyStatus(result.status);
+            }
+          }
+        }
+        return results;
+      },
+      // Status functions
+      initAsStatus: function () {
+        var elem = this.elem;
+        this.hasSetClassOn = !!elem.getAttribute("set-class-on");
+        if (this.hasSetClassOn) {
+          this.originalClass = splitBySpace(elem.getAttribute("class"));
+          this.setClassOn = splitBySpace(elem.getAttribute("set-class-on"));
+        }
+        this.hasShowOn = !!elem.getAttribute("show-on");
+        if (this.hasShowOn) {
+          this.originalDisplay = elem.style.display;
+          if (this.originalDisplay === "none") {
+            this.originalDisplay = "";
+          } else {
+            elem.style.display = "none";
+          }
+          this.showOn = splitBySpace(elem.getAttribute("show-on"));
+        }
+        return this;
+      },
+      applyStatus: function (status) {
+        if (isString(status)) status = splitBySpace(status);
+        var i, s, elem;
+        if (this.hasSetClassOn) {
+          var statusForClassOn = [].concat(this.originalClass);
+          for (i = 0; i < status.length; ++i) {
+            s = status[i];
+            if (arrayContains(this.setClassOn, s)) {
+              statusForClassOn.push(s);
+            }
+          }
+          elem = this.elem;
+          elem.className = statusForClassOn.join(" ");
+        }
+        if (this.hasShowOn) {
+          var statusForShowOn = [];
+          for (i = 0; i < status.length; ++i) {
+            s = status[i];
+            if (arrayContains(this.showOn, s)) {
+              statusForShowOn.push(s);
+            }
+          }
+          elem = this.elem;
+          elem.style.display = statusForShowOn.length ? this.originalDisplay : "none";
+        }
         return this;
       },
     };
@@ -516,6 +677,10 @@
       }
     });
 
+    Trax.Cnf = {
+      sbPrefix: "._",
+      sbPostfix: ""
+    };
     Trax.Xobject = Xobject;
     Trax.Xarray = Xarray;
 
