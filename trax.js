@@ -683,6 +683,13 @@
     };
     Trax.Xobject = Xobject;
     Trax.Xarray = Xarray;
+    Trax.validations = {
+      "empty": function (result, value, name, elems) {
+        if ((value || "").trim() === "") {
+          result.status = "error empty";
+        }
+      },
+    };
 
     Trax.release = "0.0.17";
 
