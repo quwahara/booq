@@ -213,9 +213,9 @@
           opts.validationsOpts = opts.validationsOpts || {};
           var vOpts = opts.validationsOpts;
           vOpts.rootElem = vOpts.rootElem ||
-          (elem.parentElement && elem.parentElement.parentElement) ||
-          elem.parentElement;
-          vOpts.selector = vOpts.selector || (Trax.Cnf.sbPrefix + prop + Trax.Cnf.sbPostfix);
+            (elem.parentElement && elem.parentElement.parentElement) ||
+            elem.parentElement;
+          vOpts.selector = vOpts.selector || (Trax.conf.sbPrefix + prop + Trax.conf.sbPostfix);
           vOpts.elems = [elem].concat(toArray(vOpts.rootElem.querySelectorAll(vOpts.selector)));
           pi.addYelemForValidation(yelem);
         }
@@ -443,7 +443,7 @@
       addYelemForValidation: function (yelem) {
         this.yelemsForValidation.push(yelem);
       },
-      validate: function() {
+      validate: function () {
         var resultAcc = [];
         for (var i = 0; i < this.yelemsForValidation.length; ++i) {
           var yelem = this.yelemsForValidation[i];
@@ -455,8 +455,7 @@
 
     PropInfo.prototype.constructor = PropInfo;
 
-    var Yelem = function Yelem() {
-    };
+    var Yelem = function Yelem() {};
 
     Yelem.prototype = {
       init: function (elem) {
@@ -566,7 +565,7 @@
 
         return this;
       },
-      validate: function() {
+      validate: function () {
         var results = [];
         for (var i = 0; i < this.bindInfos.length; ++i) {
           var bi = this.bindInfos[i];
@@ -652,7 +651,7 @@
     };
 
     var ctxStack = [];
-    
+
     function newCtx(elem, index, item) {
       var ctx = {
         elem: elem,
@@ -677,18 +676,42 @@
       }
     });
 
-    Trax.Cnf = {
+    Trax.conf = {
       sbPrefix: "._",
       sbPostfix: ""
     };
     Trax.Xobject = Xobject;
     Trax.Xarray = Xarray;
+
     Trax.validations = {
-      "empty": function (result, value, name, elems) {
+      empty: function (result, value, name, elems) {
         if ((value || "").trim() === "") {
-          result.status = "error empty";
+          result.status = ["error", "empty"];
         }
       },
+      lengthMinMax: function (opts) {
+        return (function (opts) {
+          return function (result, value, name, elems) {
+            value = (value || "").trim();
+            var len = value.length;
+            if (len < opts.min || opts.max < len) {
+              result.status = ["error", "length-min-max"];
+              result.opts = opts;
+            }
+          };
+        })(opts);
+      },
+      isOk: function (results) {
+        if (!isArray(results)) {
+          throw Error("The results must be Array.");
+        }
+        var ok = true;
+        for (var i = 0; i < results.length; ++i) {
+          var status = results[i].status;
+          ok &= status.length == 0 || arrayContains(status, "ok");
+        }
+        return ok;
+      }
     };
 
     Trax.release = "0.0.17";
