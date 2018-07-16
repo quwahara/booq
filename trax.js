@@ -257,8 +257,10 @@
 
         var yelem = getProxy(elem);
         if (!yelem) {
-          yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem).initAsTransmit());
+          yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem));
         }
+        yelem.initAsTransmit();
+
         if (!callback) {
           callback = (function (elem) {
             return function (value) {
@@ -268,6 +270,80 @@
         }
         yelem.addCallbackForTransmit(callback);
         pi.addTransmittee(yelem);
+      },
+      _transmitToHtml: function (prop, callback, opts) {
+        var yo = getProxy(this);
+        var pi = yo.pis[prop];
+        if (!pi) throw Error("The property was not found.:" + prop);
+
+        opts = opts || {};
+        var rootElem = opts.rootElem || Trax.ctx.elem;
+        var query = opts.query || ("." + prop);
+        var elem = rootElem.querySelector(query);
+        if (!elem) return null;
+
+        var yelem = getProxy(elem);
+        if (!yelem) {
+          yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem));
+        }
+        yelem.initAsTransmit();
+
+        if (!callback) {
+          callback = (function (elem) {
+            return function (value) {
+              elem.innerHTML = value;
+            };
+          })(yelem.elem);
+        }
+        yelem.addCallbackForTransmit(callback);
+        pi.addTransmittee(yelem);
+      },
+      _showOn: function (prop, opts) {
+
+        opts = opts || {};
+        var rootElem = opts.rootElem || Trax.ctx.elem;
+        var query = opts.query || ("." + prop);
+        var elem = rootElem.querySelector(query);
+
+        if (!elem) return null;
+        var yelem = getProxy(elem);
+        if (!yelem) {
+          yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem));
+        }
+        yelem.initAsShowOn();
+
+        var callback = (function (yelem) {
+          return function (value) {
+            this.style.display = value ? yelem.originalDisplay : "none";
+          };
+        })(yelem);
+
+        this._transmit(prop, callback, opts);
+      },
+      _transmitToClass: function (prop, opts) {
+
+        opts = opts || {};
+        var rootElem = opts.rootElem || Trax.ctx.elem;
+        var query = opts.query || ("." + prop);
+        var elem = rootElem.querySelector(query);
+
+        if (!elem) return null;
+        var yelem = getProxy(elem);
+        if (!yelem) {
+          yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem));
+        }
+        yelem.initAsTransmitToClass();
+        var callback = (function (yelem) {
+          return function (value) {
+            var classArray = [].concat(yelem.originalClass);
+            if (isString(value) && value.length) {
+              classArray.push(value);
+            }
+            this.className = classArray.join(" ");
+          };
+        })(yelem);
+
+        this._transmit(prop, callback, opts);
       },
       _validate: function () {
         var yo = getProxy(this);
@@ -501,6 +577,7 @@
       },
       // Transmit functions
       initAsTransmit: function () {
+        if (this.callbacksForTrnasmit) return this;
         this.callbacksForTrnasmit = [];
         return this;
       },
@@ -518,6 +595,25 @@
           callback.call(this.elem, value);
           releaseCtx();
         }
+      },
+      // ShowOn functions
+      initAsShowOn: function () {
+        var elem = this.elem;
+        if (this.originalDisplay != null) return this;
+        this.originalDisplay = elem.style.display;
+        if (this.originalDisplay === "none") {
+          this.originalDisplay = "";
+        } else {
+          elem.style.display = "none";
+        }
+        return this;
+      },
+      // TransmitToClass functions
+      initAsTransmitToClass: function () {
+        var elem = this.elem;
+        if (this.originalClass) return this;
+        this.originalClass = splitBySpace(elem.getAttribute("class"));
+        return this;
       },
       // Bind functions
       initAsBind: function () {
