@@ -31,6 +31,22 @@
       return ar;
     }
 
+    function forEach(list, callback, thisArg) {
+      var len = list.length;
+      for (var i = 0; i < len; ++i) {
+        callback.call(thisArg, list.item(i), i);
+      }
+    }
+
+    function map(list, callback, thisArg) {
+      var r = [];
+      var len = list.length;
+      for (var i = 0; i < len; ++i) {
+        r.push(callback.call(thisArg, list.item(i), i));
+      }
+      return r;
+    }
+
     function arrayContains(ar, item) {
       for (var i = 0; i < ar.length; ++i) {
         if (ar[i] === item) return true;
@@ -244,106 +260,73 @@
         yelem.addCallbackForEach(callback);
         yarray.addSub(yelem);
       },
-      _transmit: function (prop, callback, opts) {
+      _pi: function (prop) {
         var yo = getProxy(this);
         var pi = yo.pis[prop];
         if (!pi) throw Error("The property was not found.:" + prop);
-
-        opts = opts || {};
-        var rootElem = opts.rootElem || Trax.ctx.elem;
-        var query = opts.query || ("." + prop);
-        var elem = rootElem.querySelector(query);
-        if (!elem) return null;
-
-        var yelem = getProxy(elem);
-        if (!yelem) {
-          yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem));
-        }
-        yelem.initAsTransmit();
-
-        if (!callback) {
-          callback = (function (elem) {
-            return function (value) {
-              elem.textContent = value;
-            };
-          })(yelem.elem);
-        }
-        yelem.addCallbackForTransmit(callback);
-        pi.addTransmittee(yelem);
+        return pi;
       },
-      _transmitToHtml: function (prop, callback, opts) {
-        var yo = getProxy(this);
-        var pi = yo.pis[prop];
-        if (!pi) throw Error("The property was not found.:" + prop);
-
+      _prepYelems: function (prop, opts) {
         opts = opts || {};
         var rootElem = opts.rootElem || Trax.ctx.elem;
         var query = opts.query || ("." + prop);
-        var elem = rootElem.querySelector(query);
-        if (!elem) return null;
-
-        var yelem = getProxy(elem);
-        if (!yelem) {
-          yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem));
-        }
-        yelem.initAsTransmit();
-
-        if (!callback) {
-          callback = (function (elem) {
-            return function (value) {
-              elem.innerHTML = value;
-            };
-          })(yelem.elem);
-        }
-        yelem.addCallbackForTransmit(callback);
-        pi.addTransmittee(yelem);
+        var elemLs = rootElem.querySelectorAll(query);
+        var yelems = map(elemLs, function(elem) {
+          var yelem = getProxy(elem);
+          if (!yelem) {
+            yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem));
+          }
+          return yelem.initAsTransmit();
+        });
+        return yelems;
+      },
+      _toText: function (prop, opts) {
+        var yelems = this._prepYelems(prop, opts);
+        var pi = this._pi(prop);
+        yelems.forEach(function (yelem) {
+          yelem.addCallbackForTransmit(function (value) {
+            this.textContent = value;
+          });
+          pi.addTransmittee(yelem);
+        });
+      },
+      _toHtml: function (prop, callback, opts) {
+        var yelems = this._prepYelems(prop, opts);
+        var pi = this._pi(prop);
+        yelems.forEach(function (yelem) {
+          yelem.addCallbackForTransmit(function (value) {
+            this.innerHTML = value;
+          });
+          pi.addTransmittee(yelem);
+        });
       },
       _showOn: function (prop, opts) {
-
-        opts = opts || {};
-        var rootElem = opts.rootElem || Trax.ctx.elem;
-        var query = opts.query || ("." + prop);
-        var elem = rootElem.querySelector(query);
-
-        if (!elem) return null;
-        var yelem = getProxy(elem);
-        if (!yelem) {
-          yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem));
-        }
-        yelem.initAsShowOn();
-
-        var callback = (function (yelem) {
-          return function (value) {
+        var yelems = this._prepYelems(prop, opts);
+        var pi = this._pi(prop);
+        yelems.forEach(function (yelem) {
+          yelem.initAsShowOn();
+          yelem.addCallbackForTransmit(function (value) {
+            var yelem = getProxy(this);
             this.style.display = value ? yelem.originalDisplay : "none";
-          };
-        })(yelem);
-
-        this._transmit(prop, callback, opts);
+          });
+          pi.addTransmittee(yelem);
+        });
       },
-      _transmitToClass: function (prop, opts) {
-
-        opts = opts || {};
-        var rootElem = opts.rootElem || Trax.ctx.elem;
-        var query = opts.query || ("." + prop);
-        var elem = rootElem.querySelector(query);
-
-        if (!elem) return null;
-        var yelem = getProxy(elem);
-        if (!yelem) {
-          yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem));
-        }
-        yelem.initAsTransmitToClass();
-        var callback = (function (yelem) {
-          return function (value) {
+      _toClass: function (prop, opts) {
+        var yelems = this._prepYelems(prop, opts);
+        var pi = this._pi(prop);
+        yelems.forEach(function (yelem) {
+          yelem.initAsTransmitToClass();
+          yelem.addCallbackForTransmit(function (value) {
+            var yelem = getProxy(this);
             var classArray = [].concat(yelem.originalClass);
             if (isString(value) && value.length) {
               classArray.push(value);
             }
             this.className = classArray.join(" ");
-          };
-        })(yelem);
-
-        this._transmit(prop, callback, opts);
+          });
+          pi.addTransmittee(yelem);
+        });
       },
       _validate: function () {
         var yo = getProxy(this);
