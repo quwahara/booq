@@ -85,8 +85,9 @@
     function isInputValue(elem) {
       if (!elem) return false;
       var tn = elem.tagName;
-      if (tn === "INPUT") {
-        if (elem.type && elem.type === "text") return true;
+      if (tn === "INPUT" && elem.type) {
+        var t = elem.type;
+        return t === "text" || t === "password";
       } else if (tn === "SELECT") {
         return true;
       }
@@ -271,7 +272,7 @@
         var rootElem = opts.rootElem || Trax.ctx.elem;
         var query = opts.query || ("." + prop);
         var elemLs = rootElem.querySelectorAll(query);
-        var yelems = map(elemLs, function(elem) {
+        var yelems = map(elemLs, function (elem) {
           var yelem = getProxy(elem);
           if (!yelem) {
             yelem = setProxy(mergeRid(elem), (new Yelem()).init(elem));
@@ -793,7 +794,22 @@
       }
     };
 
-    Trax.release = "0.0.17";
+    Trax.on = function (eventType, query, listener, opts) {
+      var rootElem;
+      if (opts && opts.rootElem) {
+        rootElem = opts.rootElem;
+        delete opts.rootElem;
+      } else {
+        rootElem = this.ctx.elem;
+      }
+      var elems = map(rootElem.querySelectorAll(query), function (elem) {
+        elem.addEventListener(eventType, listener, opts);
+        return elem;
+      });
+      return elems;
+    };
+
+    Trax.release = "0.0.18";
 
     return Trax;
   })();
