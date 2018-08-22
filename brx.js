@@ -7,8 +7,8 @@
     define(definition);
   } else {
     // <script>
-    Trax = definition();
-    console.log(Trax.release);
+    Brx = definition();
+    console.log(Brx.release);
   }
 })(function () {
   'use strict';
@@ -17,8 +17,8 @@
     var TC_PIMITIVE = 1;
     var TC_ARRAY = 2;
     var TC_OBJECT = 4;
-    var TC_XARRAY = 2 + 16;
-    var TC_TRAX = 4 + 16;
+    var TC_ARX = 2 + 16;
+    var TC_BRX = 4 + 16;
     var RID_MIN = 100000000000000;
     var RID_MAX = RID_MIN * 10 - 1;
 
@@ -94,25 +94,25 @@
       return false;
     }
 
-    function isTrax(target) {
+    function isBrx(target) {
       var proto;
       if (target == null) return;
       proto = Object.getPrototypeOf(target);
-      return proto && proto.constructor === Trax;
+      return proto && proto.constructor === Brx;
     }
 
-    function isXarray(target) {
+    function isArx(target) {
       var proto;
       if (target == null) return;
       proto = Object.getPrototypeOf(target);
-      return proto && proto.constructor === Xarray;
+      return proto && proto.constructor === Arx;
     }
 
     function typeCode(v) {
-      if (isXarray(v)) {
-        return TC_XARRAY;
-      } else if (isTrax(v)) {
-        return TC_TRAX;
+      if (isArx(v)) {
+        return TC_ARX;
+      } else if (isBrx(v)) {
+        return TC_BRX;
       } else if (isPrimitive(v)) {
         return TC_PIMITIVE;
       } else if (isArray(v)) {
@@ -130,9 +130,9 @@
 
     function extend(v) {
       if (isObject(v)) {
-        return new Trax(v);
+        return new Brx(v);
       } else if (isArray(v)) {
-        return new Xarray(v);
+        return new Arx(v);
       } else {
         throw Error("Not implemented");
       }
@@ -169,27 +169,27 @@
       }
     }
 
-    var Trax = function Trax(objectDecl) {
+    var Brx = function Brx(objectDecl) {
       if (!isObject(objectDecl)) throw Error("The parameter was not an object");
-      trax_init(this, objectDecl);
+      brx_init(this, objectDecl);
     };
 
-    function trax_init(self, objectDecl) {
+    function brx_init(self, objectDecl) {
       var xy, name, value, parray;
-      xy = setProxy(mergeRid(self), new Traxy(self, objectDecl));
+      xy = setProxy(mergeRid(self), new Brxy(self, objectDecl));
       for (name in objectDecl) {
         if (!objectDecl.hasOwnProperty(name)) continue;
         if (name === "_rid") continue;
         if (name === "_bind") continue;
         value = objectDecl[name];
         if (isArray(value)) {
-          var xarray = new Xarray(value);
-          var yarray = getProxy(xarray);
-          xy.pis[name] = new PropInfo(self, name, xarray, yarray);
+          var arx = new Arx(value);
+          var yarray = getProxy(arx);
+          xy.pis[name] = new PropInfo(self, name, arx, yarray);
         } else if (isObject(value)) {
-          var trax = new Trax(value);
-          var traxy = getProxy(trax);
-          xy.pis[name] = new PropInfo(self, name, trax, traxy);
+          var brx = new Brx(value);
+          var brxy = getProxy(brx);
+          xy.pis[name] = new PropInfo(self, name, brx, brxy);
         } else if (isPrimitive(value)) {
           xy.pis[name] = new PropInfo(self, name, value, null);
         } else {
@@ -199,7 +199,7 @@
       return self;
     }
 
-    Trax.prototype = {
+    Brx.prototype = {
       _bind: function (prop, opts) {
         var xy = getProxy(this);
         var pi = xy.pis[prop];
@@ -211,7 +211,7 @@
         }
 
         opts = opts || {};
-        var rootElem = opts.rootElem || Trax.ctx.elem;
+        var rootElem = opts.rootElem || Brx.ctx.elem;
         var elem = rootElem.querySelector("." + prop);
         if (!elem) return null;
 
@@ -232,7 +232,7 @@
           vOpts.rootElem = vOpts.rootElem ||
             (elem.parentElement && elem.parentElement.parentElement) ||
             elem.parentElement;
-          vOpts.selector = vOpts.selector || (Trax.conf.sbPrefix + prop + Trax.conf.sbPostfix);
+          vOpts.selector = vOpts.selector || (Brx.conf.sbPrefix + prop + Brx.conf.sbPostfix);
           vOpts.elems = [elem].concat(toArray(vOpts.rootElem.querySelectorAll(vOpts.selector)));
           pi.addYelemForValidation(yelem);
         }
@@ -245,11 +245,11 @@
         var xy = getProxy(this);
         var pi = xy.pis[prop];
         if (!pi) throw Error("The property was not found.:" + prop);
-        if (!isXarray(pi.value)) throw Error("The property was not xarray.:" + prop);
+        if (!isArx(pi.value)) throw Error("The property was not arx.:" + prop);
         var yarray = getProxy(pi.value);
 
         opts = opts || {};
-        var rootElem = opts.rootElem || Trax.ctx.elem;
+        var rootElem = opts.rootElem || Brx.ctx.elem;
         var query = opts.query || ("." + prop);
         var elem = rootElem.querySelector(query);
         if (!elem) return null;
@@ -269,7 +269,7 @@
       },
       _prepYelems: function (prop, opts) {
         opts = opts || {};
-        var rootElem = opts.rootElem || Trax.ctx.elem;
+        var rootElem = opts.rootElem || Brx.ctx.elem;
         var query = opts.query || ("." + prop);
         var elemLs = rootElem.querySelectorAll(query);
         var yelems = map(elemLs, function (elem) {
@@ -337,9 +337,9 @@
           var pi = xy.pis[name];
           if (pi.typeCode === TC_PIMITIVE) {
             resultAcc = resultAcc.concat(pi.validate());
-          } else if (pi.typeCode === TC_TRAX) {
+          } else if (pi.typeCode === TC_BRX) {
             resultAcc = resultAcc.concat(pi.value._validate());
-          } else if (pi.typeCode === TC_XARRAY) {
+          } else if (pi.typeCode === TC_ARX) {
             resultAcc = resultAcc.concat(pi.value._validate());
           } else {
             throw Error("Not implemented");
@@ -349,31 +349,31 @@
       }
     };
 
-    Trax.prototype.constructor = Trax;
+    Brx.prototype.constructor = Brx;
 
-    var Traxy = function Traxy(trax, objectDecl) {
-      this.trax = trax;
+    var Brxy = function Brxy(brx, objectDecl) {
+      this.brx = brx;
       this.objectDecl = objectDecl;
       this.pis = {};
     };
 
-    Traxy.prototype = {
+    Brxy.prototype = {
       replaceWith: function (object) {
         var name;
         var decl = this.objectDecl;
-        var trax = this.trax;
+        var brx = this.brx;
         for (name in decl) {
           if (!decl.hasOwnProperty(name)) continue;
-          trax[name] = object[name];
+          brx[name] = object[name];
         }
       }
     };
 
-    var Xarray = function (arrayDecl) {
+    var Arx = function (arrayDecl) {
       var proxy = setProxy(mergeRid(this), new Yarray(this, arrayDecl));
     };
 
-    Xarray.prototype = {
+    Arx.prototype = {
       newItem: function () {
         var proxy, cloned;
         proxy = getProxy(this);
@@ -395,14 +395,14 @@
         var resultAcc = [];
         for (var i = 0; i < proxy.items.length; ++i) {
           var item = proxy.items[i];
-          if (typeCode(item) !== TC_TRAX) continue;
+          if (typeCode(item) !== TC_BRX) continue;
           resultAcc = resultAcc.concat(item._validate());
         }
         return resultAcc;
       }
     };
 
-    Xarray.prototype.constructor = Xarray;
+    Arx.prototype.constructor = Arx;
 
     var Yarray = function Yarray(subject, arrayDecl) {
       this.subs = [];
@@ -465,11 +465,11 @@
                   throw Error("Type unmatch");
                 self.value = value;
                 self.publish();
-              } else if (self.typeCode === TC_TRAX) {
+              } else if (self.typeCode === TC_BRX) {
                 if (typeCode(value) !== TC_OBJECT)
                   throw Error("Type unmatch");
                 self.proxy.replaceWith(value);
-              } else if (self.typeCode === TC_XARRAY) {
+              } else if (self.typeCode === TC_ARX) {
                 if (typeCode(value) !== TC_ARRAY)
                   throw Error("Type unmatch");
                 self.proxy.replaceWith(value);
@@ -541,16 +541,16 @@
         return this;
       },
       each: function (yarray) {
-        var trax, childElem;
+        var brx, childElem;
         this.eraseChildren();
         for (var i = 0; i < yarray.items.length; ++i) {
-          trax = yarray.items[i];
+          brx = yarray.items[i];
           childElem = document.importNode(this.childElemTempl, /* deep */ true);
           this.elem.appendChild(childElem);
           for (var j = 0; j < this.callbacksForEach.length; ++j) {
-            newCtx(childElem, i, trax);
+            newCtx(childElem, i, brx);
             var f = this.callbacksForEach[j];
-            f.call(childElem, trax);
+            f.call(childElem, brx);
             releaseCtx();
           }
         }
@@ -727,7 +727,7 @@
     }
 
     //>>
-    // var Trax = {
+    // var Brx = {
 
     // };
 
@@ -750,22 +750,22 @@
     // Root context
     newCtx(document, -1, null);
 
-    Object.defineProperty(Trax, "ctx", {
+    Object.defineProperty(Brx, "ctx", {
       enumerable: true,
       get: function () {
         return ctxStack[ctxStack.length - 1];
       }
     });
 
-    Trax.conf = {
+    Brx.conf = {
       sbPrefix: "._",
       sbPostfix: ""
     };
     //>>
-    // Trax.Trax = Trax;
-    Trax.Xarray = Xarray;
+    // Brx.Brx = Brx;
+    Brx.Arx = Arx;
 
-    Trax.validations = {
+    Brx.validations = {
       empty: function (result, value, name, elems) {
         if ((value || "").trim() === "") {
           result.status = ["error", "empty"];
@@ -796,7 +796,7 @@
       }
     };
 
-    Trax.on = function (eventType, query, listener, opts) {
+    Brx.on = function (eventType, query, listener, opts) {
       var rootElem;
       if (opts && opts.rootElem) {
         rootElem = opts.rootElem;
@@ -811,9 +811,9 @@
       return elems;
     };
 
-    Trax.release = "0.0.18";
+    Brx.release = "0.0.18";
 
-    return Trax;
+    return Brx;
   })();
 
 });
