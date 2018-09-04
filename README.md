@@ -6,7 +6,7 @@ The Brx is a simple data binder to DOM elements of JavaScript.
 
 ## Examples
 
-```:HTML
+```HTML
 <!-- Target element to be bound -->
 <input type="text" class="user_name">
 
