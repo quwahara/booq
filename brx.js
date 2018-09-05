@@ -329,6 +329,9 @@
           pi.addTransmittee(yelem);
         });
       },
+      _after: function (prop, fnc) {
+        this._pi(prop).afters.push(fnc);
+      },
       _validate: function () {
         var xy = getProxy(this);
         var resultAcc = [];
@@ -445,6 +448,7 @@
         this.transmittees = [];
         this.transmittees.push(this);
         this.yelemsForValidation = [];
+        this.afters = [];
 
         this.subject = subject;
         this.name = name;
@@ -476,6 +480,7 @@
               } else {
                 throw Error("Not implemented");
               }
+              self.callAfters();
             }
           });
         })(this);
@@ -510,6 +515,11 @@
           resultAcc = resultAcc.concat(yelem.validate());
         }
         return resultAcc;
+      },
+      callAfters: function () {
+        for (var i = 0; i < this.afters.length; ++i) {
+          this.afters[i].call(this, this.value);
+        }
       }
     };
 
