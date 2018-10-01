@@ -1,0 +1,117 @@
+<html>
+
+<head>
+  <script src="../brx.js"></script>
+  <title>Example</title>
+</head>
+
+<body>
+  <div>
+
+    <h1>Example</h1>
+    <div>
+      <!-- Target elements to be bound -->
+
+      <div class="text"></div>
+
+      <div class="show" style="display:none;">This will be shown.</div>
+
+      <div class="afterText"></div>
+
+      <input type="text" class="bind">
+
+      <ul class="each">
+          <li class="itemText"></li>
+      </ul>
+
+      <div class="counter"></div>
+
+      <button id="increment">Increment</button>
+    </div>
+    <script>
+      window.onload = function () {
+
+        // 1. Declare models.
+        var models = {
+          catalogue: {
+            text: "",
+            show: false,
+            after: "",
+            bind: "",
+            each: [{
+              itemText: ""
+            }],
+            counter: 0
+          }
+        };
+
+        // 2. Create Brx object from the models.
+        var brx = new Brx({
+          afterText: "",
+          io: models
+        });
+
+        // Set value of catalogue.text to element.textContent if catalogue.text is changed.
+        // The element has 'text' in class attribute. 
+        brx.io.catalogue._toText("text");
+
+        // Show the elemnt if catalogue.show has a truthy value.
+        // The elemnt must have 'show' in class attribute.
+        brx.io.catalogue._showOn("show");
+
+        // Call the callback function, the second argument, 
+        // if catalogue.after has been set a value.
+        brx._toText("afterText");
+
+        brx.io.catalogue._after("after", function (value) {
+          brx.afterText = "***" + value + "***";
+        });
+
+        // Set value of catalogue.bind to element.value if catalogue.bind is changed.
+        // The element must have 'bind' in class attribute.
+        // The element must be an input tag.
+        // Set element.value to catalogue.bind if element.value is changed.
+        brx.io.catalogue._bind("bind");
+
+        // Call the callback function, the second argument, 
+        // if catalogue.each is set a value.
+        // The catalogue.each must be an array;
+        brx.io.catalogue._each("each", function (item) {
+          item._toText("itemText");
+        });
+
+        brx.io.catalogue._toText("counter");
+
+        // Brx.on is a shortcut for addEventListener.
+        // Second argument is a query to get elements to be added a listener.
+        Brx.on("click", "#increment", function () {
+          brx.io.catalogue.counter += 1;
+        });
+
+        // 4. Put actual data to io, then the data will affect each elements.
+        brx.io = {
+          catalogue: {
+            text: "The text",
+            show: true,
+            after: "The after",
+            bind: "The bind",
+            each: [{
+                itemText: "The item text 1"
+              },
+              {
+                itemText: "The item text 2"
+              },
+              {
+                itemText: "The item text 3"
+              },
+            ],
+            counter: 0
+          }
+        };
+      };
+    </script>
+  </div>
+
+</body>
+
+</html>

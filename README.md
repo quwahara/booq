@@ -22,14 +22,14 @@ window.onload = function() {
 
     // 2. Create Brx object from the models.
     var brx = new Brx({
-        "payloads": models
+        "io": models
     });
 
     // 3. Bind to input tag.
-    brx.payloads.user._bind("user_name");
+    brx.io.user._bind("user_name");
 
-    // 4. Put actual data to payloads, then the data will show in input text. 
-    brx.payloads = {
+    // 4. Put actual data to io, then the data will show in input text. 
+    brx.io = {
         user: {
             user_name: "Motoko"
         }
@@ -37,6 +37,20 @@ window.onload = function() {
 };
 </script>
 ```
+
+## Opts
+
+```JavaScript
+{
+    // (Optional) `rootElem` is a receiver to call querySelectorAll method.
+    rootElem: null, 
+    // (Optional) `query` is a parameter to call querySelectorAll method.
+    // It will be "." + prop value if it is omitted.
+    // It means an element will be selected that has same name in its class attribute.
+    query: null,
+}
+```
+
 
 ## License
 
