@@ -38,11 +38,18 @@
       }
     }
 
-    function map(list, callback, thisArg) {
+    function map(arrayOrList, callback, thisArg) {
       var r = [];
-      var len = list.length;
-      for (var i = 0; i < len; ++i) {
-        r.push(callback.call(thisArg, list.item(i), i));
+      var i = 0;
+      var len = arrayOrList.length;
+      if (isArray(arrayOrList)) {
+        for (; i < len; ++i) {
+          r.push(callback.call(thisArg, arrayOrList[i], i));
+        }
+      } else {
+        for (; i < len; ++i) {
+          r.push(callback.call(thisArg, arrayOrList.item(i), i));
+        }
       }
       return r;
     }
@@ -272,6 +279,9 @@
         var rootElem = opts.rootElem || Brx.ctx.elem;
         var query = opts.query || ("." + prop);
         var elemLs = rootElem.querySelectorAll(query);
+        if (elemLs.length === 0 && rootElem.classList.contains(prop)) {
+          elemLs = [rootElem];
+        }
         var yelems = map(elemLs, function (elem) {
           var yelem = getProxy(elem);
           if (!yelem) {
