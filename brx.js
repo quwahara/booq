@@ -746,11 +746,6 @@
       return parent;
     }
 
-    //>>
-    // var Brx = {
-
-    // };
-
     var ctxStack = [];
 
     function newCtx(elem, index, item) {
