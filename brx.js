@@ -323,6 +323,22 @@
           pi.addTransmittee(yelem);
         });
       },
+      _addClassOn: function (prop, className, opts) {
+        var yelems = this._prepYelems(prop, opts);
+        var pi = this._pi(prop);
+        yelems.forEach(function (yelem) {
+          yelem.initAsTransmitToClass();
+          yelem.addCallbackForTransmit(function (value) {
+            var yelem = getProxy(this);
+            var classArray = [].concat(yelem.originalClass);
+            if (value) {
+              classArray.push(className);
+            }
+            this.className = classArray.join(" ");
+          });
+          pi.addTransmittee(yelem);
+        });
+      },
       _toClass: function (prop, opts) {
         var yelems = this._prepYelems(prop, opts);
         var pi = this._pi(prop);
