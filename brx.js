@@ -140,6 +140,8 @@
         return new Brx(v);
       } else if (isArray(v)) {
         return new Arx(v);
+      } else if (isPrimitive(v)) {
+        return v;
       } else {
         throw Error("Not implemented");
       }
@@ -150,6 +152,9 @@
     }
 
     function mergeRid(obj) {
+      if (isPrimitive(obj)) {
+        return obj;
+      }
       if (!obj._rid) {
         Object.defineProperty(obj, '_rid', {
           enumerable: false,
@@ -301,6 +306,16 @@
           pi.addTransmittee(yelem);
         });
       },
+      _toAttr: function (prop, attrName, opts) {
+        var yelems = this._prepYelems(prop, opts);
+        var pi = this._pi(prop);
+        yelems.forEach(function (yelem) {
+          yelem.addCallbackForTransmit(function (value) {
+            this[attrName] = value;
+          });
+          pi.addTransmittee(yelem);
+        });
+      },
       _toHtml: function (prop, callback, opts) {
         var yelems = this._prepYelems(prop, opts);
         var pi = this._pi(prop);
@@ -433,6 +448,7 @@
 
     Arx.prototype.constructor = Arx;
 
+    // Proxy array
     var Yarray = function Yarray(subject, arrayDecl) {
       this.subs = [];
       this.items = [];
@@ -792,8 +808,7 @@
       sbPrefix: "._",
       sbPostfix: ""
     };
-    //>>
-    // Brx.Brx = Brx;
+
     Brx.Arx = Arx;
 
     Brx.validations = {
@@ -840,6 +855,34 @@
         return elem;
       });
       return elems;
+    };
+
+    Brx.q = function (selectors) {
+      return document.querySelector(selectors);
+    };
+
+    Brx.querySelectorAllMap = function (selector, callback /* [, arg1[, arg2[, ...]]] */) {
+      var r = [];
+      var args = Array.prototype.slice.call(arguments);
+      if (args.length >= 3) {
+        args.splice(0, 2);
+      } else {
+        args.splice(0, args.length);
+      }
+      var elms = document.querySelectorAll(selector);
+      var i;
+      if (isString(callback)) {
+        for (i = 0; i < elms.length; ++i) {
+          var elm = elms.item(i);
+          var cb = elm[callback];
+          r.push(cb.apply(elm, args));
+        }
+      } else {
+        for (i = 0; i < elms.length; ++i) {
+          r.push(callback.apply(elms.item(i), args));
+        }
+      }
+      return r;
     };
 
     Brx.release = "0.0.18";
