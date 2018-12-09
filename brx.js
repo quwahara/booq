@@ -67,6 +67,10 @@
       return (v || "").toString().trim().split(spaceRex);
     }
 
+    function isUndefined(v) {
+      return typeof v === "undefined";
+    }
+
     function isString(v) {
       return (typeof v) === "string";
     }
@@ -83,6 +87,14 @@
       return fun && {}.toString.call(fun) === '[object Function]';
     }
 
+    function isElement(v) {
+      return v && v.nodeType === Node.ELEMENT_NODE;
+    }
+
+    function isDocument(v) {
+      return v === document;
+    }
+
     function isPrimitive(v) {
       if (v == null) return false;
       var t = typeof v;
@@ -95,7 +107,7 @@
       if (tn === "INPUT" && elem.type) {
         var t = elem.type;
         return t === "text" || t === "password";
-      } else if (tn === "SELECT") {
+      } else if (tn === "SELECT" || tn === "TEXTAREA") {
         return true;
       }
       return false;
@@ -187,12 +199,20 @@
     };
 
     function brx_init(self, objectDecl) {
-      var xy, name, value, parray;
+      var xy, name, value, parray, attrsNotes = [];
       xy = setProxy(mergeRid(self), new Brxy(self, objectDecl));
+      self._ = xy;
       for (name in objectDecl) {
         if (!objectDecl.hasOwnProperty(name)) continue;
         if (name === "_rid") continue;
         if (name === "_bind") continue;
+
+        // It is attributes if the name is ending with "$".
+        if (name.indexOf("$") === (name.length - 1)) {
+          attrsNotes.push(name.substr(0, name.length - 1));
+          continue;
+        }
+
         value = objectDecl[name];
         if (isArray(value)) {
           var arx = new Arx(value);
@@ -208,10 +228,31 @@
           throw Error("Not implemented");
         }
       }
+
+      // Attaching attributes to PropInfo
+      for (var i = 0; i < attrsNotes.length; ++i) {
+        var attrs = attrsNotes[i];
+        var pi = xy.pis[attrs];
+        if (pi && pi.proxy && objectDecl[attrs + "$"]) {
+          pi.proxy.attrs = objectDecl[attrs + "$"];
+        }
+      }
+
       return self;
     }
 
+    function brx_initOpts(ops, prop) {
+      opts = opts || {};
+      opts.rootElem = opts.rootElem || Brx.ctx.elem;
+      var query = opts.query || "." + prop;
+      return opts;
+    }
+
     Brx.prototype = {
+      // _focus: function (prop) {
+      //   return getProxy(this).focus(prop);
+      // },
+
       _bind: function (prop, opts) {
         var xy = getProxy(this);
         var pi = xy.pis[prop];
@@ -224,11 +265,24 @@
 
         opts = opts || {};
         var rootElem = opts.rootElem || Brx.ctx.elem;
-        var elem = rootElem.querySelector("." + prop);
+        var selector = opts.selector || "[name='" + prop + "']";
+        var elem = rootElem.querySelector(selector);
+        // var elem = rootElem.querySelector("." + prop);
         if (!elem) return null;
 
         if (!isInputValue(elem)) {
           throw Error("_bind supports only inputable tags.");
+        }
+
+        // Setting attributes that are given with objectDecl.
+        var settingAttrs = opts.settingAttrs || true;
+        if (settingAttrs && xy.attrs[prop]) {
+          var attrs = xy.attrs[prop];
+          var name;
+          for (name in attrs) {
+            if (!attrs.hasOwnProperty(name)) continue;
+            elem.setAttribute(name, attrs[name]);
+          }
         }
 
         var yelem = getProxy(elem);
@@ -309,9 +363,23 @@
       _toAttr: function (prop, attrName, opts) {
         var yelems = this._prepYelems(prop, opts);
         var pi = this._pi(prop);
+        var prefix = opts.prefix || "";
+        var postfix = opts.postfix || "";
         yelems.forEach(function (yelem) {
           yelem.addCallbackForTransmit(function (value) {
-            this[attrName] = value;
+            this.setAttribute(attrName, prefix + value + postfix);
+          });
+          pi.addTransmittee(yelem);
+        });
+      },
+      _toData: function (prop, dataName, opts) {
+        var yelems = this._prepYelems(prop, opts);
+        var pi = this._pi(prop);
+        var prefix = opts.prefix || "";
+        var postfix = opts.postfix || "";
+        yelems.forEach(function (yelem) {
+          yelem.addCallbackForTransmit(function (value) {
+            this.dataset[dataName] = prefix + value + postfix;
           });
           pi.addTransmittee(yelem);
         });
@@ -399,6 +467,29 @@
       this.brx = brx;
       this.objectDecl = objectDecl;
       this.pis = {};
+
+      // Attributes are to be set to element.
+      // This property will be attached later in brx_init().
+      // Because the source value is located in same level of parent object. 
+      this.attrs = {};
+
+      // this.ctxMgr = {
+      //   stack: [],
+      //   push: function (ye, index, item) {
+      //     this.stack.push({
+      //       ye: ye,
+      //       index: index,
+      //       item: item
+      //     });
+      //   },
+      //   pop: function () {
+      //     this.stack.pop();
+      //   }
+      // };
+
+      this.focusingPi = null;
+      this.ctx = null;
+      this.focusingYe = null;
     };
 
     Brxy.prototype = {
@@ -410,7 +501,127 @@
           if (!decl.hasOwnProperty(name)) continue;
           brx[name] = object[name];
         }
-      }
+      },
+      focus: function (prop) {
+        var pi = this.pis[prop];
+        if (!pi) throw Error("The property was not found.:" + prop);
+        this.focusingPi = pi;
+        this.ctx = Brx.ctx;
+        this.focusingYe = null;
+        return this;
+      },
+      query: function (selector) {
+        this.focusingYe = new Ye(this.ctx.elem).q(selector);
+        return this;
+      },
+      queryByClass: function () {
+        if (this.focusingPi === null) throw Error("requires focus() before calling.");
+        return this.query("." + this.focusingPi.name);
+      },
+      queryByName: function () {
+        if (this.focusingPi === null) throw Error("requires focus() before calling.");
+        return this.query("[name='" + this.focusingPi.name + "']");
+      },
+      queryById: function () {
+        if (this.focusingPi === null) throw Error("requires focus() before calling.");
+        return this.query("#" + this.focusingPi.name);
+      },
+      qualify: function (preferredQuery) {
+        if (this.focusingPi === null) throw Error("requires focus() before calling.");
+        if (this.focusingYe === null) {
+          if (preferredQuery === "class") {
+            this.queryByClass();
+          } else if (preferredQuery === "name") {
+            this.queryByName();
+          } else if (preferredQuery === "id") {
+            this.queryById();
+          } else {
+            throw Error("requires query() before calling.");
+          }
+        }
+        return this;
+      },
+      makeEffect: function (opts) {
+        var effect = opts.effect;
+        if (!effect) {
+          effect = (function (prefix, suffix) {
+            return function (value) {
+              return prefix + value + suffix;
+            };
+          })(opts.prefix || "", opts.suffix || "");
+        }
+        return effect;
+      },
+      makeTransmeitee: function (self, effect, coreCallback) {
+        return {
+          handleTransmit: (function (self, effect, coreCallback) {
+            return function (src, value) {
+              if (src === self) return;
+              coreCallback.call(self, effect(value));
+            };
+          })(self, effect, coreCallback)
+        };
+      },
+      transmitteeBase: function (preferredQuery, opts, coreCallback) {
+        this.qualify(preferredQuery);
+        this.focusingPi.addTransmittee(
+          this.makeTransmeitee(
+            this.focusingYe.clone(), // to be 'this'
+            this.makeEffect(opts || {}),
+            coreCallback
+          )
+        );
+        return this;
+      },
+      attr: function (attrName, opts) {
+        return this.transmitteeBase("class", opts,
+          (function (attrName) {
+            return function (value) {
+              this.attr(attrName, value);
+            };
+          })(attrName));
+      },
+      text: function (attrName, opts) {
+        return this.transmitteeBase("class", opts,
+          function (value) {
+            this.text(value);
+          });
+      },
+      bind: function (eventName, opts) {
+        this.qualify("name");
+
+        opts = opts || {};
+
+        // input value to propInfo
+        this.focusingYe.on(
+          eventName,
+          (function (self) {
+            return function (event) {
+              self.transmit(self, e.target.value);
+            };
+          })(this.focusingPi),
+          opts.evtOpts
+        );
+
+        // propInfo value to input
+        this.focusingPi.addTransmittee(
+          this.makeTransmeitee(
+            this.focusingYe.clone(), // to be 'this'
+            this.makeEffect(opts),
+            function (value) {
+              this.value = value;
+            }
+          )
+        );
+        return this;
+      },
+      on: function (eventName, listener, opts) {
+        if (this.focusingYe === null) {
+          throw Error("requires query() before calling.");
+        }
+        this.focusingYe.on(eventName, listener, opts);
+        return this;
+      },
     };
 
     var Arx = function (arrayDecl) {
@@ -481,6 +692,13 @@
 
     Yarray.prototype.constructor = Yarray;
 
+    /**
+     * 
+     * @param {Brx} subject The Brx object that is having property of name in second argument. 
+     * @param {String} name property name.
+     * @param {*} value initial property value.
+     * @param {*} proxy The proxy object for the Brx/Arx object in third argument. This is null if third argument is a primitive value.
+     */
     var PropInfo = function PropInfo(subject, name, value, proxy) {
       this.init(subject, name, value, proxy);
     };
@@ -530,8 +748,8 @@
       addTransmittee: function (proxyElem) {
         if (-1 === this.transmittees.indexOf(proxyElem)) {
           this.transmittees.push(proxyElem);
-          proxyElem.handleTransmit(this, this.value);
         }
+        proxyElem.handleTransmit(this, this.value);
       },
       publish: function () {
         this.transmit(this, this.value);
@@ -566,6 +784,117 @@
     };
 
     PropInfo.prototype.constructor = PropInfo;
+
+    var Ye = function Ye(arg) {
+      this.elems_ = [];
+      Object.defineProperty(this, "elems", {
+        get: function () {
+          return this.elems_;
+        }
+      });
+      Object.defineProperty(this, "length", {
+        get: function () {
+          return this.elems_.length;
+        }
+      });
+      Object.defineProperty(this, "elem", {
+        get: function () {
+          return this.elems_.length > 0 ? this.elems_[0] : null;
+        }
+      });
+
+      if (isString(arg)) {
+        this.elems.push(document);
+        return this.q(arg);
+      } else if (isDocument(arg) || isElement(arg)) {
+        this.elems.push(arg);
+        return this;
+      } else if (arg === null) {
+        return this;
+      }
+
+      return this;
+    };
+
+    Ye.prototype = {
+      size: function () {
+        return this.length;
+      },
+      clone: function () {
+        var c = new Ye(null);
+        c.elems_ = [].concat(this.elems_);
+        c.lastSelector = this.lastSelector;
+        return c;
+      },
+      q: function (selector) {
+        if (!selector) {
+          return this;
+        }
+        var elems = this.elems_;
+        var newElems = [];
+        for (var i = 0; i < elems.length; ++i) {
+          newElems = newElems.concat(toArray(elems[i].querySelectorAll(selector)));
+        }
+        this.elems_ = newElems;
+        this.lastSelector = selector;
+        return this;
+      },
+      first: function () {
+        if (this.length > 0) {
+          this.elems.splice(1, this.length - 1);
+        }
+        return this;
+      },
+      each: function (callback) {
+        for (var i = 0; i < this.length; ++i) {
+          if (false === callback.call(this.elems[i], i, this.elems[i])) {
+            break;
+          }
+        }
+        return this;
+      },
+      firstMatchParent: function (predicate) {
+        var found = null;
+        this.each(function (i, elem) {
+          if (elem.parentElement != null) {
+            if (predicate(elem.parentElement)) {
+              found = new Ye(null, elem.parentElement);
+            } else {
+              found = new Ye(null, elem.parentElement).firstMatchParent(predicate);
+            }
+          }
+          // null means not found and continues each
+          return found === null;
+        });
+        return found === null ? new Ye(null, null) : found;
+      },
+      add: function (ye) {
+        this.elems = this.elems.concat(ye.elems);
+        return this;
+      },
+      text: function (value) {
+        this.each(function () {
+          if (!isUndefined(this.textContent)) {
+            this.textContent = value;
+          }
+        });
+        return this;
+      },
+      attr: function (attrName, value) {
+        this.each(function () {
+          this.setAttribute(attrName, value);
+        });
+        return this;
+      },
+      on: function (eventName, listener, opts) {
+        this.each(function () {
+          this.addEventListener(eventName, listener, opts);
+        });
+        return this;
+      },
+    };
+
+    Ye.prototype.constructor = Ye;
 
     var Yelem = function Yelem() {};
 
@@ -861,7 +1190,27 @@
       return document.querySelector(selectors);
     };
 
-    Brx.querySelectorAllMap = function (selector, callback /* [, arg1[, arg2[, ...]]] */) {
+    function goUpParent(element, predicate) {
+      if (element == null) {
+        return null;
+      }
+      if (predicate(element)) {
+        return element;
+      }
+      return goUpParent(element.parentElement, predicate);
+    }
+
+    Brx.goUpParent = goUpParent;
+
+    function goUpParentByTagName(element, tagName) {
+      return goUpParent(element.parentElement, function (elem) {
+        return elem.tagName === tagName.toUpperCase();
+      });
+    }
+
+    Brx.goUpParentByTagName = goUpParentByTagName;
+
+    Brx.querySelectorAllMap = function (selector, callback /* [, arg1[, arg2[, ...]]] */ ) {
       var r = [];
       var args = Array.prototype.slice.call(arguments);
       if (args.length >= 3) {
