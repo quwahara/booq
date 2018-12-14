@@ -248,7 +248,7 @@
         } else if (isObject(value)) {
           //
         } else if (isPrimitive(value)) {
-          privates.props_[name] = new Prop(privates.data_, name, value, elem);
+          privates.props_[name] = new Prop(this, privates.data_, name, value, elem);
         } else if (isUndefined(value)) {
           throw Error("Undefined is not allowed for value.");
         } else if (value === null) {
@@ -298,7 +298,7 @@
       }
     }
 
-    var Prop = function Prop(booqd, name, value, elem) {
+    var Prop = function Prop(booq, booqd, name, value, elem) {
 
       (function (self, name, privates) {
         Object.defineProperty(privates.booqd, name, {
@@ -319,8 +319,8 @@
         });
 
       })(this, name, setProxy(mergeRid(this), {
+        booq: booq,
         booqd: booqd,
-        and: getProxy(booqd).booq,
         name: name,
         value: value,
         typeCode: typeCode(value),
@@ -331,38 +331,49 @@
     };
 
     Prop.prototype = {
-      query: function (selector) {
+      for: function (propName) {
+        return getProxy(this).booq.for(propName);
+      },
+      link: function (selector) {
         var privates = getProxy(this);
         privates.ye = new Ye(privates.elem).q(selector);
         return this;
       },
-      queryByClass: function () {
-        return this.query("." + getProxy(this).name);
+      linkByClass: function () {
+        return this.link("." + getProxy(this).name);
       },
-      queryByName: function () {
-        return this.query("[name='" + getProxy(this).name + "']");
+      linkByName: function () {
+        return this.link("[name='" + getProxy(this).name + "']");
       },
-      queryById: function () {
-        return this.query("#" + getProxy(this).name);
+      linkById: function () {
+        return this.link("#" + getProxy(this).name);
       },
-      qualify: function (preferredQuery) {
-        if (getProxy(this).ye === null) {
-          if (preferredQuery === "class") {
-            this.queryByClass();
-          } else if (preferredQuery === "name") {
-            this.queryByName();
-          } else if (preferredQuery === "id") {
-            this.queryById();
-          } else {
-            throw Error("requires query() before calling.");
-          }
+      qualify: function (preferredLink) {
+        if (getProxy(this).ye !== null) {
+          return getProxy(this).ye;
         }
+        if (preferredLink === "class") {
+          this.linkByClass();
+          return getProxy(this).ye;
+        } else if (preferredLink === "name") {
+          this.linkByName();
+          return getProxy(this).ye;
+        } else if (preferredLink === "id") {
+          this.linkById();
+          return getProxy(this).ye;
+        } else {
+          throw Error("requires link() before calling.");
+        }
+      },
+      to: function (receiver) {
+        var privates = getProxy(this);
+        privates.receivers.push(receiver);
         return this;
       },
-      text: function () {
-        this.qualify("class");
+      toText: function () {
         var privates = getProxy(this);
-        privates.receivers.push((function (privates, ye) {
+        this.qualify("class");
+        return this.to((function (privates, ye) {
           return {
             receive: function (src, value) {
               ye.each(function () {
@@ -372,6 +383,26 @@
             }
           };
         })(privates, privates.ye.clone()));
+      },
+      withValue: function () {
+        var privates = getProxy(this);
+        var ye = this.qualify("name").clone();
+        this.to((function (privates, ye) {
+          return {
+            receive: function (src, value) {
+              ye.each(function () {
+                if (this === src) return;
+                this.value = value;
+              });
+            }
+          };
+        })(privates, ye));
+        ye.on("change", (function (self) {
+          return function (event) {
+            self.receive(self, event.target.value);
+          };
+        })(this));
+        return this;
       },
       transmit: function () {
         var privates = getProxy(this);
