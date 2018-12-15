@@ -204,71 +204,79 @@
       }
     }
 
-    var Booq = function Booq(definition, elem) {
 
-      if (!isObject(definition)) {
-        throw Error("'definition' must be an Object.");
+    var Booq = function Booq(structure, elem) {
+
+      if (!isObject(structure)) {
+        throw Error("'structure' must be an Object.");
       }
 
       elem = elem || document;
 
-      var privates = {
-        definition: definition,
-        for: null,
-        data_: new Booqd(this),
-        props_: {}
-      };
+      var privates = setProxy(mergeRid(this), {
+        structure: structure,
+        data: new Booqd(this),
+      });
 
       (function (self, privates) {
         Object.defineProperty(self, "data", {
           get: function () {
-            return privates.data_;
+            return privates.data;
           },
           set: function (value) {
-            if (privates.data_ === value) return;
+            if (privates.data === value) return;
             var tc = typeCode(value);
-            if (!isTypeCodeAssignable(privates.typeCode, tc)) {
-              throw Error("Assigned value type was unmatch.")
+            if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
+              throw Error("Assigned value type was unmatch.");
             }
-            //TODO not implemented
-            privates.data_.replaceWith(value);
-            privates.data_.publish();
+            privates.data.replaceWith(value);
           }
         });
       })
-      (this, setProxy(mergeRid(this), privates));
+      (this, privates);
 
-      for (var name in definition) {
-        if (!definition.hasOwnProperty(name)) continue;
+      for (var name in structure) {
+        if (!structure.hasOwnProperty(name)) continue;
         if (name === "_rid") continue;
 
-        var value = definition[name];
+        var value = structure[name];
         if (isArray(value)) {
           //
         } else if (isObject(value)) {
           //
+          var valueBooq = new Booq(value, elem);
+          (function (self, name, prop) {
+            Object.defineProperty(self, name, {
+              get: function () {
+                return prop;
+              }
+            });
+          })(this, name, valueBooq);
+          new ObjectProp(privates.data, name, valueBooq);
+
         } else if (isPrimitive(value)) {
-          privates.props_[name] = new Prop(this, privates.data_, name, value, elem);
-        } else if (isUndefined(value)) {
-          throw Error("Undefined is not allowed for value.");
-        } else if (value === null) {
-          throw Error("null is not allowed for value.");
+
+          (function (self, name, prop) {
+            Object.defineProperty(self, name, {
+              get: function () {
+                return prop;
+              }
+            });
+          })(this, name, new PrimitiveProp(this, privates.data, name, value, elem));
+
         } else {
-          throw Error("Not allowed value was supplied.");
+          if (value === null) {
+            throw Error("null is not allowed for value.");
+          } else if (isUndefined(value)) {
+            throw Error("Undefined is not allowed for value.");
+          } else {
+            throw Error("Not allowed value was supplied.");
+          }
         }
       }
     };
 
-    Booq.prototype = {
-      for: function (propName) {
-        var privates = getProxy(this);
-        if (!(propName in privates.props_)) {
-          throw Error("The property '" + propName + "' was not defined.");
-        }
-        privates.for = privates.props_[propName];
-        return privates.for;
-      }
-    };
+    Booq.prototype = {};
 
     Booq.prototype.constructor = Booq;
 
@@ -279,8 +287,11 @@
     };
 
     Booqd.prototype = {
-      replaceWith: function (value) {
-
+      replaceWith: function (data) {
+        for (var name in data) {
+          if (!data.hasOwnProperty(name)) continue;
+          this[name] = data[name];
+        }
       }
     };
 
@@ -298,9 +309,10 @@
       }
     }
 
-    var Prop = function Prop(booq, booqd, name, value, elem) {
+    var PrimitiveProp = function PrimitiveProp(booq, booqd, name, value, elem) {
 
       (function (self, name, privates) {
+
         Object.defineProperty(privates.booqd, name, {
           get: function () {
             return privates.value;
@@ -309,7 +321,7 @@
             if (privates.value === value) return;
             var tc = typeCode(value);
             if (!isTypeCodeAssignable(privates.typeCode, tc)) {
-              throw Error("Assigned value type was unmatch.")
+              throw Error("Assigned value type was unmatch.");
             }
             if (tc === TC_PIMITIVE) {
               privates.value = value;
@@ -330,10 +342,10 @@
       }));
     };
 
-    Prop.prototype = {
-      for: function (propName) {
-        return getProxy(this).booq.for(propName);
-      },
+    PrimitiveProp.prototype = {
+      // for: function (propName) {
+      //   return getProxy(this).booq.for(propName);
+      // },
       link: function (selector) {
         var privates = getProxy(this);
         privates.ye = new Ye(privates.elem).q(selector);
@@ -368,7 +380,7 @@
       to: function (receiver) {
         var privates = getProxy(this);
         privates.receivers.push(receiver);
-        return this;
+        return privates.booq;
       },
       toText: function () {
         var privates = getProxy(this);
@@ -421,7 +433,35 @@
       },
     };
 
-    Prop.prototype.constructor = Prop;
+    PrimitiveProp.prototype.constructor = PrimitiveProp;
+
+    var ObjectProp = function ObjectProp(dataBody, name, valueBooq) {
+
+      var valueBooqPrivates = getProxy(valueBooq);
+      var data = valueBooqPrivates.data;
+
+      (function (self, dataBody, name, data) {
+
+        Object.defineProperty(dataBody, name, {
+          get: function () {
+            return data;
+          },
+          set: function (value) {
+            if (data === value) return;
+            var tc = typeCode(value);
+            if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
+              throw Error("Assigned value type was unmatch.");
+            }
+            data.replaceWith(value);
+          }
+        });
+
+      })(this, dataBody, name, data);
+    };
+
+    ObjectProp.prototype = {};
+
+    ObjectProp.prototype.constructor = ObjectProp;
 
 
     var Brx = function Brx(objectDecl) {
