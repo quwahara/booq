@@ -291,6 +291,7 @@
           (function (self, name, prop) {
             Object.defineProperty(self, name, {
               get: function () {
+                getProxy(prop).ye = null;
                 return prop;
               }
             });
@@ -345,40 +346,6 @@
       }
     }
 
-    var PrimitiveProp = function PrimitiveProp(booq, booqd, name, value, elem) {
-
-      (function (self, name, privates) {
-
-        Object.defineProperty(privates.booqd, name, {
-          enumerable: true,
-          get: function () {
-            return privates.value;
-          },
-          set: function (value) {
-            if (privates.value === value) return;
-            var tc = typeCode(value);
-            if (!isTypeCodeAssignable(privates.typeCode, tc)) {
-              throw Error("Assigned value type was unmatch.");
-            }
-            if (tc === TC_PIMITIVE) {
-              privates.value = value;
-              self.transmit();
-            }
-          }
-        });
-
-      })(this, name, setProxy(mergeRid(this), {
-        booq: booq,
-        booqd: booqd,
-        name: name,
-        value: value,
-        typeCode: typeCode(value),
-        elem: elem,
-        ye: null,
-        receivers: []
-      }));
-    };
-
     var Linker = function Linker() {};
 
     Linker.prototype = {
@@ -413,6 +380,40 @@
           throw Error("requires link() before calling.");
         }
       },
+    };
+
+    var PrimitiveProp = function PrimitiveProp(booq, booqd, name, value, elem) {
+
+      (function (self, name, privates) {
+
+        Object.defineProperty(privates.booqd, name, {
+          enumerable: true,
+          get: function () {
+            return privates.value;
+          },
+          set: function (value) {
+            if (privates.value === value) return;
+            var tc = typeCode(value);
+            if (!isTypeCodeAssignable(privates.typeCode, tc)) {
+              throw Error("Assigned value type was unmatch.");
+            }
+            if (tc === TC_PIMITIVE) {
+              privates.value = value;
+              self.transmit();
+            }
+          }
+        });
+
+      })(this, name, setProxy(mergeRid(this), {
+        booq: booq,
+        booqd: booqd,
+        name: name,
+        value: value,
+        typeCode: typeCode(value),
+        elem: elem,
+        ye: null,
+        receivers: []
+      }));
     };
 
     PrimitiveProp.prototype = objectAssign({
@@ -1660,6 +1661,7 @@
     }
 
     Brx.goUpParentByTagName = goUpParentByTagName;
+    Booq.goUpParentByTagName = goUpParentByTagName;
 
     Brx.querySelectorAllMap = function (selector, callback /* [, arg1[, arg2[, ...]]] */ ) {
       var r = [];
