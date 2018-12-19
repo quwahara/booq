@@ -555,29 +555,44 @@
           var privates = getProxy(this);
           var privatesArray = privates.array;
           privatesArray.length = 0;
-          var ye = privates.ye;
-          var templates = privates.templates;
-          ye.each(function () {
-            removeChildAll(this);
-          });
           var structure = privates.structure;
           var primitive = isPrimitive(structure);
-          var callback = privates.callback;
-          for (var i = 0; i < array.length; ++i) {
-            var item = array[i];
+          var i, item;
+          var ye = privates.ye;
+          if (ye) {
             ye.each(function () {
-              var elem = templates[this._rid].cloneNode(true);
+              removeChildAll(this);
+            });
+            var templates = privates.templates;
+            var callback = privates.callback;
+            for (i = 0; i < array.length; ++i) {
+              item = array[i];
+              ye.each(function () {
+                var elem = templates[this._rid].cloneNode(true);
+                if (primitive) {
+                  callback.call(null, elem, item);
+                  privatesArray.push(item);
+                } else {
+                  var booq = new Booq(structure, elem);
+                  callback.call(booq, elem, i);
+                  booq.data = item;
+                  privatesArray.push(booq.data);
+                }
+                this.appendChild(elem.removeChild(elem.firstElementChild));
+              });
+            }
+
+          } else {
+            for (i = 0; i < array.length; ++i) {
+              item = array[i];
               if (primitive) {
-                callback.call(null, elem, item);
                 privatesArray.push(item);
               } else {
-                var booq = new Booq(privates.structure, elem);
-                callback.call(booq, elem, i);
+                var booq = new Booq(structure, privates.elem);
                 booq.data = item;
                 privatesArray.push(booq.data);
               }
-              this.appendChild(elem.removeChild(elem.firstElementChild));
-            });
+            }
           }
         }
       },
