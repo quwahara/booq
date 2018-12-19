@@ -308,6 +308,10 @@
       }
     };
 
+    Booq.q = function q(selector) {
+      return new Ye(selector);
+    };
+
     Booq.prototype = {};
 
     Booq.prototype.constructor = Booq;
@@ -324,7 +328,7 @@
           if (!data.hasOwnProperty(name)) continue;
           this[name] = data[name];
         }
-      }
+      },
     };
 
     Booqd.prototype.constructor = Booqd;
@@ -346,6 +350,7 @@
       (function (self, name, privates) {
 
         Object.defineProperty(privates.booqd, name, {
+          enumerable: true,
           get: function () {
             return privates.value;
           },
@@ -448,7 +453,7 @@
               self.receive(self, event.target.value);
             };
           })(this));
-          return this;
+          return privates.booq;
         },
         transmit: function () {
           var privates = getProxy(this);
@@ -478,6 +483,7 @@
       (function (self, dataBody, name, data) {
 
         Object.defineProperty(dataBody, name, {
+          enumerable: true,
           get: function () {
             return data;
           },
@@ -513,6 +519,7 @@
       (function (self, dataBody, name, array) {
 
         Object.defineProperty(dataBody, name, {
+          enumerable: true,
           get: function () {
             return array;
           },
