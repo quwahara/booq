@@ -66,6 +66,16 @@
       return (v || "").toString().trim().split(spaceRex);
     }
 
+    function goUpParent(element, predicate) {
+      if (element == null) {
+        return null;
+      }
+      if (predicate(element)) {
+        return element;
+      }
+      return goUpParent(element.parentElement, predicate);
+    }
+
     function goUpParentByTagName(element, tagName) {
       return goUpParent(element.parentElement, function (elem) {
         return elem.tagName === tagName.toUpperCase();
@@ -699,6 +709,7 @@
 
     Ye.prototype.constructor = Ye;
 
+    Booq.goUpParent = goUpParent;
     Booq.goUpParentByTagName = goUpParentByTagName;
 
     return Booq;
