@@ -151,6 +151,13 @@
       return false;
     }
 
+    function isBooq(target) {
+      var proto;
+      if (target == null) return;
+      proto = Object.getPrototypeOf(target);
+      return proto && proto.constructor === Booq;
+    }
+
     function isBooqd(target) {
       var proto;
       if (target == null) return;
@@ -254,8 +261,15 @@
         updater: funcVoid,
         update: function () {
           if (!this.updater.call(this.self)) {
-            if (this.parent) {
-              this.parent.update();
+            var self = this.self;
+            for (var name in self) {
+              if (!self.hasOwnProperty(name)) continue;
+              if (name === "_rid") continue;
+              var booqy = self[name];
+              if (isBooq(booqy)) {
+                booqy.update();
+              }
+              //TODO supports ArrayProp and PrimitiveProp
             }
           }
         }
@@ -290,6 +304,7 @@
         if (isArray(value)) {
           (function (self, name, prop) {
             Object.defineProperty(self, name, {
+              enumerable: true,
               get: function () {
                 return prop;
               }
@@ -299,6 +314,7 @@
           var valueBooq = new Booq(value, elem, this);
           (function (self, name, prop) {
             Object.defineProperty(self, name, {
+              enumerable: true,
               get: function () {
                 return prop;
               }
@@ -309,6 +325,7 @@
         } else if (isPrimitive(value)) {
           (function (self, name, prop) {
             Object.defineProperty(self, name, {
+              enumerable: true,
               get: function () {
                 getProxy(prop).ye = null;
                 return prop;
@@ -456,9 +473,7 @@
         receivers: [],
         updater: funcVoid,
         update: function () {
-          if (!this.updater()) {
-            this.booq.update();
-          }
+          //TODO
         }
       }));
     };
