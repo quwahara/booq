@@ -260,7 +260,7 @@
         parent: parent || null,
         updater: funcVoid,
         update: function () {
-          if (!this.updater.call(this.self)) {
+          if (!this.updater.call(this.self, this.data)) {
             var self = this.self;
             for (var name in self) {
               if (!self.hasOwnProperty(name)) continue;
@@ -450,7 +450,6 @@
             return privates.value;
           },
           set: function (value) {
-            if (privates.value === value) return;
             var tc = typeCode(value);
             if (!isTypeCodeAssignable(privates.typeCode, tc)) {
               throw Error("Assigned value type was unmatch.");
@@ -465,6 +464,7 @@
       })(this, name, setProxy(mergeRid(this), {
         booq: booq,
         booqd: booqd,
+        self: this,
         name: name,
         value: value,
         typeCode: typeCode(value),
@@ -473,7 +473,7 @@
         receivers: [],
         updater: funcVoid,
         update: function () {
-          //TODO
+          this.updater.call(this.self, this.value);
         }
       }));
     };
@@ -545,6 +545,78 @@
               }
             };
           })(privates.ye.clone(), callback));
+        },
+        togglesAttr: function (attrName, attrValue) {
+          var privates = getProxy(this);
+          this.qualify("class");
+          return this.to((function (ye, attrName, attrValue) {
+            return {
+              receive: function (src, value) {
+                ye.each(function () {
+                  if (this === src) return;
+                  if (value) {
+                    this.setAttribute(attrName, attrValue);
+                  } else {
+                    this.removeAttribute(attrName);
+                  }
+                });
+              }
+            };
+          })(privates.ye.clone(), attrName, attrValue));
+        },
+        antitogglesAttr: function (attrName, attrValue) {
+          var privates = getProxy(this);
+          this.qualify("class");
+          return this.to((function (ye, attrName, attrValue) {
+            return {
+              receive: function (src, value) {
+                ye.each(function () {
+                  if (this === src) return;
+                  if (!value) {
+                    this.setAttribute(attrName, attrValue);
+                  } else {
+                    this.removeAttribute(attrName);
+                  }
+                });
+              }
+            };
+          })(privates.ye.clone(), attrName, attrValue));
+        },
+        togglesClass: function (className) {
+          var privates = getProxy(this);
+          this.qualify("class");
+          return this.to((function (ye, className) {
+            return {
+              receive: function (src, value) {
+                ye.each(function () {
+                  if (this === src) return;
+                  if (value) {
+                    this.classList.add(className);
+                  } else {
+                    this.classList.remove(className);
+                  }
+                });
+              }
+            };
+          })(privates.ye.clone(), className));
+        },
+        antitogglesClass: function (className) {
+          var privates = getProxy(this);
+          this.qualify("class");
+          return this.to((function (ye, className) {
+            return {
+              receive: function (src, value) {
+                ye.each(function () {
+                  if (this === src) return;
+                  if (!value) {
+                    this.classList.add(className);
+                  } else {
+                    this.classList.remove(className);
+                  }
+                });
+              }
+            };
+          })(privates.ye.clone(), className));
         },
         withValue: function () {
           var privates = getProxy(this);
@@ -870,6 +942,26 @@
           this.addClass(className);
         } else {
           this.removeClass(className);
+        }
+        return this;
+      },
+      addAttr: function (attrName, value) {
+        this.each(function () {
+          this.setAttribute(attrName, value);
+        });
+        return this;
+      },
+      removeAttr: function (attrName) {
+        this.each(function () {
+          this.removeAttribute(attrName);
+        });
+        return this;
+      },
+      toggleAttrByFlag: function (attrName, value, flag) {
+        if (flag) {
+          this.addAttr(attrName);
+        } else {
+          this.removeAttr(attrName);
         }
         return this;
       },
