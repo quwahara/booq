@@ -2,7 +2,7 @@
 
 ## Abstract
 
-The Booq is a simple data binder to DOM elements of JavaScript.
+The Booq is a simple data binder to DOM elements.
 
 ## Examples
 
