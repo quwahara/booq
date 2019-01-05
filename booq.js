@@ -258,6 +258,7 @@
         structure: structure,
         data: new Booqd(this),
         parent: parent || null,
+        also: null,
         updater: funcVoid,
         update: function () {
           if (!this.updater.call(this.self, this.data)) {
@@ -283,6 +284,21 @@
           set: function (value) {
             self.setData(value);
           }
+        });
+      })
+      (this, privates);
+
+      (function (self, privates) {
+        Object.defineProperty(self, "also", {
+          get: function () {
+            var prop = privates.also;
+            if (prop) {
+              getProxy(prop).ye = null;
+              return prop;
+            } else {
+              return null;
+            }
+          },
         });
       })
       (this, privates);
@@ -323,15 +339,16 @@
           new ObjectProp(privates.data, name, valueBooq);
 
         } else if (isPrimitive(value)) {
-          (function (self, name, prop) {
+          (function (self, privates, name, prop) {
             Object.defineProperty(self, name, {
               enumerable: true,
               get: function () {
                 getProxy(prop).ye = null;
+                privates.also = prop;
                 return prop;
               }
             });
-          })(this, name, new PrimitiveProp(this, privates.data, name, value, elem));
+          })(this, privates, name, new PrimitiveProp(this, privates.data, name, value, elem));
 
         } else {
           if (value === null) {
