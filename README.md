@@ -1,35 +1,37 @@
-# Brx
+# Booq
 
 ## Abstract
 
-The Brx is a simple data binder to DOM elements of JavaScript.
+The Booq is a simple data binder to DOM elements of JavaScript.
 
 ## Examples
 
 ```HTML
+
+<!-- Reference to booq.js -->
+<script src="path/to/booq/booq.js"></script>
+
 <!-- Target element to be bound -->
-<input type="text" class="user_name">
+<input type="text" name="user_name">
 
 <script>
 window.onload = function() {
 
-    // 1. Declare models.
-    var models = {
+    // 1. Declare structs.
+    var structs = {
         user: {
             user_name: ""
         }
     };
 
-    // 2. Create Brx object from the models.
-    var brx = new Brx({
-        "io": models
-    });
+    // 2. Create Booq object from the structs.
+    var booq = new Booq(structs);
 
     // 3. Bind to input tag.
-    brx.io.user._bind("user_name");
+    booq.user.user_name.withValue();
 
-    // 4. Put actual data to io, then the data will show in input text. 
-    brx.io = {
+    // 4. Put actual data to data property then the data will show in input text. 
+    booq.data = {
         user: {
             user_name: "Motoko"
         }
@@ -37,20 +39,6 @@ window.onload = function() {
 };
 </script>
 ```
-
-## Opts
-
-```JavaScript
-{
-    // (Optional) `rootElem` is a receiver to call querySelectorAll method.
-    rootElem: null, 
-    // (Optional) `query` is a parameter to call querySelectorAll method.
-    // It will be "." + prop value if it is omitted.
-    // It means an element will be selected that has same name in its class attribute.
-    query: null,
-}
-```
-
 
 ## License
 
