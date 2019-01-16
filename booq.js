@@ -245,6 +245,45 @@
       }
     }
 
+    var Linker = function Linker() {};
+
+    Linker.prototype = {
+      link: function (selector) {
+        var privates = getProxy(this);
+        privates.ye = new Ye(privates.elem).q(selector);
+        return this;
+      },
+      linkByClass: function () {
+        return this.link("." + getProxy(this).name);
+      },
+      linkByName: function () {
+        return this.link("[name='" + getProxy(this).name + "']");
+      },
+      linkById: function () {
+        return this.link("#" + getProxy(this).name);
+      },
+      qualify: function (preferredLink) {
+        if (getProxy(this).ye != null) {
+          return getProxy(this).ye;
+        }
+        if (preferredLink === "class") {
+          this.linkByClass();
+          return getProxy(this).ye;
+        } else if (preferredLink === "name") {
+          this.linkByName();
+          return getProxy(this).ye;
+        } else if (preferredLink === "id") {
+          this.linkById();
+          return getProxy(this).ye;
+        } else if (preferredLink != null) {
+          this.link(preferredLink);
+          return getProxy(this).ye;
+        } else {
+          throw Error("requires link() before calling.");
+        }
+      },
+    };
+
     var Booq = function Booq(structure, elem, parent) {
 
       if (!isObject(structure)) {
@@ -258,6 +297,9 @@
         structure: structure,
         data: new Booqd(this),
         parent: parent || null,
+        elem: elem,
+        ye: null,
+        receivers: [],
         also: null,
         updater: funcVoid,
         update: function () {
@@ -366,26 +408,74 @@
       return new Ye(selector);
     };
 
-    Booq.prototype = {
-      setData: function (value) {
-        var privates = getProxy(this);
-        if (privates.data === value) return;
-        var tc = typeCode(value);
-        if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
-          throw Error("Assigned value type was unmatch.");
-        }
-        privates.data.replaceWith(value);
-        return this;
+    Booq.prototype = objectAssign({
+        setData: function (value) {
+          var privates = getProxy(this);
+          if (privates.data === value) return;
+          var tc = typeCode(value);
+          if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
+            throw Error("Assigned value type was unmatch.");
+          }
+          privates.data.replaceWith(value);
+          this.transmit();
+          return this;
+        },
+        update: function () {
+          getProxy(this).update();
+          return this;
+        },
+        setUpdate: function (updater) {
+          getProxy(this).updater = updater;
+          return this;
+        },
+        to: function (receiver) {
+          var privates = getProxy(this);
+          privates.receivers.push(receiver);
+          return this;
+        },
+        toHref: function (arg) {
+          var privates = getProxy(this);
+          this.qualify("class");
+
+          var callback;
+          if (isUndefined(arg)) {
+            callback = passthrough;
+          } else if (isString(arg)) {
+            callback = valueReplace(arg, new RegExp(":" + privates.name + "\\b", "g"));
+          } else if (isFunction(arg)) {
+            callback = arg;
+          } else {
+            throw Error("Unsupported type of argument");
+          }
+
+          return this.to((function (ye, valueCallback) {
+            return {
+              receive: function (src, value) {
+                ye.each(function () {
+                  if (this === src) return;
+                  this.href = valueCallback(value);
+                });
+              }
+            };
+          })(privates.ye.clone(), callback));
+        },
+        transmit: function () {
+          var privates = getProxy(this);
+          var receivers = privates.receivers;
+          for (var i = 0; i < receivers.length; ++i) {
+            var receiver = receivers[i];
+            if (receiver === privates) continue;
+            receiver.receive(privates, privates.value);
+          }
+        },
+        receive: function (src, value) {
+          var privates = getProxy(this);
+          if (src === privates) return;
+          privates.value = value;
+          this.transmit();
+        },
       },
-      update: function () {
-        getProxy(this).update();
-        return this;
-      },
-      setUpdate: function (updater) {
-        getProxy(this).updater = updater;
-        return this;
-      },
-    };
+      Linker.prototype);
 
     Booq.prototype.constructor = Booq;
 
@@ -417,45 +507,6 @@
         return false;
       }
     }
-
-    var Linker = function Linker() {};
-
-    Linker.prototype = {
-      link: function (selector) {
-        var privates = getProxy(this);
-        privates.ye = new Ye(privates.elem).q(selector);
-        return this;
-      },
-      linkByClass: function () {
-        return this.link("." + getProxy(this).name);
-      },
-      linkByName: function () {
-        return this.link("[name='" + getProxy(this).name + "']");
-      },
-      linkById: function () {
-        return this.link("#" + getProxy(this).name);
-      },
-      qualify: function (preferredLink) {
-        if (getProxy(this).ye != null) {
-          return getProxy(this).ye;
-        }
-        if (preferredLink === "class") {
-          this.linkByClass();
-          return getProxy(this).ye;
-        } else if (preferredLink === "name") {
-          this.linkByName();
-          return getProxy(this).ye;
-        } else if (preferredLink === "id") {
-          this.linkById();
-          return getProxy(this).ye;
-        } else if (preferredLink != null) {
-          this.link(preferredLink);
-          return getProxy(this).ye;
-        } else {
-          throw Error("requires link() before calling.");
-        }
-      },
-    };
 
     var PrimitiveProp = function PrimitiveProp(booq, booqd, name, value, elem) {
 
@@ -686,7 +737,7 @@
           var privates = getProxy(this);
           if (src === privates) return;
           privates.value = value;
-          this.transmit(src, value);
+          this.transmit();
         },
       },
       Linker.prototype);
