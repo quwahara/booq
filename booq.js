@@ -465,7 +465,7 @@
           for (var i = 0; i < receivers.length; ++i) {
             var receiver = receivers[i];
             if (receiver === privates) continue;
-            receiver.receive(privates, privates.value);
+            receiver.receive(privates, privates.data);
           }
         },
         receive: function (src, value) {
@@ -518,14 +518,20 @@
             return privates.value;
           },
           set: function (value) {
-            var tc = typeCode(value);
-            if (!isTypeCodeAssignable(privates.typeCode, tc)) {
-              throw Error("Assigned value type was unmatch.");
-            }
-            if (tc === TC_PIMITIVE) {
+            if (value == null || typeCode(value) === TC_PIMITIVE) {
               privates.value = value;
               self.transmit();
+            } else {
+              throw Error("Assigned value type was unmatch.");
             }
+            // var tc = typeCode(value);
+            // if (!isTypeCodeAssignable(privates.typeCode, tc)) {
+            //   throw Error("Assigned value type was unmatch.");
+            // }
+            // if (tc === TC_PIMITIVE) {
+            //   privates.value = value;
+            //   self.transmit();
+            // }
           }
         });
 
