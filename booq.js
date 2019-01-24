@@ -284,7 +284,7 @@
       },
     };
 
-    var Booq = function Booq(structure, elem, parent) {
+    var Booq = function Booq(structure, elem, parent, name) {
 
       if (!isObject(structure)) {
         throw Error("'structure' must be an Object.");
@@ -297,6 +297,7 @@
         structure: structure,
         data: new Booqd(this),
         parent: parent || null,
+        name: name || null,
         elem: elem,
         ye: null,
         receivers: [],
@@ -369,7 +370,7 @@
             });
           })(this, name, new ArrayProp(this, privates.data, name, value, elem));
         } else if (isObject(value)) {
-          var valueBooq = new Booq(value, elem, this);
+          var valueBooq = new Booq(value, elem, this, name);
           (function (self, name, prop) {
             Object.defineProperty(self, name, {
               enumerable: true,
@@ -409,6 +410,17 @@
     };
 
     Booq.prototype = objectAssign({
+        fullname: function () {
+          var privates = getProxy(this);
+          var fn = "";
+          if (privates.parent) {
+            fn = privates.parent.fullname();
+          }
+          if (privates.name) {
+            fn += "/" + privates.name;
+          }
+          return fn;
+        },
         setData: function (value) {
           var privates = getProxy(this);
           if (privates.data === value) return;
@@ -441,7 +453,22 @@
           if (isUndefined(arg)) {
             callback = passthrough;
           } else if (isString(arg)) {
-            callback = valueReplace(arg, new RegExp(":" + privates.name + "\\b", "g"));
+            callback = (function (template) {
+              return function (data) {
+                var href = template;
+                for (var name in data) {
+                  var v = data[name];
+                  if (v == null) {
+                    v = "";
+                  }
+                  if (!isPrimitive(v)) {
+                    continue;
+                  }
+                  href = href.replace(new RegExp(":" + name + "\\b", "g"), v);
+                }
+                return href;
+              };
+            })(arg);
           } else if (isFunction(arg)) {
             callback = arg;
           } else {
@@ -491,6 +518,7 @@
           if (!data.hasOwnProperty(name)) continue;
           this[name] = data[name];
         }
+        getProxy(this).booq.transmit();
       },
     };
 
@@ -774,7 +802,7 @@
             if (data === value) return;
             var tc = typeCode(value);
             if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
-              throw Error("Assigned value type was unmatch.");
+              throw Error("Assigned value type was unmatch. Path:" + valueBooq.fullname());
             }
             data.replaceWith(value);
           }
@@ -827,6 +855,17 @@
     };
 
     ArrayProp.prototype = objectAssign({
+        fullname: function () {
+          var privates = getProxy(this);
+          var fn = "";
+          if (privates.parent) {
+            fn = privates.parent.fullname();
+          }
+          if (privates.name) {
+            fn += "/" + privates.name;
+          }
+          return fn;
+        },
         each: function (callback) {
           this.qualify("class");
           var privates = getProxy(this);
@@ -863,7 +902,7 @@
                   callback.call(null, elem, item);
                   privatesArray.push(item);
                 } else {
-                  var booq = new Booq(structure, elem, privates.booq);
+                  var booq = new Booq(structure, elem, privates.booq, privates.name + "[]");
                   callback.call(booq, elem, i);
                   booq.data = item;
                   privatesArray.push(booq.data);
@@ -878,7 +917,7 @@
               if (primitive) {
                 privatesArray.push(item);
               } else {
-                var booq = new Booq(structure, privates.elem, privates.booq);
+                var booq = new Booq(structure, privates.elem, privates.booq, privates.name + "[]");
                 booq.data = item;
                 privatesArray.push(booq.data);
               }
