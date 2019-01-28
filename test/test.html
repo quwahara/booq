@@ -1,0 +1,59 @@
+<html>
+<head>
+<script src="../booq.js"></script>
+</head>
+<body>
+<div>
+  <table>
+    <thead>
+      <th style="width: 20px;">#</th>
+      <th style="width: 20px;">Result</th>
+      <th >Title</th>
+    </thead>
+    <tbody class="status">
+
+    </tbody>
+  </table>
+  <div class="tests">
+    <div class="t001"></div>
+  </div>
+</div>
+<script>
+
+let no = 0;
+
+function test(title, predicate) {
+  ++no;
+  const result = predicate();
+  
+  document.querySelector(".status").insertAdjacentHTML("beforeend",
+  "<td>" + no +"</td>" +
+  "<td style='background-color:" + (result ? "LightGreen" : "LightCoral") + ";'>" + (result ? "OK" : "NG") +"</td>" +
+  "<td>" + title +"</td>" +
+  "");
+}
+
+window.onload = function () {
+
+  test("toText()", function () {
+    const struct = {
+      t001: {
+        prop: "",
+      }
+    };
+    const booq = new Booq(struct);
+    booq.t001.prop.link(".t001").toText();
+    booq.data = {
+      t001: {
+        prop: "value1",
+      }
+    };
+    const t001 = document.querySelector(".t001");
+    return t001.textContent === "value1" ? "OK" : "NG";
+  });
+
+};
+
+</script>
+</body>
+</html>
