@@ -1,55 +1,96 @@
 <html>
 <head>
 <script src="../booq.js"></script>
+<style>
+  html {
+    font-size: 12px;
+    font-family: "Lucida Console", Monaco, monospace;
+  }
+  th, td, div, span {
+    font-size: 1rem;
+  }
+</style>
 </head>
 <body>
 <div>
-  <table>
-    <thead>
-      <th style="width: 20px;">#</th>
-      <th style="width: 20px;">Result</th>
-      <th >Title</th>
-    </thead>
-    <tbody class="status">
+  <h1>Tests</h1>
+  <h2>Status</h2>
+  <div>
+    <table>
+      <thead>
+        <th >#</th>
+        <th >Result</th>
+        <th >Title</th>
+        <th >Expected/Actual</th>
+      </thead>
+      <tbody class="status">
 
-    </tbody>
-  </table>
-  <div class="tests">
-    <div class="t001"></div>
+      </tbody>
+    </table>
+  </div>
+  <h2>Bench</h2>
+  <div class="bench">
+    <div class="toText_"></div>
+    <div ><a class="booq_">booq_</a></div>
   </div>
 </div>
 <script>
 
 let no = 0;
 
-function test(title, predicate) {
+function test(title, expected, actual) {
   ++no;
-  const result = predicate();
+  let actual2;
+  if (typeof actual === 'function') {
+    actual2 = actual();
+  } else {
+    actual2 = actual;
+  }
+  const result = expected === actual2;
   
   document.querySelector(".status").insertAdjacentHTML("beforeend",
-  "<td>" + no +"</td>" +
+  "<td>" + no + "</td>" +
   "<td style='background-color:" + (result ? "LightGreen" : "LightCoral") + ";'>" + (result ? "OK" : "NG") +"</td>" +
-  "<td>" + title +"</td>" +
+  "<td>" + title + "</td>" +
+  "<td>" +
+  "<div><span>E </span><span>" + expected + "</span></div>" +
+  "<div><span>A </span><span>" + actual2 + "</span></div>" +
+  "</td>" +
   "");
 }
 
 window.onload = function () {
 
-  test("toText()", function () {
-    const struct = {
-      t001: {
-        prop: "",
-      }
-    };
-    const booq = new Booq(struct);
-    booq.t001.prop.link(".t001").toText();
+  const structure = {
+    primitiveProp_: {
+      toText_: "",
+    },
+    booq_: {
+      prop1: "",
+      prop2: 0,
+    },
+  };
+  const booq = new Booq(structure);
+
+  test("PrimitiveProp.toText()", "value1", function () {
+    booq.primitiveProp_.toText_.toText();
     booq.data = {
-      t001: {
-        prop: "value1",
+      primitiveProp_: {
+        toText_: "value1",
       }
     };
-    const t001 = document.querySelector(".t001");
-    return t001.textContent === "value1" ? "OK" : "NG";
+    return document.querySelector(".toText_").textContent;
+  });
+
+  test("Booq.toHref()", "http://test.com/test.html?prop1=value1&prop2=2", function () {
+    booq.booq_.toHref("http://test.com/test.html?prop1=:prop1&prop2=:prop2");
+    booq.data = {
+      booq_: {
+        prop1: "value1",
+        prop2: 2,
+      },
+    };
+    return document.querySelector(".booq_").href;
   });
 
 };

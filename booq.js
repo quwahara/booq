@@ -552,14 +552,6 @@
             } else {
               throw Error("Assigned value type was unmatch.");
             }
-            // var tc = typeCode(value);
-            // if (!isTypeCodeAssignable(privates.typeCode, tc)) {
-            //   throw Error("Assigned value type was unmatch.");
-            // }
-            // if (tc === TC_PIMITIVE) {
-            //   privates.value = value;
-            //   self.transmit();
-            // }
           }
         });
 
