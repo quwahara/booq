@@ -190,10 +190,6 @@
       }
     }
 
-    // function clone(origin) {
-    //   return JSON.parse(JSON.stringify(origin));
-    // }
-
     /**
      * 
      * @param {*} target 
@@ -366,30 +362,19 @@
       })
       (this, privates);
 
-      for (var name in structure) {
-        if (!structure.hasOwnProperty(name)) continue;
-        if (name === "_rid") continue;
+      for (var propName in structure) {
+        if (!structure.hasOwnProperty(propName)) continue;
+        if (propName === "_rid") continue;
 
-        var value = structure[name];
+        var value = structure[propName];
         if (isArray(value)) {
-          setUpReadOnlyProperty(this, name, new ArrayProp(this, privates.data, name, value, elem));
+          setUpReadOnlyProperty(this, propName, new ArrayProp(this, privates.data, propName, value, elem));
         } else if (isObject(value)) {
-          var valueBooq = new Booq(value, elem, this, name);
-          setUpReadOnlyProperty(this, name, valueBooq);
-          new ObjectProp(privates.data, name, valueBooq);
-
+          var valueBooq = new Booq(value, elem, this, propName);
+          setUpReadOnlyProperty(this, propName, valueBooq);
+          setUpBooqdProperty(privates.data, propName, getProxy(valueBooq).data);
         } else if (isPrimitive(value)) {
-          (function (self, privates, name, prop) {
-            Object.defineProperty(self, name, {
-              enumerable: true,
-              get: function () {
-                getProxy(prop).ye = null;
-                privates.also = prop;
-                return prop;
-              }
-            });
-          })(this, privates, name, new PrimitiveProp(this, privates.data, name, value, elem));
-
+          setUpPrimitiveProperty(this, propName, new PrimitiveProp(this, privates.data, propName, value, elem));
         } else {
           if (value === null) {
             throw Error("null is not allowed for value.");
@@ -520,6 +505,44 @@
     };
 
     Booqd.prototype.constructor = Booqd;
+
+    /**
+     * 
+     * @param {Booqd} bodyBooqd 
+     * @param {String} name 
+     * @param {Booqd} data 
+     */
+    function setUpBooqdProperty(body, name, data) {
+      (function (body, name, data) {
+        Object.defineProperty(body, name, {
+          enumerable: true,
+          get: function () {
+            return data;
+          },
+          set: function (value) {
+            if (data === value) return;
+            var tc = typeCode(value);
+            if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
+              throw Error("Assigned value type was unmatch. Path:" + valueBooq.fullname());
+            }
+            data.replaceWith(value);
+          }
+        });
+      })(body, name, data);
+    }
+
+    function setUpPrimitiveProperty(booq, name, prop) {
+      (function (self, booqPrivates, name, prop, propPrivates) {
+        Object.defineProperty(self, name, {
+          enumerable: true,
+          get: function () {
+            propPrivates.ye = null;
+            booqPrivates.also = prop;
+            return prop;
+          }
+        });
+      })(booq, getProxy(booq), name, prop, getProxy(prop));
+    }
 
     function isTypeCodeAssignable(dst, src) {
       if (dst === TC_PIMITIVE) {
@@ -766,41 +789,6 @@
       Linker.prototype);
 
     PrimitiveProp.prototype.constructor = PrimitiveProp;
-
-
-    /**
-     * This represents just data.
-     * This object should be a function in a future.
-     * @param {*} dataBody 
-     * @param {*} name 
-     * @param {*} valueBooq 
-     */
-    var ObjectProp = function ObjectProp(dataBody, name, valueBooq) {
-
-      var valueBooqPrivates = getProxy(valueBooq);
-      var data = valueBooqPrivates.data;
-
-      (function (self, dataBody, name, data) {
-
-        Object.defineProperty(dataBody, name, {
-          enumerable: true,
-          get: function () {
-            return data;
-          },
-          set: function (value) {
-            if (data === value) return;
-            var tc = typeCode(value);
-            if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
-              throw Error("Assigned value type was unmatch. Path:" + valueBooq.fullname());
-            }
-            data.replaceWith(value);
-          }
-        });
-
-      })(this, dataBody, name, data);
-    };
-
-    ObjectProp.prototype.constructor = ObjectProp;
 
     var ArrayProp = function ArrayProp(booq, dataBody, name, array, elem) {
       var privates = setProxy(mergeRid(this), {
