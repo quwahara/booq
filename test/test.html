@@ -1,100 +1,161 @@
 <html>
+
 <head>
-<script src="../booq.js"></script>
-<style>
-  html {
-    font-size: 12px;
-    font-family: "Lucida Console", Monaco, monospace;
-  }
-  th, td, div, span {
-    font-size: 1rem;
-  }
-</style>
+  <script src="../booq.js"></script>
+  <style>
+    html {
+      font-size: 12px;
+      font-family: "Lucida Console", Monaco, monospace;
+    }
+
+    th,
+    td,
+    div,
+    span {
+      font-size: 1rem;
+    }
+  </style>
 </head>
+
 <body>
-<div>
-  <h1>Tests</h1>
-  <h2>Status</h2>
   <div>
-    <table>
-      <thead>
-        <th >#</th>
-        <th >Result</th>
-        <th >Title</th>
-        <th >Expected/Actual</th>
-      </thead>
-      <tbody class="status">
+    <h1>Tests</h1>
+    <h2>Status</h2>
+    <div>
+      <table>
+        <thead>
+          <th>#</th>
+          <th>Result</th>
+          <th>Title</th>
+          <th>Expected/Actual</th>
+        </thead>
+        <tbody class="status">
 
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
+    <h2>Bench</h2>
+    <div class="bench">
+      <div class="toText_"></div>
+      <div class="theArray">
+        <div class="theArrayProp"></div>
+      </div>
+      <div><a class="booq_">booq_</a></div>
+    </div>
   </div>
-  <h2>Bench</h2>
-  <div class="bench">
-    <div class="toText_"></div>
-    <div ><a class="booq_">booq_</a></div>
-  </div>
-</div>
-<script>
+  <script>
+    let no = 0;
 
-let no = 0;
-
-function test(title, expected, actual) {
-  ++no;
-  let actual2;
-  if (typeof actual === 'function') {
-    actual2 = actual();
-  } else {
-    actual2 = actual;
-  }
-  const result = expected === actual2;
-  
-  document.querySelector(".status").insertAdjacentHTML("beforeend",
-  "<td>" + no + "</td>" +
-  "<td style='background-color:" + (result ? "LightGreen" : "LightCoral") + ";'>" + (result ? "OK" : "NG") +"</td>" +
-  "<td>" + title + "</td>" +
-  "<td>" +
-  "<div><span>E </span><span>" + expected + "</span></div>" +
-  "<div><span>A </span><span>" + actual2 + "</span></div>" +
-  "</td>" +
-  "");
-}
-
-window.onload = function () {
-
-  const structure = {
-    primitiveProp_: {
-      toText_: "",
-    },
-    booq_: {
-      prop1: "",
-      prop2: 0,
-    },
-  };
-  const booq = new Booq(structure);
-
-  test("PrimitiveProp.toText()", "value1", function () {
-    booq.primitiveProp_.toText_.toText();
-    booq.data = {
-      primitiveProp_: {
-        toText_: "value1",
+    // Reference: https://qiita.com/saekis/items/c2b41cd8940923863791 
+    function escape_html(string) {
+      if (typeof string !== 'string') {
+        return string;
       }
+      return string.replace(/[&'`"<>]/g, function (match) {
+        return {
+          '&': '&amp;',
+          "'": '&#x27;',
+          '`': '&#x60;',
+          '"': '&quot;',
+          '<': '&lt;',
+          '>': '&gt;',
+        } [match]
+      });
+    }
+
+    function unionOuterHTML(elements) {
+      let s = "";
+      for (let i = 0; i < elements.length; ++i) {
+        s += elements.item(i).outerHTML;
+      }
+      return s;
+    }
+
+    function test(title, expected, actual) {
+      ++no;
+      let actual2;
+      if (typeof actual === 'function') {
+        actual2 = actual();
+      } else {
+        actual2 = actual;
+      }
+      const result = expected === actual2;
+
+      document.querySelector(".status").insertAdjacentHTML("beforeend",
+        "<td>" + no + "</td>" +
+        "<td style='background-color:" + (result ? "LightGreen" : "LightCoral") + ";'>" + (result ? "OK" : "NG") +
+        "</td>" +
+        "<td>" + title + "</td>" +
+        "<td>" +
+        "<div><span>E </span><span>" + escape_html(expected) + "</span></div>" +
+        "<div><span>A </span><span>" + escape_html(actual2) + "</span></div>" +
+        "</td>" +
+        "");
+    }
+
+    window.onload = function () {
+
+      const structure = {
+        primitiveProp_: {
+          toText_: "",
+        },
+        arrayProp_: {
+          theArray: [{
+            theArrayProp: "",
+          }, ]
+        },
+        booq_: {
+          prop1: "",
+          prop2: 0,
+        },
+      };
+      const booq = new Booq(structure);
+
+      test("PrimitiveProp.toText()", "value1", function () {
+        booq.primitiveProp_.toText_.toText();
+        booq.data = {
+          primitiveProp_: {
+            toText_: "value1",
+          }
+        };
+        return document.querySelector(".toText_").textContent;
+      });
+
+      test("arrayProp_.each() for Object item",
+        '<div class="theArrayProp">theArrayProp1</div>' +
+        '<div class="theArrayProp">theArrayProp2</div>' +
+        '',
+        function () {
+          booq.arrayProp_.theArray.each(function (element) {
+            this.theArrayProp.toText();
+          });
+          booq.data = {
+            arrayProp_: {
+              theArray: [{
+                  theArrayProp: "theArrayProp1",
+                },
+                {
+                  theArrayProp: "theArrayProp2",
+                },
+              ]
+            },
+          };
+          return unionOuterHTML(document.querySelectorAll(".theArrayProp"));
+        });
+
+      test("Booq.toHref()", "http://test.com/test.html?prop1=value1&prop2=2", function () {
+        booq.booq_.toHref("http://test.com/test.html?prop1=:prop1&prop2=:prop2");
+        booq.data = {
+          booq_: {
+            prop1: "value1",
+            prop2: 2,
+          },
+        };
+        return document.querySelector(".booq_").href;
+      });
+
     };
-    return document.querySelector(".toText_").textContent;
-  });
-
-  test("Booq.toHref()", "http://test.com/test.html?prop1=value1&prop2=2", function () {
-    booq.booq_.toHref("http://test.com/test.html?prop1=:prop1&prop2=:prop2");
-    booq.data = {
-      booq_: {
-        prop1: "value1",
-        prop2: 2,
-      },
-    };
-    return document.querySelector(".booq_").href;
-  });
-
-};
-
-</script>
+  </script>
 </body>
+
 </html>

@@ -46,41 +46,52 @@
       return ar;
     }
 
-    function forEach(list, callback, thisArg) {
-      var len = list.length;
-      for (var i = 0; i < len; ++i) {
-        callback.call(thisArg, list.item(i), i);
-      }
+    function setUpReadOnlyProperty(body, name, value) {
+      (function (value) {
+        Object.defineProperty(body, name, {
+          enumerable: true,
+          get: function () {
+            return value;
+          }
+        });
+      })(value);
     }
 
-    function map(arrayOrList, callback, thisArg) {
-      var r = [];
-      var i = 0;
-      var len = arrayOrList.length;
-      if (isArray(arrayOrList)) {
-        for (; i < len; ++i) {
-          r.push(callback.call(thisArg, arrayOrList[i], i));
-        }
-      } else {
-        for (; i < len; ++i) {
-          r.push(callback.call(thisArg, arrayOrList.item(i), i));
-        }
-      }
-      return r;
-    }
+    // function forEach(list, callback, thisArg) {
+    //   var len = list.length;
+    //   for (var i = 0; i < len; ++i) {
+    //     callback.call(thisArg, list.item(i), i);
+    //   }
+    // }
 
-    function arrayContains(ar, item) {
-      for (var i = 0; i < ar.length; ++i) {
-        if (ar[i] === item) return true;
-      }
-      return false;
-    }
+    // function map(arrayOrList, callback, thisArg) {
+    //   var r = [];
+    //   var i = 0;
+    //   var len = arrayOrList.length;
+    //   if (isArray(arrayOrList)) {
+    //     for (; i < len; ++i) {
+    //       r.push(callback.call(thisArg, arrayOrList[i], i));
+    //     }
+    //   } else {
+    //     for (; i < len; ++i) {
+    //       r.push(callback.call(thisArg, arrayOrList.item(i), i));
+    //     }
+    //   }
+    //   return r;
+    // }
 
-    var spaceRex = /\s+/;
+    // function arrayContains(ar, item) {
+    //   for (var i = 0; i < ar.length; ++i) {
+    //     if (ar[i] === item) return true;
+    //   }
+    //   return false;
+    // }
 
-    function splitBySpace(v) {
-      return (v || "").toString().trim().split(spaceRex);
-    }
+    // var spaceRex = /\s+/;
+
+    // function splitBySpace(v) {
+    //   return (v || "").toString().trim().split(spaceRex);
+    // }
 
     function goUpParent(element, predicate) {
       if (element == null) {
@@ -139,17 +150,17 @@
       return t === "string" || t === "number" || t === "boolean";
     }
 
-    function isInputValue(elem) {
-      if (!elem) return false;
-      var tn = elem.tagName;
-      if (tn === "INPUT" && elem.type) {
-        var t = elem.type;
-        return t === "text" || t === "password";
-      } else if (tn === "SELECT" || tn === "TEXTAREA") {
-        return true;
-      }
-      return false;
-    }
+    // function isInputValue(elem) {
+    //   if (!elem) return false;
+    //   var tn = elem.tagName;
+    //   if (tn === "INPUT" && elem.type) {
+    //     var t = elem.type;
+    //     return t === "text" || t === "password";
+    //   } else if (tn === "SELECT" || tn === "TEXTAREA") {
+    //     return true;
+    //   }
+    //   return false;
+    // }
 
     function isBooq(target) {
       var proto;
@@ -179,9 +190,9 @@
       }
     }
 
-    function clone(origin) {
-      return JSON.parse(JSON.stringify(origin));
-    }
+    // function clone(origin) {
+    //   return JSON.parse(JSON.stringify(origin));
+    // }
 
     /**
      * 
@@ -371,14 +382,15 @@
           })(this, name, new ArrayProp(this, privates.data, name, value, elem));
         } else if (isObject(value)) {
           var valueBooq = new Booq(value, elem, this, name);
-          (function (self, name, prop) {
-            Object.defineProperty(self, name, {
-              enumerable: true,
-              get: function () {
-                return prop;
-              }
-            });
-          })(this, name, valueBooq);
+          // (function (self, name, prop) {
+          //   Object.defineProperty(self, name, {
+          //     enumerable: true,
+          //     get: function () {
+          //       return prop;
+          //     }
+          //   });
+          // })(this, name, valueBooq);
+          setUpReadOnlyProperty(this, name, valueBooq);
           new ObjectProp(privates.data, name, valueBooq);
 
         } else if (isPrimitive(value)) {
@@ -487,7 +499,7 @@
           })(privates.ye.clone(), callback));
         },
         transmit: function () {
-          var privates = getProxy(this);
+          let privates = getProxy(this);
           var receivers = privates.receivers;
           for (var i = 0; i < receivers.length; ++i) {
             var receiver = receivers[i];
