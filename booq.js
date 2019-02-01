@@ -372,24 +372,9 @@
 
         var value = structure[name];
         if (isArray(value)) {
-          (function (self, name, prop) {
-            Object.defineProperty(self, name, {
-              enumerable: true,
-              get: function () {
-                return prop;
-              }
-            });
-          })(this, name, new ArrayProp(this, privates.data, name, value, elem));
+          setUpReadOnlyProperty(this, name, new ArrayProp(this, privates.data, name, value, elem));
         } else if (isObject(value)) {
           var valueBooq = new Booq(value, elem, this, name);
-          // (function (self, name, prop) {
-          //   Object.defineProperty(self, name, {
-          //     enumerable: true,
-          //     get: function () {
-          //       return prop;
-          //     }
-          //   });
-          // })(this, name, valueBooq);
           setUpReadOnlyProperty(this, name, valueBooq);
           new ObjectProp(privates.data, name, valueBooq);
 
