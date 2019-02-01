@@ -335,10 +335,6 @@
             self.setData(value);
           }
         });
-      })
-      (this, privates);
-
-      (function (self, privates) {
         Object.defineProperty(self, "also", {
           get: function () {
             var prop = privates.also;
@@ -350,10 +346,6 @@
             }
           },
         });
-      })
-      (this, privates);
-
-      (function (self, privates) {
         Object.defineProperty(self, "end", {
           get: function () {
             return privates.parent;
