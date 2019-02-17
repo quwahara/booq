@@ -176,6 +176,13 @@
       return proto && proto.constructor === Booqd;
     }
 
+    function isPrimitiveProp(target) {
+      var proto;
+      if (target == null) return;
+      proto = Object.getPrototypeOf(target);
+      return proto && proto.constructor === PrimitiveProp;
+    }
+
     function typeCode(v) {
       if (isBooqd(v)) {
         return TC_BOOQD;
@@ -288,6 +295,16 @@
         } else {
           throw Error("requires link() before calling.");
         }
+      },
+      /**
+       * Copy status from src.
+       * This actually clones and copies ye from src.
+       * 
+       * @param {(Link|Booq|PrimitiveProp)} src 
+       */
+      copyLink: function (src) {
+        getProxy(this).ye = getProxy(src).ye.clone();
+        return this;
       },
     };
 
@@ -406,6 +423,13 @@
           this.transmit();
           return this;
         },
+        /**
+         * Set structure to data.
+         * The structure is a parameter of constructor.
+         */
+        setStructureAsData: function () {
+          return this.setData(getProxy(this).structure);
+        },
         update: function () {
           getProxy(this).update();
           return this;
@@ -459,6 +483,25 @@
               }
             };
           })(privates.ye.clone(), callback));
+        },
+        /**
+         * Write-to-binding that is all properties to attributes.
+         */
+        toAttrs: function () {
+          var privates = getProxy(this);
+          this.qualify("class");
+          
+          for (var name in this) {
+            if (!this.hasOwnProperty(name)) continue;
+            var prop = this[name];
+            if (isPrimitiveProp(prop)) {
+              prop.copyLink(this).toAttr(name);
+            } else {
+              throw Error("toAttrs() does not support property of Object.");
+            }
+          }
+
+          return privates.parent;
         },
         transmit: function () {
           let privates = getProxy(this);
