@@ -636,6 +636,17 @@
           getProxy(this).updater = updater;
           return this;
         },
+        onReceive: function (fun) {
+          var privates = getProxy(this);
+          privates.receivers.push((function (fun, privates) {
+            return {
+              receive: function (src, value) {
+                fun.call(privates.booq, value, privates.booqd);
+              }
+            };
+          })(fun, privates));
+          return privates.booq;
+        },
         to: function (receiver) {
           var privates = getProxy(this);
           privates.receivers.push(receiver);
