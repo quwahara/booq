@@ -121,7 +121,7 @@
     }
 
     function isString(v) {
-      return (typeof v) === "string";
+      return typeof v === "string";
     }
 
     function isObject(v) {
@@ -490,7 +490,7 @@
         toAttrs: function () {
           var privates = getProxy(this);
           this.qualify("class");
-          
+
           for (var name in this) {
             if (!this.hasOwnProperty(name)) continue;
             var prop = this[name];
