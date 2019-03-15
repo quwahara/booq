@@ -842,9 +842,10 @@
         name: name,
         elem: elem,
         array: [],
-        callback: null,
+        receivers: [],
         structure: array[0],
         templates: {},
+        eachSets: {},
         ye: null,
       });
 
@@ -892,58 +893,66 @@
         each: function (callback) {
           this.qualify("class");
           var privates = getProxy(this);
-          privates.callback = callback;
           privates.ye.each(function () {
-            if (!(mergeRid(this) in privates.templates)) {
+            var eachSet;
+            if (mergeRid(this)._rid in privates.eachSets) {
+              eachSet = privates.eachSets[this._rid];
+              eachSet.callbacks.push(callback);
+            } else {
               if (this.firstElementChild) {
-                privates.templates[this._rid] = this.cloneNode(true);
+                eachSet = {
+                  targetElement: this,
+                  // Template is parent node because of to query subnodes.
+                  template: this.cloneNode(true),
+                  callbacks: [callback]
+                };
+                removeChildAll(this);
+                privates.eachSets[this._rid] = eachSet;
+
+                // Receiver is created by each one element
+                privates.receivers.push((function (privates, eachSet) {
+                  return {
+                    receive: function (src, item) {
+                      var elem = eachSet.template.cloneNode(true);
+                      var booq = null;
+                      if (!isPrimitive(privates.structure)) {
+                        booq = new Booq(privates.structure, elem, privates.booq, privates.name + "[]");
+                      }
+                      for (var i = 0; i < eachSet.callbacks.length; ++i) {
+                        var callback = eachSet.callbacks[i];
+                        if (booq) {
+                          callback.call(booq, elem, i);
+                        } else {
+                          callback.call(null, elem, item);
+                        }
+                      }
+                      if (booq) {
+                        booq.data = item;
+                        privates.array.push(booq.data);
+                      } else {
+                        privates.array.push(item);
+                      }
+                      eachSet.targetElement.appendChild(elem.removeChild(elem.firstElementChild));
+                    }
+                  };
+                })(privates, eachSet));
               }
-              removeChildAll(this);
             }
           });
           return privates.booq;
         },
+        callFunctionWithThis: function (fun) {
+          fun(this);
+          return getProxy(this).booq;
+        },
         replaceWith: function (array) {
           var privates = getProxy(this);
-          var privatesArray = privates.array;
-          privatesArray.length = 0;
-          var structure = privates.structure;
-          var primitive = isPrimitive(structure);
-          var i, item;
-          var ye = privates.ye;
-          if (ye) {
-            ye.each(function () {
-              removeChildAll(this);
-            });
-            var templates = privates.templates;
-            var callback = privates.callback;
-            for (i = 0; i < array.length; ++i) {
-              item = array[i];
-              ye.each(function () {
-                var elem = templates[this._rid].cloneNode(true);
-                if (primitive) {
-                  callback.call(null, elem, item);
-                  privatesArray.push(item);
-                } else {
-                  var booq = new Booq(structure, elem, privates.booq, privates.name + "[]");
-                  callback.call(booq, elem, i);
-                  booq.data = item;
-                  privatesArray.push(booq.data);
-                }
-                this.appendChild(elem.removeChild(elem.firstElementChild));
-              });
-            }
-
-          } else {
-            for (i = 0; i < array.length; ++i) {
-              item = array[i];
-              if (primitive) {
-                privatesArray.push(item);
-              } else {
-                var booq = new Booq(structure, privates.elem, privates.booq, privates.name + "[]");
-                booq.data = item;
-                privatesArray.push(booq.data);
-              }
+          privates.array.length = 0;
+          var receivers = privates.receivers;
+          for (var i = 0; i < array.length; ++i) {
+            var item = array[i];
+            for (var ii = 0; ii < receivers.length; ++ii) {
+              receivers[ii].receive(this, item);
             }
           }
         }
