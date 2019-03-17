@@ -438,7 +438,7 @@
           getProxy(this).updater = updater;
           return this;
         },
-        to2: function (srcValueCallback) {
+        to: function (srcValueCallback) {
           var privates = getProxy(this);
           privates.receivers.push((function (ye, srcValueCallback) {
             return {
@@ -450,11 +450,6 @@
               }
             };
           })(privates.ye.clone(), srcValueCallback));
-          return this;
-        },
-        to: function (receiver) {
-          var privates = getProxy(this);
-          privates.receivers.push(receiver);
           return this;
         },
         toHref: function (arg) {
@@ -487,16 +482,11 @@
             throw Error("Unsupported type of argument");
           }
 
-          return this.to((function (ye, valueCallback) {
-            return {
-              receive: function (src, value) {
-                ye.each(function () {
-                  if (this === src) return;
-                  this.href = valueCallback(value);
-                });
-              }
+          return this.to((function (valueCallback) {
+            return function (src, value) {
+              this.href = valueCallback(value);
             };
-          })(privates.ye.clone(), callback));
+          })(callback));
         },
         /**
          * Write-to-binding that is all properties to attributes.
