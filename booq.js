@@ -438,6 +438,20 @@
           getProxy(this).updater = updater;
           return this;
         },
+        to2: function (srcValueCallback) {
+          var privates = getProxy(this);
+          privates.receivers.push((function (ye, srcValueCallback) {
+            return {
+              receive: function (src, value) {
+                ye.each(function () {
+                  if (this === src) return;
+                  srcValueCallback.call(this, src, value);
+                });
+              }
+            };
+          })(privates.ye.clone(), srcValueCallback));
+          return this;
+        },
         to: function (receiver) {
           var privates = getProxy(this);
           privates.receivers.push(receiver);
@@ -650,6 +664,7 @@
         to: function (receiver) {
           var privates = getProxy(this);
           privates.receivers.push(receiver);
+          privates.ye = null;
           return privates.booq;
         },
         toText: function () {
@@ -1021,6 +1036,12 @@
         }
         return this;
       },
+      /**
+       * Call callback function with seleceted element.
+       * 
+       * @param {function} callback a callback will be called with each elment by iterating.
+       *                            "this" becomes each elemnt in the callback function.
+       */
       each: function (callback) {
         for (var i = 0; i < this.length; ++i) {
           if (false === callback.call(this.elems[i], i, this.elems[i])) {
