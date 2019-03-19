@@ -952,6 +952,11 @@
         },
         replaceWith: function (array) {
           var privates = getProxy(this);
+          if (privates.ye) {
+            privates.ye.each(function () {
+              removeChildAll(this);
+            });
+          }
           privates.array.length = 0;
           var receivers = privates.receivers;
           for (var i = 0; i < array.length; ++i) {
