@@ -329,6 +329,20 @@
         }
         return this.linkByFullPath(preferred);
       },
+      linkExtra: function (extra) {
+        return this.linkPreferred3("class", extra);
+      },
+      linkPreferred3: function (prferred, extra) {
+        getProxy(this).ye = new Ye(this.fullPathSelector(prferred) + (isString(extra) ? extra : ""));
+        return this;
+      },
+      qualify3: function (preferred) {
+        var proxy = getProxy(this);
+        if (proxy.ye != null) {
+          return this;
+        }
+        return this.linkPreferred3(preferred);
+      },
       link: function (selector) {
         var privates = getProxy(this);
         privates.ye = new Ye(privates.elem).q(selector);
@@ -391,6 +405,7 @@
         index: isInt(index) ? index : null,
         name: isString(name) ? name : null,
         elem: elem,
+        chains: this,
         ye: null,
         receivers: [],
         also: null,
@@ -582,7 +597,7 @@
           return privates.parent;
         },
         transmit: function () {
-          let privates = getProxy(this);
+          var privates = getProxy(this);
           var receivers = privates.receivers;
           for (var i = 0; i < receivers.length; ++i) {
             var receiver = receivers[i];
@@ -696,6 +711,8 @@
         value: value,
         typeCode: typeCode(value),
         elem: elem,
+        chains: parent,
+        conditional: null,
         ye: null,
         receivers: [],
         updater: funcVoid,
@@ -736,6 +753,19 @@
           })(fun, privates));
           return privates.parent;
         },
+        eq: function (condition) {
+          var privates = getProxy(this);
+          this.qualify3("class");
+          var predicate = (function (condition) {
+            return function (value) {
+              return condition === value;
+            };
+          })(condition);
+          privates.conditional = new Conditional(privates.parent, privates.ye.clone(), predicate);
+          privates.receivers.push(privates.conditional);
+          privates.ye = null;
+          return privates.conditional;
+        },
         to: function (receiver) {
           var privates = getProxy(this);
           privates.receivers.push(receiver);
@@ -743,7 +773,7 @@
           return privates.parent;
         },
         toText: function () {
-          this.qualify2("class");
+          this.qualify3("class");
           var privates = getProxy(this);
           return this.to((function (privates, ye) {
             return {
@@ -772,7 +802,7 @@
         },
         toHref: function (arg) {
           var privates = getProxy(this);
-          this.qualify("class");
+          this.qualify3("class");
 
           var callback;
           if (isUndefined(arg)) {
@@ -1078,6 +1108,37 @@
       Linker.prototype);
 
     ArrayProp.prototype.constructor = ArrayProp;
+
+    var Conditional = function Conditional(chains, ye, predicate) {
+      this.chains = chains;
+      this.ye = ye;
+      this.predicate = predicate;
+      this.then_ = funcVoid;
+    };
+
+    Conditional.prototype = {
+      receive: function (src, value) {
+        this.then_(value);
+      },
+      thenToggle: function (className) {
+        this.then_ = (function (self, className) {
+          return function (value) {
+            self.ye.toggleClassByFlag(className, self.predicate(value));
+          };
+        })(this, className);
+        return this.chains;
+      },
+      thenUntitoggle: function (className) {
+        this.then_ = (function (self, className) {
+          return function (value) {
+            self.ye.toggleClassByFlag(className, !self.predicate(value));
+          };
+        })(this, className);
+        return this.chains;
+      },
+    };
+
+    Conditional.prototype.constructor = Conditional;
 
     var Ye = function Ye(arg) {
       this.elems_ = [];
