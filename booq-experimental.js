@@ -377,6 +377,10 @@
           throw Error("requires link() before calling.");
         }
       },
+      callFunctionWithThis: function (fun) {
+        fun(this);
+        return getProxy(this).chains;
+      },
       /**
        * Copy status from src.
        * This actually clones and copies ye from src.
@@ -961,6 +965,7 @@
         parent: parent,
         name: name,
         elem: elem,
+        chains: parent,
         array: [],
         receivers: [],
         structure: array[0],
@@ -1011,7 +1016,7 @@
           return fn;
         },
         each: function (callback) {
-          this.qualify("class");
+          this.qualify3("class");
           var privates = getProxy(this);
           privates.ye.each((function (self, privates) {
             // closure for ye.each() having self and privates
@@ -1053,12 +1058,13 @@
                   receive: function (src, item, index) {
 
                     var elem = eachSet.template.cloneNode(true);
-                    eachSet.targetElement.appendChild(elem.removeChild(elem.firstElementChild));
+                    var childElem = elem.removeChild(elem.firstElementChild);
+                    eachSet.targetElement.appendChild(childElem);
 
                     var booq = null;
                     if (!isPrimitive(privates.structure)) {
                       // name is null because it is skipped in Link::fullPathSelector
-                      booq = new Booq(privates.structure, elem, self, index, /* name */ null);
+                      booq = new Booq(privates.structure, eachSet.targetElement, self, index, /* name */ null);
                     }
                     if (booq) {
                       privates.array.push(booq.data);
@@ -1069,9 +1075,9 @@
                     for (var i = 0; i < eachSet.callbacks.length; ++i) {
                       var callback = eachSet.callbacks[i];
                       if (booq) {
-                        callback.call(booq, elem, i);
+                        callback.call(booq, eachSet.targetElement, i);
                       } else {
-                        callback.call(null, elem, item);
+                        callback.call(null, eachSet.targetElement, i);
                       }
                     }
                     if (booq) {
@@ -1082,11 +1088,7 @@
               })(privates, eachSet));
             };
           })(this, privates));
-          return privates.parent;
-        },
-        callFunctionWithThis: function (fun) {
-          fun(this);
-          return getProxy(this).booq;
+          return privates.chains;
         },
         replaceWith: function (array) {
           var privates = getProxy(this);
