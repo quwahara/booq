@@ -322,13 +322,6 @@
         getProxy(this).ye = new Ye(this.fullPathSelector(preferred));
         return this;
       },
-      qualify2: function (preferred) {
-        var proxy = getProxy(this);
-        if (proxy.ye != null) {
-          return this;
-        }
-        return this.linkByFullPath(preferred);
-      },
       linkExtra: function (extra) {
         return this.linkPreferred3("class", extra);
       },
@@ -357,29 +350,27 @@
       linkById: function () {
         return this.link("#" + getProxy(this).name);
       },
-      qualify: function (preferredLink) {
-        if (getProxy(this).ye != null) {
-          return getProxy(this).ye;
-        }
-        if (preferredLink === "class") {
-          this.linkByClass();
-          return getProxy(this).ye;
-        } else if (preferredLink === "name") {
-          this.linkByName();
-          return getProxy(this).ye;
-        } else if (preferredLink === "id") {
-          this.linkById();
-          return getProxy(this).ye;
-        } else if (preferredLink != null) {
-          this.link(preferredLink);
-          return getProxy(this).ye;
-        } else {
-          throw Error("requires link() before calling.");
-        }
+      selector: function (preferred) {
+        this.qualify3(preferred);
+        var privates = getProxy(this);
+        var ye = privates.ye;
+        return ye ? ye.lastSelector : "";
       },
       callFunctionWithThis: function (fun) {
         fun(this);
         return getProxy(this).chains;
+      },
+      on: function (eventName, listener, opts) {
+        var privates = getProxy(this);
+        this.qualify3("name");
+        var ye = privates.ye;
+        privates.ye = null;
+        ye.on(eventName, (function (self, listener) {
+          return function (event) {
+            listener.call(self, event);
+          };
+        })(this, listener), opts);
+        return privates.chains;
       },
       /**
        * Copy status from src.
@@ -547,7 +538,7 @@
         },
         toHref: function (arg) {
           var privates = getProxy(this);
-          this.qualify("class");
+          this.qualify3("class");
 
           var callback;
           if (isUndefined(arg)) {
@@ -586,7 +577,7 @@
          */
         toAttrs: function () {
           var privates = getProxy(this);
-          this.qualify("class");
+          this.qualify3("class");
 
           for (var name in this) {
             if (!this.hasOwnProperty(name)) continue;
@@ -774,7 +765,7 @@
           var privates = getProxy(this);
           privates.receivers.push(receiver);
           privates.ye = null;
-          return privates.parent;
+          return privates.chains;
         },
         toText: function () {
           this.qualify3("class");
@@ -792,7 +783,7 @@
         },
         toAttr: function (attrName, valueCallback) {
           var privates = getProxy(this);
-          this.qualify("class");
+          this.qualify3("class");
           return this.to((function (ye, attrName, valueCallback) {
             return {
               receive: function (src, value) {
@@ -832,7 +823,7 @@
         },
         togglesAttr: function (attrName, attrValue) {
           var privates = getProxy(this);
-          this.qualify("class");
+          this.qualify3("class");
           return this.to((function (ye, attrName, attrValue) {
             return {
               receive: function (src, value) {
@@ -850,7 +841,7 @@
         },
         antitogglesAttr: function (attrName, attrValue) {
           var privates = getProxy(this);
-          this.qualify("class");
+          this.qualify3("class");
           return this.to((function (ye, attrName, attrValue) {
             return {
               receive: function (src, value) {
@@ -868,7 +859,7 @@
         },
         togglesClass: function (className) {
           var privates = getProxy(this);
-          this.qualify("class");
+          this.qualify3("class");
           return this.to((function (ye, className) {
             return {
               receive: function (src, value) {
@@ -886,7 +877,7 @@
         },
         antitogglesClass: function (className) {
           var privates = getProxy(this);
-          this.qualify("class");
+          this.qualify3("class");
           return this.to((function (ye, className) {
             return {
               receive: function (src, value) {
@@ -904,7 +895,9 @@
         },
         withValue: function () {
           var privates = getProxy(this);
-          var ye = this.qualify("name").clone();
+          this.qualify3("name");
+          var ye = privates.ye;
+          privates.ye = null;
           this.to((function (privates, ye) {
             return {
               receive: function (src, value) {
@@ -928,17 +921,7 @@
           var selector = "." + name + ", " +
             "[name='" + name + "'], " +
             "#" + name;
-          this.qualify(selector).addClass(className);
-        },
-        on: function (eventName, listener, opts) {
-          var privates = getProxy(this);
-          var ye = this.qualify("name").clone();
-          ye.on(eventName, (function (self, listener) {
-            return function (event) {
-              listener.call(self, event);
-            };
-          })(this, listener), opts);
-          return privates.parent;
+          this.qualify3(selector).addClass(className);
         },
         transmit: function () {
           var privates = getProxy(this);
