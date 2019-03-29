@@ -116,6 +116,14 @@
       return parent;
     }
 
+    function isInt(v) {
+      return v === parseInt(v, 10);
+    }
+
+    function isNullOrUndefined(v) {
+      return isUndefined(v) || v === null;
+    }
+
     function isUndefined(v) {
       return typeof v === "undefined";
     }
@@ -164,21 +172,28 @@
 
     function isBooq(target) {
       var proto;
-      if (target == null) return;
+      if (target == null) return false;
       proto = Object.getPrototypeOf(target);
       return proto && proto.constructor === Booq;
     }
 
     function isBooqd(target) {
       var proto;
-      if (target == null) return;
+      if (target == null) return false;
       proto = Object.getPrototypeOf(target);
       return proto && proto.constructor === Booqd;
     }
 
+    function isArrayProp(target) {
+      var proto;
+      if (target == null) return false;
+      proto = Object.getPrototypeOf(target);
+      return proto && proto.constructor === ArrayProp;
+    }
+
     function isPrimitiveProp(target) {
       var proto;
-      if (target == null) return;
+      if (target == null) return false;
       proto = Object.getPrototypeOf(target);
       return proto && proto.constructor === PrimitiveProp;
     }
@@ -210,8 +225,8 @@
 
       var to = Object(target);
 
-      for (var index = 1; index < arguments.length; index++) {
-        var nextSource = arguments[index];
+      for (var i = 1; i < arguments.length; ++i) {
+        var nextSource = arguments[i];
 
         if (nextSource != null) { // Skip over if undefined or null
           for (var nextKey in nextSource) {
@@ -262,39 +277,96 @@
     var Linker = function Linker() {};
 
     Linker.prototype = {
-      link: function (selector) {
+
+      preferredSelector: function (preferred) {
         var privates = getProxy(this);
-        privates.ye = new Ye(privates.elem).q(selector);
+
+        // This was item in an array
+        if (isInt(privates.index)) {
+          return ">*:nth-child(" + (privates.index + 1) + ")";
+        }
+
+        if (!privates.name) {
+          return "";
+        }
+
+        var name = privates.name;
+        var nameSelector;
+        if (preferred === "id") {
+          nameSelector = "#" + name;
+        } else if (preferred === "name") {
+          nameSelector = "[name='" + name + "']";
+        } else {
+          nameSelector = "." + name;
+        }
+
+        return nameSelector;
+      },
+      fullPathSelector: function (preferred) {
+        var privates = getProxy(this);
+        var selector = " " + this.preferredSelector(preferred);
+        var parent = privates.parent;
+        while (parent) {
+          var parentPrivates = getProxy(parent);
+          selector = " " + parent.preferredSelector("class") + selector;
+          parent = parentPrivates.parent;
+        }
+        return selector;
+      },
+      linkByFullPath: function (preferred) {
+        getProxy(this).ye = new Ye(this.fullPathSelector(preferred));
         return this;
       },
-      linkByClass: function () {
-        return this.link("." + getProxy(this).name);
+      linkExtra: function (extra) {
+        return this.linkPreferred3("class", extra);
       },
-      linkByName: function () {
-        return this.link("[name='" + getProxy(this).name + "']");
+      linkPreferred3: function (prferred, extra) {
+        getProxy(this).ye = new Ye(this.fullPathSelector(prferred) + (isString(extra) ? extra : ""));
+        return this;
       },
-      linkById: function () {
-        return this.link("#" + getProxy(this).name);
-      },
-      qualify: function (preferredLink) {
-        if (getProxy(this).ye != null) {
-          return getProxy(this).ye;
+      qualify: function (preferred) {
+        var privates = getProxy(this);
+        if (privates.ye === null) {
+          this.linkPreferred3(preferred);
         }
-        if (preferredLink === "class") {
-          this.linkByClass();
-          return getProxy(this).ye;
-        } else if (preferredLink === "name") {
-          this.linkByName();
-          return getProxy(this).ye;
-        } else if (preferredLink === "id") {
-          this.linkById();
-          return getProxy(this).ye;
-        } else if (preferredLink != null) {
-          this.link(preferredLink);
-          return getProxy(this).ye;
-        } else {
-          throw Error("requires link() before calling.");
-        }
+        console.log(this.fullname ? this.fullname() : "(no fullname)", privates.ye.lastSelector, privates.ye.length);
+        return this;
+      },
+      // link: function (selector) {
+      //   var privates = getProxy(this);
+      //   privates.ye = new Ye(privates.elem).q(selector);
+      //   return this;
+      // },
+      // linkByClass: function () {
+      //   return this.link("." + getProxy(this).name);
+      // },
+      // linkByName: function () {
+      //   return this.link("[name='" + getProxy(this).name + "']");
+      // },
+      // linkById: function () {
+      //   return this.link("#" + getProxy(this).name);
+      // },
+      selector: function (preferred) {
+        this.qualify(preferred);
+        var privates = getProxy(this);
+        var ye = privates.ye;
+        return ye ? ye.lastSelector : "";
+      },
+      callFunctionWithThis: function (fun) {
+        fun(this);
+        return getProxy(this).chains;
+      },
+      on: function (eventName, listener, opts) {
+        var privates = getProxy(this);
+        this.qualify("name");
+        var ye = privates.ye;
+        privates.ye = null;
+        ye.on(eventName, (function (self, listener) {
+          return function (event) {
+            listener.call(self, event);
+          };
+        })(this, listener), opts);
+        return privates.chains;
       },
       /**
        * Copy status from src.
@@ -308,7 +380,7 @@
       },
     };
 
-    var Booq = function Booq(structure, elem, parent, name) {
+    var Booq = function Booq(structure, elem, parent, index, name) {
 
       if (!isObject(structure)) {
         throw Error("'structure' must be an Object.");
@@ -321,8 +393,10 @@
         structure: structure,
         data: new Booqd(this),
         parent: parent || null,
-        name: name || null,
+        index: isInt(index) ? index : null,
+        name: isString(name) ? name : null,
         elem: elem,
+        chains: this,
         ye: null,
         receivers: [],
         also: null,
@@ -379,7 +453,7 @@
         if (isArray(value)) {
           setUpReadOnlyProperty(this, propName, new ArrayProp(this, privates.data, propName, value, elem));
         } else if (isObject(value)) {
-          var valueBooq = new Booq(value, elem, this, propName);
+          var valueBooq = new Booq(value, elem, this, /* index */ null, propName);
           setUpReadOnlyProperty(this, propName, valueBooq);
           setUpBooqdProperty(privates.data, propName, getProxy(valueBooq).data);
         } else if (isPrimitive(value)) {
@@ -407,9 +481,15 @@
           if (privates.parent) {
             fn = privates.parent.fullname();
           }
-          if (privates.name) {
-            fn += "/" + privates.name;
+          var me;
+          if (isInt(privates.index)) {
+            me = privates.index;
+          } else if (isString(privates.name)) {
+            me = privates.name;
+          } else {
+            me = "(empty)";
           }
+          fn += "/(Booq)" + me;
           return fn;
         },
         setData: function (value) {
@@ -508,7 +588,7 @@
           return privates.parent;
         },
         transmit: function () {
-          let privates = getProxy(this);
+          var privates = getProxy(this);
           var receivers = privates.receivers;
           for (var i = 0; i < receivers.length; ++i) {
             var receiver = receivers[i];
@@ -595,7 +675,7 @@
       }
     }
 
-    var PrimitiveProp = function PrimitiveProp(booq, booqd, name, value, elem) {
+    var PrimitiveProp = function PrimitiveProp(parent, booqd, name, value, elem) {
 
       (function (self, name, privates) {
 
@@ -615,13 +695,15 @@
         });
 
       })(this, name, setProxy(mergeRid(this), {
-        booq: booq,
+        parent: parent,
         booqd: booqd,
         self: this,
         name: name,
         value: value,
         typeCode: typeCode(value),
         elem: elem,
+        chains: parent,
+        conditional: null,
         ye: null,
         receivers: [],
         updater: funcVoid,
@@ -632,6 +714,17 @@
     };
 
     PrimitiveProp.prototype = objectAssign({
+        fullname: function () {
+          var privates = getProxy(this);
+          var fn = "";
+          if (privates.parent) {
+            fn = privates.parent.fullname();
+          }
+          if (privates.name) {
+            fn += "/(PrimitiveProp)" + privates.name;
+          }
+          return fn;
+        },
         update: function () {
           getProxy(this).update();
           return this;
@@ -645,21 +738,34 @@
           privates.receivers.push((function (fun, privates) {
             return {
               receive: function (src, value) {
-                fun.call(privates.booq, value, privates.booqd);
+                fun.call(privates.parent, value, privates.booqd);
               }
             };
           })(fun, privates));
-          return privates.booq;
+          return privates.parent;
+        },
+        eq: function (condition) {
+          var privates = getProxy(this);
+          this.qualify("class");
+          var predicate = (function (condition) {
+            return function (value) {
+              return condition === value;
+            };
+          })(condition);
+          privates.conditional = new Conditional(privates.parent, privates.ye.clone(), predicate);
+          privates.receivers.push(privates.conditional);
+          privates.ye = null;
+          return privates.conditional;
         },
         to: function (receiver) {
           var privates = getProxy(this);
           privates.receivers.push(receiver);
           privates.ye = null;
-          return privates.booq;
+          return privates.chains;
         },
         toText: function () {
-          var privates = getProxy(this);
           this.qualify("class");
+          var privates = getProxy(this);
           return this.to((function (privates, ye) {
             return {
               receive: function (src, value) {
@@ -785,7 +891,9 @@
         },
         withValue: function () {
           var privates = getProxy(this);
-          var ye = this.qualify("name").clone();
+          this.qualify("name");
+          var ye = privates.ye;
+          privates.ye = null;
           this.to((function (privates, ye) {
             return {
               receive: function (src, value) {
@@ -801,7 +909,7 @@
               self.receive(self, event.target.value);
             };
           })(this));
-          return privates.booq;
+          return privates.parent;
         },
         addClass: function (className) {
           var privates = getProxy(this);
@@ -810,16 +918,6 @@
             "[name='" + name + "'], " +
             "#" + name;
           this.qualify(selector).addClass(className);
-        },
-        on: function (eventName, listener, opts) {
-          var privates = getProxy(this);
-          var ye = this.qualify("name").clone();
-          ye.on(eventName, (function (self, listener) {
-            return function (event) {
-              listener.call(self, event);
-            };
-          })(this, listener), opts);
-          return privates.booq;
         },
         transmit: function () {
           var privates = getProxy(this);
@@ -841,11 +939,12 @@
 
     PrimitiveProp.prototype.constructor = PrimitiveProp;
 
-    var ArrayProp = function ArrayProp(booq, dataBody, name, array, elem) {
+    var ArrayProp = function ArrayProp(parent, dataBody, name, array, elem) {
       var privates = setProxy(mergeRid(this), {
-        booq: booq,
+        parent: parent,
         name: name,
         elem: elem,
+        chains: parent,
         array: [],
         receivers: [],
         structure: array[0],
@@ -880,7 +979,7 @@
           },
         });
       })
-      (this, booq);
+      (this, parent);
     };
 
     ArrayProp.prototype = objectAssign({
@@ -891,64 +990,84 @@
             fn = privates.parent.fullname();
           }
           if (privates.name) {
-            fn += "/" + privates.name;
+            fn += "/(ArrayProp)" + privates.name;
           }
           return fn;
         },
         each: function (callback) {
           this.qualify("class");
           var privates = getProxy(this);
-          privates.ye.each(function () {
-            var eachSet;
-            if (mergeRid(this)._rid in privates.eachSets) {
-              eachSet = privates.eachSets[this._rid];
-              eachSet.callbacks.push(callback);
-            } else {
-              if (this.firstElementChild) {
-                eachSet = {
-                  targetElement: this,
-                  // Template is parent node because of to query subnodes.
-                  template: this.cloneNode(true),
-                  callbacks: [callback]
-                };
-                removeChildAll(this);
-                privates.eachSets[this._rid] = eachSet;
+          privates.ye.each((function (self, privates) {
+            // closure for ye.each() having self and privates
+            return function () {
 
-                // Receiver is created by each one element
-                privates.receivers.push((function (privates, eachSet) {
-                  return {
-                    receive: function (src, item) {
-                      var elem = eachSet.template.cloneNode(true);
-                      var booq = null;
-                      if (!isPrimitive(privates.structure)) {
-                        booq = new Booq(privates.structure, elem, privates.booq, privates.name + "[]");
-                      }
-                      for (var i = 0; i < eachSet.callbacks.length; ++i) {
-                        var callback = eachSet.callbacks[i];
-                        if (booq) {
-                          callback.call(booq, elem, i);
-                        } else {
-                          callback.call(null, elem, item);
-                        }
-                      }
-                      if (booq) {
-                        booq.data = item;
-                        privates.array.push(booq.data);
-                      } else {
-                        privates.array.push(item);
-                      }
-                      eachSet.targetElement.appendChild(elem.removeChild(elem.firstElementChild));
-                    }
-                  };
-                })(privates, eachSet));
+              // eachSet exists for each element.
+              var eachSet;
+
+              // Just add callbakc to eachSet if eachSet already exists.
+              // Because one element can have only one eachSet.
+              if (mergeRid(this)._rid in privates.eachSets) {
+                eachSet = privates.eachSets[this._rid];
+                eachSet.callbacks.push(callback);
+                return;
               }
-            }
-          });
-          return privates.booq;
-        },
-        callFunctionWithThis: function (fun) {
-          fun(this);
-          return getProxy(this).booq;
+
+              //
+              // Create eachSet
+              //
+
+              // Required firstElementChild to create eachSet.
+              // Becuase firstElementChild is used to clone to create element.
+              if (!this.firstElementChild) {
+                return;
+              }
+
+              eachSet = {
+                targetElement: this,
+                // Template is parent node because of to query subnodes.
+                template: this.cloneNode(true),
+                callbacks: [callback]
+              };
+              removeChildAll(this);
+              privates.eachSets[this._rid] = eachSet;
+
+              // Receiver is created by each one element
+              privates.receivers.push((function (privates, eachSet) {
+                return {
+                  receive: function (src, item, index) {
+
+                    var elem = eachSet.template.cloneNode(true);
+                    var childElem = elem.removeChild(elem.firstElementChild);
+                    eachSet.targetElement.appendChild(childElem);
+
+                    var booq = null;
+                    if (!isPrimitive(privates.structure)) {
+                      // name is null because it is skipped in Link::fullPathSelector
+                      booq = new Booq(privates.structure, eachSet.targetElement, self, index, /* name */ null);
+                    }
+                    if (booq) {
+                      privates.array.push(booq.data);
+                    } else {
+                      privates.array.push(item);
+                    }
+
+                    for (var i = 0; i < eachSet.callbacks.length; ++i) {
+                      var callback = eachSet.callbacks[i];
+                      if (booq) {
+                        callback.call(booq, eachSet.targetElement, i);
+                      } else {
+                        callback.call(null, eachSet.targetElement, i);
+                      }
+                    }
+                    if (booq) {
+                      booq.data = item;
+                    }
+                  }
+                };
+              })(privates, eachSet));
+            };
+          })(this, privates));
+          return privates.chains;
         },
         replaceWith: function (array) {
           var privates = getProxy(this);
@@ -959,10 +1078,10 @@
           }
           privates.array.length = 0;
           var receivers = privates.receivers;
-          for (var i = 0; i < array.length; ++i) {
-            var item = array[i];
-            for (var ii = 0; ii < receivers.length; ++ii) {
-              receivers[ii].receive(this, item);
+          for (var index = 0; index < array.length; ++index) {
+            var item = array[index];
+            for (var j = 0; j < receivers.length; ++j) {
+              receivers[j].receive(this, item, index);
             }
           }
         }
@@ -970,6 +1089,37 @@
       Linker.prototype);
 
     ArrayProp.prototype.constructor = ArrayProp;
+
+    var Conditional = function Conditional(chains, ye, predicate) {
+      this.chains = chains;
+      this.ye = ye;
+      this.predicate = predicate;
+      this.then_ = funcVoid;
+    };
+
+    Conditional.prototype = {
+      receive: function (src, value) {
+        this.then_(value);
+      },
+      thenToggle: function (className) {
+        this.then_ = (function (self, className) {
+          return function (value) {
+            self.ye.toggleClassByFlag(className, self.predicate(value));
+          };
+        })(this, className);
+        return this.chains;
+      },
+      thenUntitoggle: function (className) {
+        this.then_ = (function (self, className) {
+          return function (value) {
+            self.ye.toggleClassByFlag(className, !self.predicate(value));
+          };
+        })(this, className);
+        return this.chains;
+      },
+    };
+
+    Conditional.prototype.constructor = Conditional;
 
     var Ye = function Ye(arg) {
       this.elems_ = [];
