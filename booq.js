@@ -21,7 +21,7 @@
     var RID_MIN = 100000000000000;
     var RID_MAX = RID_MIN * 10 - 1;
 
-    function funcVoid() {}
+    function funcVoid() { }
 
     function passthrough(v) {
       return v;
@@ -274,16 +274,23 @@
       }
     }
 
-    var Linker = function Linker() {};
+    var Linker = function Linker() { };
 
     Linker.prototype = {
-
+      extent: function (extentSelector) {
+        getProxy(this).extentSelector = extentSelector;
+        return this;
+      },
       preferredSelector: function (preferred) {
         var privates = getProxy(this);
 
         // This was item in an array
         if (isInt(privates.index)) {
-          return ">*:nth-child(" + (privates.index + 1) + ")";
+          var selector = ">*:nth-child(" + (privates.index + 1) + ")";
+          if (isString(privates.extentSelector)) {
+            selector += privates.extentSelector;
+          }
+          return selector;
         }
 
         if (!privates.name) {
@@ -296,21 +303,58 @@
           nameSelector = "#" + name;
         } else if (preferred === "name") {
           nameSelector = "[name='" + name + "']";
+          if (isString(privates.extentSelector)) {
+            nameSelector += privates.extentSelector;
+          }
         } else {
           nameSelector = "." + name;
+          if (isString(privates.extentSelector)) {
+            nameSelector += privates.extentSelector;
+          }
         }
 
         return nameSelector;
       },
       fullPathSelector: function (preferred) {
+
         var privates = getProxy(this);
-        var selector = " " + this.preferredSelector(preferred);
+
+        // collect all parents
+        var parents = [];
         var parent = privates.parent;
         while (parent) {
-          var parentPrivates = getProxy(parent);
-          selector = " " + parent.preferredSelector("class") + selector;
-          parent = parentPrivates.parent;
+          parents.splice(0, 0, parent);
+          parent = getProxy(parent).parent;
         }
+
+        var selector = "";
+        var isPrevInt = false;
+        for (var i = 0; i < parents.length; ++i) {
+
+          // "." (class) selector string directly concatenates
+          // "nth-child" selector string gives a space to concatenate
+          if (isPrevInt) {
+            selector += " ";
+          }
+
+          isPrevInt = false;
+
+          parent = parents[i];
+
+          selector += parent.preferredSelector("class");
+
+          if (isInt(getProxy(parent).index)) {
+            isPrevInt = true;
+          }
+        }
+
+        // PrimitiveProp is expected to be down levle tag
+        if (isPrimitiveProp(this)) {
+          selector += " ";
+        }
+
+        selector += this.preferredSelector(preferred);
+
         return selector;
       },
       linkByFullPath: function (preferred) {
@@ -329,7 +373,7 @@
         if (privates.ye === null) {
           this.linkPreferred3(preferred);
         }
-        console.log(this.fullname ? this.fullname() : "(no fullname)", privates.ye.lastSelector, privates.ye.length);
+        console.log(this.fullname ? this.fullname() : "(no fullname)", privates.ye.lastSelector, privates.ye.elems);
         return this;
       },
       // link: function (selector) {
@@ -439,11 +483,12 @@
         });
         Object.defineProperty(self, "end", {
           get: function () {
+            privates.extentSelector = null;
             return privates.parent;
           },
         });
       })
-      (this, privates);
+        (this, privates);
 
       for (var propName in structure) {
         if (!structure.hasOwnProperty(propName)) continue;
@@ -475,134 +520,134 @@
     };
 
     Booq.prototype = objectAssign({
-        fullname: function () {
-          var privates = getProxy(this);
-          var fn = "";
-          if (privates.parent) {
-            fn = privates.parent.fullname();
-          }
-          var me;
-          if (isInt(privates.index)) {
-            me = privates.index;
-          } else if (isString(privates.name)) {
-            me = privates.name;
-          } else {
-            me = "(empty)";
-          }
-          fn += "/(Booq)" + me;
-          return fn;
-        },
-        setData: function (value) {
-          var privates = getProxy(this);
-          if (privates.data === value) return;
-          var tc = typeCode(value);
-          if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
-            throw Error("Assigned value type was unmatch.");
-          }
-          privates.data.replaceWith(value);
-          this.transmit();
-          return this;
-        },
-        /**
-         * Set structure to data.
-         * The structure is a parameter of constructor.
-         */
-        setStructureAsData: function () {
-          return this.setData(getProxy(this).structure);
-        },
-        update: function () {
-          getProxy(this).update();
-          return this;
-        },
-        setUpdate: function (updater) {
-          getProxy(this).updater = updater;
-          return this;
-        },
-        to: function (srcValueCallback) {
-          var privates = getProxy(this);
-          privates.receivers.push((function (ye, srcValueCallback) {
-            return {
-              receive: function (src, value) {
-                ye.each(function () {
-                  if (this === src) return;
-                  srcValueCallback.call(this, src, value);
-                });
-              }
-            };
-          })(privates.ye.clone(), srcValueCallback));
-          return this;
-        },
-        toHref: function (arg) {
-          var privates = getProxy(this);
-          this.qualify("class");
-
-          var callback;
-          if (isUndefined(arg)) {
-            callback = passthrough;
-          } else if (isString(arg)) {
-            callback = (function (template) {
-              return function (data) {
-                var href = template;
-                for (var name in data) {
-                  var v = data[name];
-                  if (v == null) {
-                    v = "";
-                  }
-                  if (!isPrimitive(v)) {
-                    continue;
-                  }
-                  href = href.replace(new RegExp(":" + name + "\\b", "g"), v);
-                }
-                return href;
-              };
-            })(arg);
-          } else if (isFunction(arg)) {
-            callback = arg;
-          } else {
-            throw Error("Unsupported type of argument");
-          }
-
-          return this.to((function (valueCallback) {
-            return function (src, value) {
-              this.href = valueCallback(value);
-            };
-          })(callback));
-        },
-        /**
-         * Write-to-binding that is all properties to attributes.
-         */
-        toAttrs: function () {
-          var privates = getProxy(this);
-          this.qualify("class");
-
-          for (var name in this) {
-            if (!this.hasOwnProperty(name)) continue;
-            var prop = this[name];
-            if (isPrimitiveProp(prop)) {
-              prop.copyLink(this).toAttr(name);
-            } else {
-              throw Error("toAttrs() does not support property of Object.");
-            }
-          }
-
-          return privates.parent;
-        },
-        transmit: function () {
-          var privates = getProxy(this);
-          var receivers = privates.receivers;
-          for (var i = 0; i < receivers.length; ++i) {
-            var receiver = receivers[i];
-            if (receiver === privates) continue;
-            receiver.receive(privates, privates.data);
-          }
-        },
-        receive: function (src, value) {
-          var privates = getProxy(this);
-          if (src === privates) return;
-          privates.value = value;
-          this.transmit();
-        },
+      fullname: function () {
+        var privates = getProxy(this);
+        var fn = "";
+        if (privates.parent) {
+          fn = privates.parent.fullname();
+        }
+        var me;
+        if (isInt(privates.index)) {
+          me = privates.index;
+        } else if (isString(privates.name)) {
+          me = privates.name;
+        } else {
+          me = "(empty)";
+        }
+        fn += "/(Booq)" + me;
+        return fn;
       },
+      setData: function (value) {
+        var privates = getProxy(this);
+        if (privates.data === value) return;
+        var tc = typeCode(value);
+        if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
+          throw Error("Assigned value type was unmatch.");
+        }
+        privates.data.replaceWith(value);
+        this.transmit();
+        return this;
+      },
+      /**
+       * Set structure to data.
+       * The structure is a parameter of constructor.
+       */
+      setStructureAsData: function () {
+        return this.setData(getProxy(this).structure);
+      },
+      update: function () {
+        getProxy(this).update();
+        return this;
+      },
+      setUpdate: function (updater) {
+        getProxy(this).updater = updater;
+        return this;
+      },
+      to: function (srcValueCallback) {
+        var privates = getProxy(this);
+        privates.receivers.push((function (ye, srcValueCallback) {
+          return {
+            receive: function (src, value) {
+              ye.each(function () {
+                if (this === src) return;
+                srcValueCallback.call(this, src, value);
+              });
+            }
+          };
+        })(privates.ye.clone(), srcValueCallback));
+        return this;
+      },
+      toHref: function (arg) {
+        var privates = getProxy(this);
+        this.qualify("class");
+
+        var callback;
+        if (isUndefined(arg)) {
+          callback = passthrough;
+        } else if (isString(arg)) {
+          callback = (function (template) {
+            return function (data) {
+              var href = template;
+              for (var name in data) {
+                var v = data[name];
+                if (v == null) {
+                  v = "";
+                }
+                if (!isPrimitive(v)) {
+                  continue;
+                }
+                href = href.replace(new RegExp(":" + name + "\\b", "g"), v);
+              }
+              return href;
+            };
+          })(arg);
+        } else if (isFunction(arg)) {
+          callback = arg;
+        } else {
+          throw Error("Unsupported type of argument");
+        }
+
+        return this.to((function (valueCallback) {
+          return function (src, value) {
+            this.href = valueCallback(value);
+          };
+        })(callback));
+      },
+      /**
+       * Write-to-binding that is all properties to attributes.
+       */
+      toAttrs: function () {
+        var privates = getProxy(this);
+        this.qualify("class");
+
+        for (var name in this) {
+          if (!this.hasOwnProperty(name)) continue;
+          var prop = this[name];
+          if (isPrimitiveProp(prop)) {
+            prop.copyLink(this).toAttr(name);
+          } else {
+            throw Error("toAttrs() does not support property of Object.");
+          }
+        }
+
+        return privates.parent;
+      },
+      transmit: function () {
+        var privates = getProxy(this);
+        var receivers = privates.receivers;
+        for (var i = 0; i < receivers.length; ++i) {
+          var receiver = receivers[i];
+          if (receiver === privates) continue;
+          receiver.receive(privates, privates.data);
+        }
+      },
+      receive: function (src, value) {
+        var privates = getProxy(this);
+        if (src === privates) return;
+        privates.value = value;
+        this.transmit();
+      },
+    },
       Linker.prototype);
 
     Booq.prototype.constructor = Booq;
@@ -714,227 +759,251 @@
     };
 
     PrimitiveProp.prototype = objectAssign({
-        fullname: function () {
-          var privates = getProxy(this);
-          var fn = "";
-          if (privates.parent) {
-            fn = privates.parent.fullname();
-          }
-          if (privates.name) {
-            fn += "/(PrimitiveProp)" + privates.name;
-          }
-          return fn;
-        },
-        update: function () {
-          getProxy(this).update();
-          return this;
-        },
-        setUpdate: function (updater) {
-          getProxy(this).updater = updater;
-          return this;
-        },
-        onReceive: function (fun) {
-          var privates = getProxy(this);
-          privates.receivers.push((function (fun, privates) {
-            return {
-              receive: function (src, value) {
-                fun.call(privates.parent, value, privates.booqd);
-              }
-            };
-          })(fun, privates));
-          return privates.parent;
-        },
-        eq: function (condition) {
-          var privates = getProxy(this);
-          this.qualify("class");
-          var predicate = (function (condition) {
-            return function (value) {
-              return condition === value;
-            };
-          })(condition);
-          privates.conditional = new Conditional(privates.parent, privates.ye.clone(), predicate);
-          privates.receivers.push(privates.conditional);
-          privates.ye = null;
-          return privates.conditional;
-        },
-        to: function (receiver) {
-          var privates = getProxy(this);
-          privates.receivers.push(receiver);
-          privates.ye = null;
-          return privates.chains;
-        },
-        toText: function () {
-          this.qualify("class");
-          var privates = getProxy(this);
-          return this.to((function (privates, ye) {
-            return {
-              receive: function (src, value) {
-                ye.each(function () {
-                  if (this === src) return;
-                  this.textContent = value;
-                });
-              }
-            };
-          })(privates, privates.ye.clone()));
-        },
-        toAttr: function (attrName, valueCallback) {
-          var privates = getProxy(this);
-          this.qualify("class");
-          return this.to((function (ye, attrName, valueCallback) {
-            return {
-              receive: function (src, value) {
-                ye.each(function () {
-                  if (this === src) return;
-                  this.setAttribute(attrName, valueCallback(value));
-                });
-              }
-            };
-          })(privates.ye.clone(), attrName, orPassthrough(valueCallback)));
-        },
-        toHref: function (arg) {
-          var privates = getProxy(this);
-          this.qualify("class");
-
-          var callback;
-          if (isUndefined(arg)) {
-            callback = passthrough;
-          } else if (isString(arg)) {
-            callback = valueReplace(arg, new RegExp(":" + privates.name + "\\b", "g"));
-          } else if (isFunction(arg)) {
-            callback = arg;
-          } else {
-            throw Error("Unsupported type of argument");
-          }
-
-          return this.to((function (ye, valueCallback) {
-            return {
-              receive: function (src, value) {
-                ye.each(function () {
-                  if (this === src) return;
-                  this.href = valueCallback(value);
-                });
-              }
-            };
-          })(privates.ye.clone(), callback));
-        },
-        togglesAttr: function (attrName, attrValue) {
-          var privates = getProxy(this);
-          this.qualify("class");
-          return this.to((function (ye, attrName, attrValue) {
-            return {
-              receive: function (src, value) {
-                ye.each(function () {
-                  if (this === src) return;
-                  if (value) {
-                    this.setAttribute(attrName, attrValue);
-                  } else {
-                    this.removeAttribute(attrName);
-                  }
-                });
-              }
-            };
-          })(privates.ye.clone(), attrName, attrValue));
-        },
-        antitogglesAttr: function (attrName, attrValue) {
-          var privates = getProxy(this);
-          this.qualify("class");
-          return this.to((function (ye, attrName, attrValue) {
-            return {
-              receive: function (src, value) {
-                ye.each(function () {
-                  if (this === src) return;
-                  if (!value) {
-                    this.setAttribute(attrName, attrValue);
-                  } else {
-                    this.removeAttribute(attrName);
-                  }
-                });
-              }
-            };
-          })(privates.ye.clone(), attrName, attrValue));
-        },
-        togglesClass: function (className) {
-          var privates = getProxy(this);
-          this.qualify("class");
-          return this.to((function (ye, className) {
-            return {
-              receive: function (src, value) {
-                ye.each(function () {
-                  if (this === src) return;
-                  if (value) {
-                    this.classList.add(className);
-                  } else {
-                    this.classList.remove(className);
-                  }
-                });
-              }
-            };
-          })(privates.ye.clone(), className));
-        },
-        antitogglesClass: function (className) {
-          var privates = getProxy(this);
-          this.qualify("class");
-          return this.to((function (ye, className) {
-            return {
-              receive: function (src, value) {
-                ye.each(function () {
-                  if (this === src) return;
-                  if (!value) {
-                    this.classList.add(className);
-                  } else {
-                    this.classList.remove(className);
-                  }
-                });
-              }
-            };
-          })(privates.ye.clone(), className));
-        },
-        withValue: function () {
-          var privates = getProxy(this);
-          this.qualify("name");
-          var ye = privates.ye;
-          privates.ye = null;
-          this.to((function (privates, ye) {
-            return {
-              receive: function (src, value) {
-                ye.each(function () {
-                  if (this === src) return;
-                  this.value = value;
-                });
-              }
-            };
-          })(privates, ye));
-          ye.on("change", (function (self) {
-            return function (event) {
-              self.receive(self, event.target.value);
-            };
-          })(this));
-          return privates.parent;
-        },
-        addClass: function (className) {
-          var privates = getProxy(this);
-          var name = privates.name;
-          var selector = "." + name + ", " +
-            "[name='" + name + "'], " +
-            "#" + name;
-          this.qualify(selector).addClass(className);
-        },
-        transmit: function () {
-          var privates = getProxy(this);
-          var receivers = privates.receivers;
-          for (var i = 0; i < receivers.length; ++i) {
-            var receiver = receivers[i];
-            if (receiver === privates) continue;
-            receiver.receive(privates, privates.value);
-          }
-        },
-        receive: function (src, value) {
-          var privates = getProxy(this);
-          if (src === privates) return;
-          privates.value = value;
-          this.transmit();
-        },
+      fullname: function () {
+        var privates = getProxy(this);
+        var fn = "";
+        if (privates.parent) {
+          fn = privates.parent.fullname();
+        }
+        if (privates.name) {
+          fn += "/(PrimitiveProp)" + privates.name;
+        }
+        return fn;
       },
+      update: function () {
+        getProxy(this).update();
+        return this;
+      },
+      setUpdate: function (updater) {
+        getProxy(this).updater = updater;
+        return this;
+      },
+      onReceive: function (fun) {
+        var privates = getProxy(this);
+        privates.receivers.push((function (fun, privates) {
+          return {
+            receive: function (src, value) {
+              fun.call(privates.parent, value, privates.booqd);
+            }
+          };
+        })(fun, privates));
+        return privates.parent;
+      },
+      eq: function (condition) {
+        var privates = getProxy(this);
+        this.qualify("class");
+        var predicate = (function (condition) {
+          return function (value) {
+            return condition === value;
+          };
+        })(condition);
+        privates.conditional = new Conditional(privates.parent, privates.ye.clone(), predicate);
+        privates.receivers.push(privates.conditional);
+        privates.ye = null;
+        return privates.conditional;
+      },
+      isTruthy: function () {
+        var privates = getProxy(this);
+        this.qualify("class");
+        var predicate = function (value) {
+          console.log("isTruthy", !!value);
+          return !!value;
+        };
+        privates.conditional = new Conditional(privates.parent, privates.ye.clone(), predicate);
+        privates.receivers.push(privates.conditional);
+        privates.ye = null;
+        return privates.conditional;
+      },
+      isFalsy: function () {
+        var privates = getProxy(this);
+        this.qualify("class");
+        var predicate = function (value) {
+          console.log("isFalsy", !value);
+          return !value;
+        };
+        privates.conditional = new Conditional(privates.parent, privates.ye.clone(), predicate);
+        privates.receivers.push(privates.conditional);
+        privates.ye = null;
+        return privates.conditional;
+      },
+      to: function (receiver) {
+        var privates = getProxy(this);
+        privates.receivers.push(receiver);
+        privates.ye = null;
+        return privates.chains;
+      },
+      toText: function () {
+        this.qualify("class");
+        var privates = getProxy(this);
+        return this.to((function (privates, ye) {
+          return {
+            receive: function (src, value) {
+              ye.each(function () {
+                if (this === src) return;
+                this.textContent = value;
+              });
+            }
+          };
+        })(privates, privates.ye.clone()));
+      },
+      toAttr: function (attrName, valueCallback) {
+        var privates = getProxy(this);
+        this.qualify("class");
+        return this.to((function (ye, attrName, valueCallback) {
+          return {
+            receive: function (src, value) {
+              ye.each(function () {
+                if (this === src) return;
+                this.setAttribute(attrName, valueCallback(value));
+              });
+            }
+          };
+        })(privates.ye.clone(), attrName, orPassthrough(valueCallback)));
+      },
+      toHref: function (arg) {
+        var privates = getProxy(this);
+        this.qualify("class");
+
+        var callback;
+        if (isUndefined(arg)) {
+          callback = passthrough;
+        } else if (isString(arg)) {
+          callback = valueReplace(arg, new RegExp(":" + privates.name + "\\b", "g"));
+        } else if (isFunction(arg)) {
+          callback = arg;
+        } else {
+          throw Error("Unsupported type of argument");
+        }
+
+        return this.to((function (ye, valueCallback) {
+          return {
+            receive: function (src, value) {
+              ye.each(function () {
+                if (this === src) return;
+                this.href = valueCallback(value);
+              });
+            }
+          };
+        })(privates.ye.clone(), callback));
+      },
+      togglesAttr: function (attrName, attrValue) {
+        var privates = getProxy(this);
+        this.qualify("class");
+        return this.to((function (ye, attrName, attrValue) {
+          return {
+            receive: function (src, value) {
+              ye.each(function () {
+                if (this === src) return;
+                if (value) {
+                  this.setAttribute(attrName, attrValue);
+                } else {
+                  this.removeAttribute(attrName);
+                }
+              });
+            }
+          };
+        })(privates.ye.clone(), attrName, attrValue));
+      },
+      antitogglesAttr: function (attrName, attrValue) {
+        var privates = getProxy(this);
+        this.qualify("class");
+        return this.to((function (ye, attrName, attrValue) {
+          return {
+            receive: function (src, value) {
+              ye.each(function () {
+                if (this === src) return;
+                if (!value) {
+                  this.setAttribute(attrName, attrValue);
+                } else {
+                  this.removeAttribute(attrName);
+                }
+              });
+            }
+          };
+        })(privates.ye.clone(), attrName, attrValue));
+      },
+      togglesClass: function (className) {
+        var privates = getProxy(this);
+        this.qualify("class");
+        return this.to((function (ye, className) {
+          return {
+            receive: function (src, value) {
+              ye.each(function () {
+                if (this === src) return;
+                if (value) {
+                  this.classList.add(className);
+                } else {
+                  this.classList.remove(className);
+                }
+              });
+            }
+          };
+        })(privates.ye.clone(), className));
+      },
+      antitogglesClass: function (className) {
+        var privates = getProxy(this);
+        this.qualify("class");
+        return this.to((function (ye, className) {
+          return {
+            receive: function (src, value) {
+              ye.each(function () {
+                if (this === src) return;
+                if (!value) {
+                  this.classList.add(className);
+                } else {
+                  this.classList.remove(className);
+                }
+              });
+            }
+          };
+        })(privates.ye.clone(), className));
+      },
+      withValue: function () {
+        var privates = getProxy(this);
+        this.qualify("name");
+        var ye = privates.ye;
+        privates.ye = null;
+        this.to((function (privates, ye) {
+          return {
+            receive: function (src, value) {
+              ye.each(function () {
+                if (this === src) return;
+                this.value = value;
+              });
+            }
+          };
+        })(privates, ye));
+        ye.on("change", (function (self) {
+          return function (event) {
+            self.receive(self, event.target.value);
+          };
+        })(this));
+        return privates.parent;
+      },
+      addClass: function (className) {
+        var privates = getProxy(this);
+        var name = privates.name;
+        var selector = "." + name + ", " +
+          "[name='" + name + "'], " +
+          "#" + name;
+        this.qualify(selector).addClass(className);
+      },
+      transmit: function () {
+        var privates = getProxy(this);
+        var receivers = privates.receivers;
+        for (var i = 0; i < receivers.length; ++i) {
+          var receiver = receivers[i];
+          if (receiver === privates) continue;
+          receiver.receive(privates, privates.value);
+        }
+      },
+      receive: function (src, value) {
+        var privates = getProxy(this);
+        if (src === privates) return;
+        privates.value = value;
+        this.transmit();
+      },
+    },
       Linker.prototype);
 
     PrimitiveProp.prototype.constructor = PrimitiveProp;
@@ -975,117 +1044,118 @@
       (function (self, parent) {
         Object.defineProperty(self, "end", {
           get: function () {
+            getProxy(self).extentSelector = null;
             return parent;
           },
         });
       })
-      (this, parent);
+        (this, parent);
     };
 
     ArrayProp.prototype = objectAssign({
-        fullname: function () {
-          var privates = getProxy(this);
-          var fn = "";
-          if (privates.parent) {
-            fn = privates.parent.fullname();
-          }
-          if (privates.name) {
-            fn += "/(ArrayProp)" + privates.name;
-          }
-          return fn;
-        },
-        each: function (callback) {
-          this.qualify("class");
-          var privates = getProxy(this);
-          privates.ye.each((function (self, privates) {
-            // closure for ye.each() having self and privates
-            return function () {
+      fullname: function () {
+        var privates = getProxy(this);
+        var fn = "";
+        if (privates.parent) {
+          fn = privates.parent.fullname();
+        }
+        if (privates.name) {
+          fn += "/(ArrayProp)" + privates.name;
+        }
+        return fn;
+      },
+      each: function (callback) {
+        this.qualify("class");
+        var privates = getProxy(this);
+        privates.ye.each((function (self, privates) {
+          // closure for ye.each() having self and privates
+          return function () {
 
-              // eachSet exists for each element.
-              var eachSet;
+            // eachSet exists for each element.
+            var eachSet;
 
-              // Just add callbakc to eachSet if eachSet already exists.
-              // Because one element can have only one eachSet.
-              if (mergeRid(this)._rid in privates.eachSets) {
-                eachSet = privates.eachSets[this._rid];
-                eachSet.callbacks.push(callback);
-                return;
-              }
+            // Just add callbakc to eachSet if eachSet already exists.
+            // Because one element can have only one eachSet.
+            if (mergeRid(this)._rid in privates.eachSets) {
+              eachSet = privates.eachSets[this._rid];
+              eachSet.callbacks.push(callback);
+              return;
+            }
 
-              //
-              // Create eachSet
-              //
+            //
+            // Create eachSet
+            //
 
-              // Required firstElementChild to create eachSet.
-              // Becuase firstElementChild is used to clone to create element.
-              if (!this.firstElementChild) {
-                return;
-              }
+            // Required firstElementChild to create eachSet.
+            // Becuase firstElementChild is used to clone to create element.
+            if (!this.firstElementChild) {
+              return;
+            }
 
-              eachSet = {
-                targetElement: this,
-                // Template is parent node because of to query subnodes.
-                template: this.cloneNode(true),
-                callbacks: [callback]
-              };
-              removeChildAll(this);
-              privates.eachSets[this._rid] = eachSet;
+            eachSet = {
+              targetElement: this,
+              // Template is parent node because of to query subnodes.
+              template: this.cloneNode(true),
+              callbacks: [callback]
+            };
+            removeChildAll(this);
+            privates.eachSets[this._rid] = eachSet;
 
-              // Receiver is created by each one element
-              privates.receivers.push((function (privates, eachSet) {
-                return {
-                  receive: function (src, item, index) {
+            // Receiver is created by each one element
+            privates.receivers.push((function (privates, eachSet) {
+              return {
+                receive: function (src, item, index) {
 
-                    var elem = eachSet.template.cloneNode(true);
-                    var childElem = elem.removeChild(elem.firstElementChild);
-                    eachSet.targetElement.appendChild(childElem);
+                  var elem = eachSet.template.cloneNode(true);
+                  var childElem = elem.removeChild(elem.firstElementChild);
+                  eachSet.targetElement.appendChild(childElem);
 
-                    var booq = null;
-                    if (!isPrimitive(privates.structure)) {
-                      // name is null because it is skipped in Link::fullPathSelector
-                      booq = new Booq(privates.structure, eachSet.targetElement, self, index, /* name */ null);
-                    }
+                  var booq = null;
+                  if (!isPrimitive(privates.structure)) {
+                    // name is null because it is skipped in Link::fullPathSelector
+                    booq = new Booq(privates.structure, eachSet.targetElement, self, index, /* name */ null);
+                  }
+                  if (booq) {
+                    privates.array.push(booq.data);
+                  } else {
+                    privates.array.push(item);
+                  }
+
+                  for (var i = 0; i < eachSet.callbacks.length; ++i) {
+                    var callback = eachSet.callbacks[i];
                     if (booq) {
-                      privates.array.push(booq.data);
+                      callback.call(booq, eachSet.targetElement, i);
                     } else {
-                      privates.array.push(item);
-                    }
-
-                    for (var i = 0; i < eachSet.callbacks.length; ++i) {
-                      var callback = eachSet.callbacks[i];
-                      if (booq) {
-                        callback.call(booq, eachSet.targetElement, i);
-                      } else {
-                        callback.call(null, eachSet.targetElement, i);
-                      }
-                    }
-                    if (booq) {
-                      booq.data = item;
+                      callback.call(null, eachSet.targetElement, i);
                     }
                   }
-                };
-              })(privates, eachSet));
-            };
-          })(this, privates));
-          return privates.chains;
-        },
-        replaceWith: function (array) {
-          var privates = getProxy(this);
-          if (privates.ye) {
-            privates.ye.each(function () {
-              removeChildAll(this);
-            });
-          }
-          privates.array.length = 0;
-          var receivers = privates.receivers;
-          for (var index = 0; index < array.length; ++index) {
-            var item = array[index];
-            for (var j = 0; j < receivers.length; ++j) {
-              receivers[j].receive(this, item, index);
-            }
+                  if (booq) {
+                    booq.data = item;
+                  }
+                }
+              };
+            })(privates, eachSet));
+          };
+        })(this, privates));
+        return privates.chains;
+      },
+      replaceWith: function (array) {
+        var privates = getProxy(this);
+        if (privates.ye) {
+          privates.ye.each(function () {
+            removeChildAll(this);
+          });
+        }
+        privates.array.length = 0;
+        var receivers = privates.receivers;
+        for (var index = 0; index < array.length; ++index) {
+          var item = array[index];
+          for (var j = 0; j < receivers.length; ++j) {
+            receivers[j].receive(this, item, index);
           }
         }
-      },
+      }
+    },
       Linker.prototype);
 
     ArrayProp.prototype.constructor = ArrayProp;
