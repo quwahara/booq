@@ -374,6 +374,7 @@
           this.linkPreferred3(preferred);
         }
         console.log(this.fullname ? this.fullname() : "(no fullname)", privates.ye.lastSelector, privates.ye.elems);
+        // console.trace();
         return this;
       },
       // link: function (selector) {
@@ -485,6 +486,21 @@
           get: function () {
             privates.extentSelector = null;
             return privates.parent;
+          },
+        });
+        if (privates.name) {
+          var n = privates.name;
+          Object.defineProperty(self, "end" + n.slice(0, 1).toUpperCase() + n.slice(1), {
+            get: function () {
+              privates.extentSelector = null;
+              return privates.parent;
+            },
+          });
+        }
+        // property for indent
+        Object.defineProperty(self, "___", {
+          get: function () {
+            return self;
           },
         });
       })
