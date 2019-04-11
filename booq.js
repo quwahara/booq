@@ -518,6 +518,9 @@
         if (!structure.hasOwnProperty(propName)) continue;
         if (propName === "_rid") continue;
 
+        // ignore "___", because of reserved word
+        if (propName === "___") continue;
+
         var value = structure[propName];
         if (isArray(value)) {
           setUpReadOnlyProperty(this, propName, new ArrayProp(this, privates.data, propName, value, elem));
@@ -1174,6 +1177,7 @@
         var receivers = privates.receivers;
         for (var index = 0; index < array.length; ++index) {
           var item = array[index];
+          privates.array.push(item);
           for (var j = 0; j < receivers.length; ++j) {
             receivers[j].receive(this, item, index);
           }
