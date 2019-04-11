@@ -298,19 +298,27 @@
         }
 
         var name = privates.name;
-        var nameSelector;
+        var nameSelector = "";
         if (preferred === "id") {
           nameSelector = "#" + name;
-        } else if (preferred === "name") {
-          nameSelector = "[name='" + name + "']";
+        } else if (preferred === "name" || preferred === "lower_name") {
+          if (preferred === "lower_name") {
+            nameSelector = " ";
+          }
+          nameSelector += "[name='" + name + "']";
+          if (isString(privates.extentSelector)) {
+            nameSelector += privates.extentSelector;
+          }
+        } else if (preferred === "class" || preferred === "lower_class") {
+          if (preferred === "lower_class") {
+            nameSelector = " ";
+          }
+          nameSelector += "." + name;
           if (isString(privates.extentSelector)) {
             nameSelector += privates.extentSelector;
           }
         } else {
-          nameSelector = "." + name;
-          if (isString(privates.extentSelector)) {
-            nameSelector += privates.extentSelector;
-          }
+          throw Error("Unsupported preferred");
         }
 
         return nameSelector;
@@ -362,16 +370,16 @@
         return this;
       },
       linkExtra: function (extra) {
-        return this.linkPreferred3("class", extra);
+        return this.linkPreferred("class", extra);
       },
-      linkPreferred3: function (prferred, extra) {
+      linkPreferred: function (prferred, extra) {
         getProxy(this).ye = new Ye(this.fullPathSelector(prferred) + (isString(extra) ? extra : ""));
         return this;
       },
       qualify: function (preferred) {
         var privates = getProxy(this);
         if (privates.ye === null) {
-          this.linkPreferred3(preferred);
+          this.linkPreferred(preferred);
         }
         console.log(this.fullname ? this.fullname() : "(no fullname)", privates.ye.lastSelector, privates.ye.elems);
         // console.trace();
