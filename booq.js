@@ -293,32 +293,46 @@
           return selector;
         }
 
-        if (!privates.name) {
-          return "";
+        var nameSelector = "";
+        var name;
+        if (privates.name) {
+          name = privates.name;
+        } else {
+          name = "";
         }
 
-        var name = privates.name;
-        var nameSelector = "";
-        if (preferred === "id") {
-          nameSelector = "#" + name;
-        } else if (preferred === "name" || preferred === "lower_name") {
-          if (preferred === "lower_name") {
-            nameSelector = " ";
+        if (privates.name) {
+          if (preferred === "id") {
+            nameSelector = "#" + name;
+          } else if (preferred === "name" || preferred === "lower_name") {
+            if (preferred === "lower_name") {
+              nameSelector = " ";
+            }
+            nameSelector += "[name='" + name + "']";
+          } else if (preferred === "class" || preferred === "lower_class") {
+            if (preferred === "lower_class") {
+              nameSelector = " ";
+            }
+            nameSelector += "." + name;
+          } else {
+            throw Error("Unsupported preferred");
           }
-          nameSelector += "[name='" + name + "']";
-          if (isString(privates.extentSelector)) {
+        }
+
+        if (isString(privates.extentSelector)) {
+          if (preferred === "id") {
+            // don't add extent if selector has id selector
+            // because id selector is expected to be able to select unique element
+            if (name === "") {
+              nameSelector += privates.extentSelector;
+            }
+          } else if (preferred === "name" || preferred === "lower_name") {
             nameSelector += privates.extentSelector;
-          }
-        } else if (preferred === "class" || preferred === "lower_class") {
-          if (preferred === "lower_class") {
-            nameSelector = " ";
-          }
-          nameSelector += "." + name;
-          if (isString(privates.extentSelector)) {
+          } else if (preferred === "class" || preferred === "lower_class") {
             nameSelector += privates.extentSelector;
+          } else {
+            throw Error("Unsupported preferred");
           }
-        } else {
-          throw Error("Unsupported preferred");
         }
 
         return nameSelector;
