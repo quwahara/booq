@@ -370,11 +370,6 @@
           }
         }
 
-        // PrimitiveProp is expected to be down levle tag
-        if (isPrimitiveProp(this)) {
-          selector += " ";
-        }
-
         selector += this.preferredSelector(preferred);
 
         return selector;
@@ -384,7 +379,7 @@
         return this;
       },
       linkExtra: function (extra) {
-        return this.linkPreferred("class", extra);
+        return this.linkPreferred(getProxy(this).preferredLink, extra);
       },
       linkPreferred: function (prferred, extra) {
         getProxy(this).ye = new Ye(this.fullPathSelector(prferred) + (isString(extra) ? extra : ""));
@@ -464,6 +459,7 @@
         name: isString(name) ? name : null,
         elem: elem,
         chains: this,
+        preferredLink: "class",
         ye: null,
         receivers: [],
         also: null,
@@ -789,6 +785,7 @@
         typeCode: typeCode(value),
         elem: elem,
         chains: parent,
+        preferredLink: "lower_class",
         conditional: null,
         ye: null,
         receivers: [],
@@ -832,7 +829,7 @@
       },
       eq: function (condition) {
         var privates = getProxy(this);
-        this.qualify("class");
+        this.qualify("lower_class");
         var predicate = (function (condition) {
           return function (value) {
             return condition === value;
@@ -845,7 +842,7 @@
       },
       isTruthy: function () {
         var privates = getProxy(this);
-        this.qualify("class");
+        this.qualify("lower_class");
         var predicate = function (value) {
           console.log("isTruthy", !!value);
           return !!value;
@@ -857,7 +854,7 @@
       },
       isFalsy: function () {
         var privates = getProxy(this);
-        this.qualify("class");
+        this.qualify("lower_class");
         var predicate = function (value) {
           console.log("isFalsy", !value);
           return !value;
@@ -874,7 +871,7 @@
         return privates.chains;
       },
       toText: function () {
-        this.qualify("class");
+        this.qualify("lower_class");
         var privates = getProxy(this);
         return this.to((function (privates, ye) {
           return {
@@ -889,7 +886,7 @@
       },
       toAttr: function (attrName, valueCallback) {
         var privates = getProxy(this);
-        this.qualify("class");
+        this.qualify("lower_class");
         return this.to((function (ye, attrName, valueCallback) {
           return {
             receive: function (src, value) {
@@ -903,7 +900,7 @@
       },
       toHref: function (arg) {
         var privates = getProxy(this);
-        this.qualify("class");
+        this.qualify("lower_class");
 
         var callback;
         if (isUndefined(arg)) {
@@ -929,7 +926,7 @@
       },
       togglesAttr: function (attrName, attrValue) {
         var privates = getProxy(this);
-        this.qualify("class");
+        this.qualify("lower_class");
         return this.to((function (ye, attrName, attrValue) {
           return {
             receive: function (src, value) {
@@ -947,7 +944,7 @@
       },
       antitogglesAttr: function (attrName, attrValue) {
         var privates = getProxy(this);
-        this.qualify("class");
+        this.qualify("lower_class");
         return this.to((function (ye, attrName, attrValue) {
           return {
             receive: function (src, value) {
@@ -965,7 +962,7 @@
       },
       togglesClass: function (className) {
         var privates = getProxy(this);
-        this.qualify("class");
+        this.qualify("lower_class");
         return this.to((function (ye, className) {
           return {
             receive: function (src, value) {
@@ -983,7 +980,7 @@
       },
       antitogglesClass: function (className) {
         var privates = getProxy(this);
-        this.qualify("class");
+        this.qualify("lower_class");
         return this.to((function (ye, className) {
           return {
             receive: function (src, value) {
@@ -1001,7 +998,7 @@
       },
       withValue: function () {
         var privates = getProxy(this);
-        this.qualify("name");
+        this.qualify("lower_name");
         var ye = privates.ye;
         privates.ye = null;
         this.to((function (privates, ye) {
@@ -1055,6 +1052,7 @@
         name: name,
         elem: elem,
         chains: parent,
+        preferredLink: "class",
         array: [],
         receivers: [],
         structure: array[0],

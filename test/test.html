@@ -37,11 +37,15 @@
     </div>
     <h2>Bench</h2>
     <div class="bench">
-      <div class="toText_"></div>
-      <div class="theArray">
+      <div class="test1 primitiveProp_">
+        <div class="toText_"></div>
+      </div>
+
+      <div class="test2 arrayProp_ theArray">
         <div class="theArrayProp"></div>
       </div>
-      <div><a class="booq_">booq_</a></div>
+
+      <div><a class="test3 booq_">booq_</a></div>
     </div>
   </div>
   <script>
@@ -60,7 +64,7 @@
           '"': '&quot;',
           '<': '&lt;',
           '>': '&gt;',
-        } [match]
+        }[match]
       });
     }
 
@@ -97,29 +101,37 @@
     window.onload = function () {
 
       const structure = {
-        primitiveProp_: {
-          toText_: "",
+        test1: {
+          primitiveProp_: {
+            toText_: "",
+          },
         },
-        arrayProp_: {
-          theArray: [{
-            theArrayProp: "",
-          }, ]
+        test2: {
+          arrayProp_: {
+            theArray: [{
+              theArrayProp: "",
+            }]
+          }
         },
-        booq_: {
-          prop1: "",
-          prop2: 0,
+        test3: {
+          booq_: {
+            prop1: "",
+            prop2: 0,
+          }
         },
       };
       const booq = new Booq(structure);
 
       test("PrimitiveProp.toText()", "value1", function () {
-        booq.primitiveProp_.toText_.toText();
-        booq.data = {
-          primitiveProp_: {
-            toText_: "value1",
+        booq.test1.primitiveProp_.toText_.toText();
+        booq.setData({
+          test1: {
+            primitiveProp_: {
+              toText_: "value1",
+            }
           }
-        };
-        return document.querySelector(".toText_").textContent;
+        });
+        return document.querySelector(".test1 .toText_").textContent;
       });
 
       test("arrayProp_.each() for Object item",
@@ -127,32 +139,36 @@
         '<div class="theArrayProp">theArrayProp2</div>' +
         '',
         function () {
-          booq.arrayProp_.theArray.each(function (element) {
-            this.theArrayProp.toText();
+          booq.test2.arrayProp_.theArray.each(function (element) {
+            this.theArrayProp.qualify("class").toText();
           });
-          booq.data = {
-            arrayProp_: {
-              theArray: [{
+          booq.setData({
+            test2: {
+              arrayProp_: {
+                theArray: [{
                   theArrayProp: "theArrayProp1",
                 },
                 {
                   theArrayProp: "theArrayProp2",
                 },
-              ]
-            },
-          };
-          return unionOuterHTML(document.querySelectorAll(".theArrayProp"));
+                ]
+              },
+            }
+          });
+          return unionOuterHTML(document.querySelectorAll(".test2 .theArrayProp"));
         });
 
       test("Booq.toHref()", "http://test.com/test.html?prop1=value1&prop2=2", function () {
-        booq.booq_.toHref("http://test.com/test.html?prop1=:prop1&prop2=:prop2");
-        booq.data = {
-          booq_: {
-            prop1: "value1",
-            prop2: 2,
-          },
-        };
-        return document.querySelector(".booq_").href;
+        booq.test3.booq_.toHref("http://test.com/test.html?prop1=:prop1&prop2=:prop2");
+        booq.setData({
+          test3: {
+            booq_: {
+              prop1: "value1",
+              prop2: 2,
+            }
+          }
+        });
+        return document.querySelector(".test3").href;
       });
 
     };
