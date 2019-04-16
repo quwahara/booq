@@ -274,9 +274,9 @@
       }
     }
 
-    var Linker = function Linker() { };
+    var Base = function Base() { };
 
-    Linker.prototype = {
+    Base.prototype = {
       extent: function (extentSelector) {
         getProxy(this).extentSelector = extentSelector;
         return this;
@@ -678,7 +678,7 @@
         this.transmit();
       },
     },
-      Linker.prototype);
+      Base.prototype);
 
     Booq.prototype.constructor = Booq;
 
@@ -1035,7 +1035,7 @@
         this.transmit();
       },
     },
-      Linker.prototype);
+      Base.prototype);
 
     PrimitiveProp.prototype.constructor = PrimitiveProp;
 
@@ -1189,7 +1189,7 @@
         }
       }
     },
-      Linker.prototype);
+      Base.prototype);
 
     ArrayProp.prototype.constructor = ArrayProp;
 
