@@ -277,6 +277,24 @@
     var Base = function Base() { };
 
     Base.prototype = {
+      
+      /**
+       * Extends selector string
+       * 
+       * Selector string is generated from property name.
+       * The argument, extentSeletor string appends to genereted
+       * selector string.
+       * For example, the generated selector string will be ".prop_name",
+       * if the paroperty name is "prop_name".
+       * The selector string will be ".prop_name.extent",
+       * if the extentSeletor argument is ".extent";
+       * The selector string will be ".prop_name .extent",
+       * if the extentSeletor argument is " .extent";
+       * You can put a space if you want to select lower tag.
+       * 
+       * @param {string} extentSelector It is a selector string that you want to extend 
+       *                                for generated selector.
+       */
       extent: function (extentSelector) {
         getProxy(this).extentSelector = extentSelector;
         return this;
