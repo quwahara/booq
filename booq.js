@@ -383,6 +383,13 @@
       },
       linkPreferred: function (prferred, extra) {
         getProxy(this).ye = new Ye(this.fullPathSelector(prferred) + (isString(extra) ? extra : ""));
+        // var ye = new Ye(this.fullPathSelector(prferred) + (isString(extra) ? extra : ""));
+        // var privates = getProxy(this);
+        // if (privates.ye) {
+        //   privates.ye.add(ye);
+        // } else {
+        //   privates.ye = ye;
+        // }
         return this;
       },
       qualify: function (preferred) {
@@ -394,20 +401,6 @@
         // console.trace();
         return this;
       },
-      // link: function (selector) {
-      //   var privates = getProxy(this);
-      //   privates.ye = new Ye(privates.elem).q(selector);
-      //   return this;
-      // },
-      // linkByClass: function () {
-      //   return this.link("." + getProxy(this).name);
-      // },
-      // linkByName: function () {
-      //   return this.link("[name='" + getProxy(this).name + "']");
-      // },
-      // linkById: function () {
-      //   return this.link("#" + getProxy(this).name);
-      // },
       selector: function (preferred) {
         this.qualify(preferred);
         var privates = getProxy(this);
@@ -1321,7 +1314,15 @@
         return found === null ? new Ye(null, null) : found;
       },
       add: function (ye) {
-        this.elems = this.elems.concat(ye.elems);
+        var elemsNotIn = [];
+        for (var i = 0; i < ye.elems_.length; ++i) {
+          if (this.elems_.indexOf(ye.elems_[i]) === -1) {
+            elemsNotIn.push(ye.elems_[i]);
+          }
+        }
+        if (elemsNotIn.length > 0) {
+          this.elems_ = this.elems_.concat(elemsNotIn);
+        }
         return this;
       },
       removeChildAll: function () {
