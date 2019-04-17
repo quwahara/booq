@@ -259,29 +259,14 @@
       return obj;
     }
 
-    var proxies = {};
-
-    function setProxy(target, proxy) {
-      proxies[target._rid] = proxy;
-      return proxy;
-    }
-
-    function getProxy(target) {
-      if (target._rid) {
-        return proxies[target._rid];
-      } else {
-        return null;
-      }
-    }
-
     var Base = function Base() { };
 
     Base.prototype = {
-      
+
       /**
        * Extends selector string
        * 
-       * Selector string is generated from property name.
+       * Selector string is generated from property name automatically.
        * The argument, extentSeletor string appends to genereted
        * selector string.
        * For example, the generated selector string will be ".prop_name",
@@ -296,11 +281,11 @@
        *                                for generated selector.
        */
       extent: function (extentSelector) {
-        getProxy(this).extentSelector = extentSelector;
+        this.___r.extentSelector = extentSelector;
         return this;
       },
       preferredSelector: function (preferred) {
-        var privates = getProxy(this);
+        var privates = this.___r;
 
         // This was item in an array
         if (isInt(privates.index)) {
@@ -357,14 +342,14 @@
       },
       fullPathSelector: function (preferred) {
 
-        var privates = getProxy(this);
+        var privates = this.___r;
 
         // collect all parents
         var parents = [];
         var parent = privates.parent;
         while (parent) {
           parents.splice(0, 0, parent);
-          parent = getProxy(parent).parent;
+          parent = parent.___r.parent;
         }
 
         var selector = "";
@@ -383,7 +368,7 @@
 
           selector += parent.preferredSelector("class");
 
-          if (isInt(getProxy(parent).index)) {
+          if (isInt(parent.___r.index)) {
             isPrevInt = true;
           }
         }
@@ -393,16 +378,16 @@
         return selector;
       },
       linkByFullPath: function (preferred) {
-        getProxy(this).ye = new Ye(this.fullPathSelector(preferred));
+        this.___r.ye = new Ye(this.fullPathSelector(preferred));
         return this;
       },
       linkExtra: function (extra) {
-        return this.linkPreferred(getProxy(this).preferredLink, extra);
+        return this.linkPreferred(this.___r.preferredLink, extra);
       },
       linkPreferred: function (prferred, extra) {
-        getProxy(this).ye = new Ye(this.fullPathSelector(prferred) + (isString(extra) ? extra : ""));
+        this.___r.ye = new Ye(this.fullPathSelector(prferred) + (isString(extra) ? extra : ""));
         // var ye = new Ye(this.fullPathSelector(prferred) + (isString(extra) ? extra : ""));
-        // var privates = getProxy(this);
+        // var privates = this.___r;
         // if (privates.ye) {
         //   privates.ye.add(ye);
         // } else {
@@ -411,7 +396,7 @@
         return this;
       },
       qualify: function (preferred) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         if (privates.ye === null) {
           this.linkPreferred(preferred);
         }
@@ -421,16 +406,16 @@
       },
       selector: function (preferred) {
         this.qualify(preferred);
-        var privates = getProxy(this);
+        var privates = this.___r;
         var ye = privates.ye;
         return ye ? ye.lastSelector : "";
       },
       callFunctionWithThis: function (fun) {
         fun(this);
-        return getProxy(this).chains;
+        return this.___r.chains;
       },
       on: function (eventName, listener, opts) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         this.qualify("name");
         var ye = privates.ye;
         privates.ye = null;
@@ -448,7 +433,7 @@
        * @param {(Link|Booq|PrimitiveProp)} src 
        */
       copyLink: function (src) {
-        getProxy(this).ye = getProxy(src).ye.clone();
+        this.___r.ye = src.___r.ye.clone();
         return this;
       },
     };
@@ -461,7 +446,7 @@
 
       elem = elem || document;
 
-      var privates = setProxy(mergeRid(this), {
+      var privates = {
         self: this,
         structure: structure,
         data: new Booqd(this),
@@ -489,7 +474,7 @@
             }
           }
         }
-      });
+      };
 
       (function (self, privates) {
         Object.defineProperty(self, "data", {
@@ -504,7 +489,7 @@
           get: function () {
             var prop = privates.also;
             if (prop) {
-              getProxy(prop).ye = null;
+              prop.___r.ye = null;
               return prop;
             } else {
               return null;
@@ -532,6 +517,11 @@
             return self;
           },
         });
+        Object.defineProperty(self, "___r", {
+          get: function () {
+            return privates;
+          },
+        });
       })
         (this, privates);
 
@@ -548,7 +538,7 @@
         } else if (isObject(value)) {
           var valueBooq = new Booq(value, elem, this, /* index */ null, propName);
           setUpReadOnlyProperty(this, propName, valueBooq);
-          setUpBooqdProperty(privates.data, propName, getProxy(valueBooq).data);
+          setUpBooqdProperty(privates.data, propName, valueBooq.___r.data);
         } else if (isPrimitive(value)) {
           setUpPrimitiveProperty(this, propName, new PrimitiveProp(this, privates.data, propName, value, elem));
         } else {
@@ -561,6 +551,7 @@
           }
         }
       }
+
     };
 
     Booq.q = function q(selector) {
@@ -569,7 +560,7 @@
 
     Booq.prototype = objectAssign({
       fullname: function () {
-        var privates = getProxy(this);
+        var privates = this.___r;
         var fn = "";
         if (privates.parent) {
           fn = privates.parent.fullname();
@@ -586,7 +577,7 @@
         return fn;
       },
       setData: function (value) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         if (privates.data === value) return;
         var tc = typeCode(value);
         if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
@@ -601,18 +592,18 @@
        * The structure is a parameter of constructor.
        */
       setStructureAsData: function () {
-        return this.setData(getProxy(this).structure);
+        return this.setData(this.___r.structure);
       },
       update: function () {
-        getProxy(this).update();
+        this.___r.update();
         return this;
       },
       setUpdate: function (updater) {
-        getProxy(this).updater = updater;
+        this.___r.updater = updater;
         return this;
       },
       to: function (srcValueCallback) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         privates.receivers.push((function (ye, srcValueCallback) {
           return {
             receive: function (src, value) {
@@ -626,7 +617,7 @@
         return this;
       },
       toHref: function (arg) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         this.qualify("class");
 
         var callback;
@@ -665,7 +656,7 @@
        * Write-to-binding that is all properties to attributes.
        */
       toAttrs: function () {
-        var privates = getProxy(this);
+        var privates = this.___r;
         this.qualify("class");
 
         for (var name in this) {
@@ -681,7 +672,7 @@
         return privates.parent;
       },
       transmit: function () {
-        var privates = getProxy(this);
+        var privates = this.___r;
         var receivers = privates.receivers;
         for (var i = 0; i < receivers.length; ++i) {
           var receiver = receivers[i];
@@ -690,7 +681,7 @@
         }
       },
       receive: function (src, value) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         if (src === privates) return;
         privates.value = value;
         this.transmit();
@@ -701,8 +692,14 @@
     Booq.prototype.constructor = Booq;
 
     var Booqd = function Booqd(booq) {
-      setProxy(mergeRid(this), {
-        booq: booq
+
+      Object.defineProperty(this, '___r', {
+        enumerable: false,
+        configurable: false,
+        writable: false,
+        value: {
+          booq: booq
+        }
       });
     };
 
@@ -712,7 +709,7 @@
           if (!data.hasOwnProperty(name)) continue;
           this[name] = data[name];
         }
-        getProxy(this).booq.transmit();
+        this.___r.booq.transmit();
       },
     };
 
@@ -753,7 +750,7 @@
             return prop;
           }
         });
-      })(booq, getProxy(booq), name, prop, getProxy(prop));
+      })(booq, booq.___r, name, prop, prop.___r);
     }
 
     function isTypeCodeAssignable(dst, src) {
@@ -769,6 +766,25 @@
     }
 
     var PrimitiveProp = function PrimitiveProp(parent, booqd, name, value, elem) {
+
+      this.___r = {
+        parent: parent,
+        booqd: booqd,
+        self: this,
+        name: name,
+        value: value,
+        typeCode: typeCode(value),
+        elem: elem,
+        chains: parent,
+        preferredLink: "lower_class",
+        conditional: null,
+        ye: null,
+        receivers: [],
+        updater: funcVoid,
+        update: function () {
+          this.updater.call(this.self, this.value);
+        }
+      };
 
       (function (self, name, privates) {
 
@@ -787,29 +803,12 @@
           }
         });
 
-      })(this, name, setProxy(mergeRid(this), {
-        parent: parent,
-        booqd: booqd,
-        self: this,
-        name: name,
-        value: value,
-        typeCode: typeCode(value),
-        elem: elem,
-        chains: parent,
-        preferredLink: "lower_class",
-        conditional: null,
-        ye: null,
-        receivers: [],
-        updater: funcVoid,
-        update: function () {
-          this.updater.call(this.self, this.value);
-        }
-      }));
+      })(this, name, this.___r);
     };
 
     PrimitiveProp.prototype = objectAssign({
       fullname: function () {
-        var privates = getProxy(this);
+        var privates = this.___r;
         var fn = "";
         if (privates.parent) {
           fn = privates.parent.fullname();
@@ -820,15 +819,15 @@
         return fn;
       },
       update: function () {
-        getProxy(this).update();
+        this.___r.update();
         return this;
       },
       setUpdate: function (updater) {
-        getProxy(this).updater = updater;
+        this.___r.updater = updater;
         return this;
       },
       onReceive: function (fun) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         privates.receivers.push((function (fun, privates) {
           return {
             receive: function (src, value) {
@@ -839,7 +838,7 @@
         return privates.parent;
       },
       eq: function (condition) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         this.qualify("lower_class");
         var predicate = (function (condition) {
           return function (value) {
@@ -852,7 +851,7 @@
         return privates.conditional;
       },
       isTruthy: function () {
-        var privates = getProxy(this);
+        var privates = this.___r;
         this.qualify("lower_class");
         var predicate = function (value) {
           console.log("isTruthy", !!value);
@@ -864,7 +863,7 @@
         return privates.conditional;
       },
       isFalsy: function () {
-        var privates = getProxy(this);
+        var privates = this.___r;
         this.qualify("lower_class");
         var predicate = function (value) {
           console.log("isFalsy", !value);
@@ -876,14 +875,14 @@
         return privates.conditional;
       },
       to: function (receiver) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         privates.receivers.push(receiver);
         privates.ye = null;
         return privates.chains;
       },
       toText: function () {
         this.qualify("lower_class");
-        var privates = getProxy(this);
+        var privates = this.___r;
         return this.to((function (privates, ye) {
           return {
             receive: function (src, value) {
@@ -896,7 +895,7 @@
         })(privates, privates.ye.clone()));
       },
       toAttr: function (attrName, valueCallback) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         this.qualify("lower_class");
         return this.to((function (ye, attrName, valueCallback) {
           return {
@@ -910,7 +909,7 @@
         })(privates.ye.clone(), attrName, orPassthrough(valueCallback)));
       },
       toHref: function (arg) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         this.qualify("lower_class");
 
         var callback;
@@ -936,7 +935,7 @@
         })(privates.ye.clone(), callback));
       },
       togglesAttr: function (attrName, attrValue) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         this.qualify("lower_class");
         return this.to((function (ye, attrName, attrValue) {
           return {
@@ -954,7 +953,7 @@
         })(privates.ye.clone(), attrName, attrValue));
       },
       antitogglesAttr: function (attrName, attrValue) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         this.qualify("lower_class");
         return this.to((function (ye, attrName, attrValue) {
           return {
@@ -972,7 +971,7 @@
         })(privates.ye.clone(), attrName, attrValue));
       },
       togglesClass: function (className) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         this.qualify("lower_class");
         return this.to((function (ye, className) {
           return {
@@ -990,7 +989,7 @@
         })(privates.ye.clone(), className));
       },
       antitogglesClass: function (className) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         this.qualify("lower_class");
         return this.to((function (ye, className) {
           return {
@@ -1008,7 +1007,7 @@
         })(privates.ye.clone(), className));
       },
       withValue: function () {
-        var privates = getProxy(this);
+        var privates = this.___r;
         this.qualify("lower_name");
         var ye = privates.ye;
         privates.ye = null;
@@ -1030,7 +1029,7 @@
         return privates.parent;
       },
       addClass: function (className) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         var name = privates.name;
         var selector = "." + name + ", " +
           "[name='" + name + "'], " +
@@ -1038,7 +1037,7 @@
         this.qualify(selector).addClass(className);
       },
       transmit: function () {
-        var privates = getProxy(this);
+        var privates = this.___r;
         var receivers = privates.receivers;
         for (var i = 0; i < receivers.length; ++i) {
           var receiver = receivers[i];
@@ -1047,7 +1046,7 @@
         }
       },
       receive: function (src, value) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         if (src === privates) return;
         privates.value = value;
         this.transmit();
@@ -1058,7 +1057,7 @@
     PrimitiveProp.prototype.constructor = PrimitiveProp;
 
     var ArrayProp = function ArrayProp(parent, dataBody, name, array, elem) {
-      var privates = setProxy(mergeRid(this), {
+      var privates = {
         parent: parent,
         name: name,
         elem: elem,
@@ -1070,7 +1069,9 @@
         templates: {},
         eachSets: {},
         ye: null,
-      });
+      };
+
+      this.___r = privates;
 
       (function (self, dataBody, name, array) {
 
@@ -1094,7 +1095,7 @@
       (function (self, parent) {
         Object.defineProperty(self, "end", {
           get: function () {
-            getProxy(self).extentSelector = null;
+            self.___r.extentSelector = null;
             return parent;
           },
         });
@@ -1104,7 +1105,7 @@
 
     ArrayProp.prototype = objectAssign({
       fullname: function () {
-        var privates = getProxy(this);
+        var privates = this.___r;
         var fn = "";
         if (privates.parent) {
           fn = privates.parent.fullname();
@@ -1116,7 +1117,7 @@
       },
       each: function (callback) {
         this.qualify("class");
-        var privates = getProxy(this);
+        var privates = this.___r;
         privates.ye.each((function (self, privates) {
           // closure for ye.each() having self and privates
           return function () {
@@ -1190,7 +1191,7 @@
         return privates.chains;
       },
       replaceWith: function (array) {
-        var privates = getProxy(this);
+        var privates = this.___r;
         if (privates.ye) {
           privates.ye.each(function () {
             removeChildAll(this);
