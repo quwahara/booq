@@ -453,7 +453,6 @@
     var Booq = function Booq(structure, elem, parent, index, name) {
 
       this.___base();
-      console.log("Booq constructor");
 
       if (!isObject(structure)) {
         throw Error("'structure' must be an Object.");
@@ -461,7 +460,7 @@
 
       elem = elem || document;
 
-      var privates = {
+      objectAssign(this.___r, {
         self: this,
         structure: structure,
         data: new Booqd(this),
@@ -489,16 +488,12 @@
             }
           }
         }
-      };
+      });
 
-      objectAssign(this.___r, privates);
-
-      privates = this.___r;
-
-      (function (self, privates) {
+      (function (self) {
         Object.defineProperty(self, "data", {
           get: function () {
-            return privates.data;
+            return self.___r.data;
           },
           set: function (value) {
             self.setData(value);
@@ -506,7 +501,7 @@
         });
         Object.defineProperty(self, "also", {
           get: function () {
-            var prop = privates.also;
+            var prop = self.___r.also;
             if (prop) {
               prop.___r.ye = null;
               return prop;
@@ -517,16 +512,16 @@
         });
         Object.defineProperty(self, "end", {
           get: function () {
-            privates.extentSelector = null;
-            return privates.parent;
+            self.___r.extentSelector = null;
+            return self.___r.parent;
           },
         });
-        if (privates.name) {
-          var n = privates.name;
+        if (self.___r.name) {
+          var n = self.___r.name;
           Object.defineProperty(self, "end" + n.slice(0, 1).toUpperCase() + n.slice(1), {
             get: function () {
-              privates.extentSelector = null;
-              return privates.parent;
+              self.___r.extentSelector = null;
+              return self.___r.parent;
             },
           });
         }
@@ -537,7 +532,7 @@
           },
         });
       })
-        (this, privates);
+        (this);
 
       for (var propName in structure) {
         if (!structure.hasOwnProperty(propName)) continue;
@@ -548,13 +543,13 @@
 
         var value = structure[propName];
         if (isArray(value)) {
-          setUpReadOnlyProperty(this, propName, new ArrayProp(this, privates.data, propName, value, elem));
+          setUpReadOnlyProperty(this, propName, new ArrayProp(this, this.___r.data, propName, value, elem));
         } else if (isObject(value)) {
           var valueBooq = new Booq(value, elem, this, /* index */ null, propName);
           setUpReadOnlyProperty(this, propName, valueBooq);
-          setUpBooqdProperty(privates.data, propName, valueBooq.___r.data);
+          setUpBooqdProperty(this.___r.data, propName, valueBooq.___r.data);
         } else if (isPrimitive(value)) {
-          setUpPrimitiveProperty(this, propName, new PrimitiveProp(this, privates.data, propName, value, elem));
+          setUpPrimitiveProperty(this, propName, new PrimitiveProp(this, this.___r.data, propName, value, elem));
         } else {
           if (value === null) {
             throw Error("null is not allowed for value.");
