@@ -570,16 +570,15 @@
     Booq.prototype = objectAssign({
       ___base: Base.prototype.constructor,
       fullname: function () {
-        var privates = this.___r;
         var fn = "";
-        if (privates.parent) {
-          fn = privates.parent.fullname();
+        if (this.___r.parent) {
+          fn = this.___r.parent.fullname();
         }
         var me;
-        if (isInt(privates.index)) {
-          me = privates.index;
-        } else if (isString(privates.name)) {
-          me = privates.name;
+        if (isInt(this.___r.index)) {
+          me = this.___r.index;
+        } else if (isString(this.___r.name)) {
+          me = this.___r.name;
         } else {
           me = "(empty)";
         }
@@ -587,13 +586,12 @@
         return fn;
       },
       setData: function (value) {
-        var privates = this.___r;
-        if (privates.data === value) return;
+        if (this.___r.data === value) return;
         var tc = typeCode(value);
         if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
           throw Error("Assigned value type was unmatch.");
         }
-        privates.data.replaceWith(value);
+        this.___r.data.replaceWith(value);
         this.transmit();
         return this;
       },
@@ -613,8 +611,7 @@
         return this;
       },
       to: function (srcValueCallback) {
-        var privates = this.___r;
-        privates.receivers.push((function (ye, srcValueCallback) {
+        this.___r.receivers.push((function (ye, srcValueCallback) {
           return {
             receive: function (src, value) {
               ye.each(function () {
@@ -623,11 +620,10 @@
               });
             }
           };
-        })(privates.ye.clone(), srcValueCallback));
+        })(this.___r.ye.clone(), srcValueCallback));
         return this;
       },
       toHref: function (arg) {
-        var privates = this.___r;
         this.qualify("class");
 
         var callback;
@@ -666,7 +662,6 @@
        * Write-to-binding that is all properties to attributes.
        */
       toAttrs: function () {
-        var privates = this.___r;
         this.qualify("class");
 
         for (var name in this) {
@@ -679,21 +674,19 @@
           }
         }
 
-        return privates.parent;
+        return this.___r.parent;
       },
       transmit: function () {
-        var privates = this.___r;
-        var receivers = privates.receivers;
+        var receivers = this.___r.receivers;
         for (var i = 0; i < receivers.length; ++i) {
           var receiver = receivers[i];
-          if (receiver === privates) continue;
-          receiver.receive(privates, privates.data);
+          if (receiver === this.___r) continue;
+          receiver.receive(this.___r, this.___r.data);
         }
       },
       receive: function (src, value) {
-        var privates = this.___r;
-        if (src === privates) return;
-        privates.value = value;
+        if (src === this.___r) return;
+        this.___r.value = value;
         this.transmit();
       },
     },
