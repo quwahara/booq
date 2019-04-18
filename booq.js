@@ -260,7 +260,15 @@
     }
 
     var Base = function Base() {
-      console.log("Base constructor");
+
+      (function (self, privates) {
+        Object.defineProperty(self, "___r", {
+          get: function () {
+            return privates;
+          },
+        });
+
+      })(this, {});
     };
 
     Base.prototype = {
@@ -483,6 +491,10 @@
         }
       };
 
+      objectAssign(this.___r, privates);
+
+      privates = this.___r;
+
       (function (self, privates) {
         Object.defineProperty(self, "data", {
           get: function () {
@@ -522,11 +534,6 @@
         Object.defineProperty(self, "___", {
           get: function () {
             return self;
-          },
-        });
-        Object.defineProperty(self, "___r", {
-          get: function () {
-            return privates;
           },
         });
       })
@@ -775,9 +782,9 @@
 
     var PrimitiveProp = function PrimitiveProp(parent, booqd, name, value, elem) {
 
-      console.log("PrimitiveProp constructor");
+      this.___base();
 
-      this.___r = {
+      objectAssign(this.___r, {
         parent: parent,
         booqd: booqd,
         self: this,
@@ -794,7 +801,7 @@
         update: function () {
           this.updater.call(this.self, this.value);
         }
-      };
+      });
 
       (function (self, name, privates) {
 
@@ -1069,9 +1076,9 @@
 
     var ArrayProp = function ArrayProp(parent, dataBody, name, array, elem) {
 
-      console.log("ArrayProp constructor");
+      this.___base();
 
-      var privates = {
+      objectAssign(this.___r, {
         parent: parent,
         name: name,
         elem: elem,
@@ -1083,9 +1090,9 @@
         templates: {},
         eachSets: {},
         ye: null,
-      };
+      });
 
-      this.___r = privates;
+      var privates = this.___r;
 
       (function (self, dataBody, name, array) {
 
