@@ -791,16 +791,16 @@
         }
       });
 
-      (function (self, name, privates) {
+      (function (self, name) {
 
-        Object.defineProperty(privates.booqd, name, {
+        Object.defineProperty(self.___r.booqd, name, {
           enumerable: true,
           get: function () {
-            return privates.value;
+            return self.___r.value;
           },
           set: function (value) {
             if (value == null || typeCode(value) === TC_PIMITIVE) {
-              privates.value = value;
+              self.___r.value = value;
               self.transmit();
             } else {
               throw Error("Assigned value type was unmatch.");
@@ -808,7 +808,7 @@
           }
         });
 
-      })(this, name, this.___r);
+      })(this, name);
     };
 
     PrimitiveProp.prototype = objectAssign({
@@ -1080,17 +1080,15 @@
         ye: null,
       });
 
-      var privates = this.___r;
-
-      (function (self, dataBody, name, array) {
+      (function (self, dataBody, name) {
 
         Object.defineProperty(dataBody, name, {
           enumerable: true,
           get: function () {
-            return array;
+            return self.___r.array;
           },
           set: function (value) {
-            if (array === value) return;
+            if (self.___r.array === value) return;
             var tc = typeCode(value);
             if (!isTypeCodeAssignable(TC_ARRQD, tc)) {
               throw Error("Assigned value type was unmatch.");
@@ -1099,7 +1097,7 @@
           }
         });
 
-      })(this, dataBody, name, privates.array);
+      })(this, dataBody, name);
 
       (function (self, parent) {
         Object.defineProperty(self, "end", {
