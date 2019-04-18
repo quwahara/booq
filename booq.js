@@ -307,13 +307,13 @@
         if (privates.name) {
           if (preferred === "id") {
             nameSelector = "#" + name;
-          } else if (preferred === "name" || preferred === "lower_name") {
-            if (preferred === "lower_name") {
+          } else if (preferred === "name" || preferred === "down_and_name") {
+            if (preferred === "down_and_name") {
               nameSelector = " ";
             }
             nameSelector += "[name='" + name + "']";
-          } else if (preferred === "class" || preferred === "lower_class") {
-            if (preferred === "lower_class") {
+          } else if (preferred === "class" || preferred === "down_and_class") {
+            if (preferred === "down_and_class") {
               nameSelector = " ";
             }
             nameSelector += "." + name;
@@ -329,9 +329,9 @@
             if (name === "") {
               nameSelector += privates.extentSelector;
             }
-          } else if (preferred === "name" || preferred === "lower_name") {
+          } else if (preferred === "name" || preferred === "down_and_name") {
             nameSelector += privates.extentSelector;
-          } else if (preferred === "class" || preferred === "lower_class") {
+          } else if (preferred === "class" || preferred === "down_and_class") {
             nameSelector += privates.extentSelector;
           } else {
             throw Error("Unsupported preferred");
@@ -776,7 +776,7 @@
         typeCode: typeCode(value),
         elem: elem,
         chains: parent,
-        preferredLink: "lower_class",
+        preferredLink: "down_and_class",
         conditional: null,
         ye: null,
         receivers: [],
@@ -839,7 +839,7 @@
       },
       eq: function (condition) {
         var privates = this.___r;
-        this.qualify("lower_class");
+        this.qualify("down_and_class");
         var predicate = (function (condition) {
           return function (value) {
             return condition === value;
@@ -852,7 +852,7 @@
       },
       isTruthy: function () {
         var privates = this.___r;
-        this.qualify("lower_class");
+        this.qualify("down_and_class");
         var predicate = function (value) {
           console.log("isTruthy", !!value);
           return !!value;
@@ -864,7 +864,7 @@
       },
       isFalsy: function () {
         var privates = this.___r;
-        this.qualify("lower_class");
+        this.qualify("down_and_class");
         var predicate = function (value) {
           console.log("isFalsy", !value);
           return !value;
@@ -881,7 +881,7 @@
         return privates.chains;
       },
       toText: function () {
-        this.qualify("lower_class");
+        this.qualify("down_and_class");
         var privates = this.___r;
         return this.to((function (privates, ye) {
           return {
@@ -896,7 +896,7 @@
       },
       toAttr: function (attrName, valueCallback) {
         var privates = this.___r;
-        this.qualify("lower_class");
+        this.qualify("down_and_class");
         return this.to((function (ye, attrName, valueCallback) {
           return {
             receive: function (src, value) {
@@ -910,7 +910,7 @@
       },
       toHref: function (arg) {
         var privates = this.___r;
-        this.qualify("lower_class");
+        this.qualify("down_and_class");
 
         var callback;
         if (isUndefined(arg)) {
@@ -936,7 +936,7 @@
       },
       togglesAttr: function (attrName, attrValue) {
         var privates = this.___r;
-        this.qualify("lower_class");
+        this.qualify("down_and_class");
         return this.to((function (ye, attrName, attrValue) {
           return {
             receive: function (src, value) {
@@ -954,7 +954,7 @@
       },
       antitogglesAttr: function (attrName, attrValue) {
         var privates = this.___r;
-        this.qualify("lower_class");
+        this.qualify("down_and_class");
         return this.to((function (ye, attrName, attrValue) {
           return {
             receive: function (src, value) {
@@ -972,7 +972,7 @@
       },
       togglesClass: function (className) {
         var privates = this.___r;
-        this.qualify("lower_class");
+        this.qualify("down_and_class");
         return this.to((function (ye, className) {
           return {
             receive: function (src, value) {
@@ -990,7 +990,7 @@
       },
       antitogglesClass: function (className) {
         var privates = this.___r;
-        this.qualify("lower_class");
+        this.qualify("down_and_class");
         return this.to((function (ye, className) {
           return {
             receive: function (src, value) {
@@ -1008,7 +1008,7 @@
       },
       withValue: function () {
         var privates = this.___r;
-        this.qualify("lower_name");
+        this.qualify("down_and_name");
         var ye = privates.ye;
         privates.ye = null;
         this.to((function (privates, ye) {
