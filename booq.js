@@ -259,7 +259,9 @@
       return obj;
     }
 
-    var Base = function Base() { };
+    var Base = function Base() {
+      console.log("Base constructor");
+    };
 
     Base.prototype = {
 
@@ -438,7 +440,12 @@
       },
     };
 
+    Base.prototype.constructor = Base;
+
     var Booq = function Booq(structure, elem, parent, index, name) {
+
+      this.___base();
+      console.log("Booq constructor");
 
       if (!isObject(structure)) {
         throw Error("'structure' must be an Object.");
@@ -559,6 +566,7 @@
     };
 
     Booq.prototype = objectAssign({
+      ___base: Base.prototype.constructor,
       fullname: function () {
         var privates = this.___r;
         var fn = "";
@@ -767,6 +775,8 @@
 
     var PrimitiveProp = function PrimitiveProp(parent, booqd, name, value, elem) {
 
+      console.log("PrimitiveProp constructor");
+
       this.___r = {
         parent: parent,
         booqd: booqd,
@@ -807,6 +817,7 @@
     };
 
     PrimitiveProp.prototype = objectAssign({
+      ___base: Base.prototype.constructor,
       fullname: function () {
         var privates = this.___r;
         var fn = "";
@@ -1057,6 +1068,9 @@
     PrimitiveProp.prototype.constructor = PrimitiveProp;
 
     var ArrayProp = function ArrayProp(parent, dataBody, name, array, elem) {
+
+      console.log("ArrayProp constructor");
+
       var privates = {
         parent: parent,
         name: name,
@@ -1104,6 +1118,7 @@
     };
 
     ArrayProp.prototype = objectAssign({
+      ___base: Base.prototype.constructor,
       fullname: function () {
         var privates = this.___r;
         var fn = "";
