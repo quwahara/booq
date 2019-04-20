@@ -268,7 +268,11 @@
           },
         });
 
-      })(this, {});
+      })(this,
+        // privates
+        {
+          receivers: [],
+        });
     };
 
     Base.prototype = {
@@ -424,6 +428,21 @@
         fun(this);
         return this.___r.chains;
       },
+      to: function (srcValueCallback) {
+        this.___r.receivers.push((function (ye, srcValueCallback) {
+          return {
+            receive: function (src, value) {
+              ye.each(function () {
+                if (this === src) return;
+                srcValueCallback.call(this, src, value);
+              });
+            }
+          };
+        })(this.___r.ye.clone(), srcValueCallback));
+        this.___r.ye = null;
+        return this.___r.chains;
+      },
+
       on: function (eventName, listener, opts) {
         var privates = this.___r;
         this.qualify("name");
@@ -471,7 +490,6 @@
         chains: this,
         preferredLink: "class",
         ye: null,
-        receivers: [],
         also: null,
         updater: funcVoid,
         update: function () {
@@ -608,19 +626,6 @@
       },
       setUpdate: function (updater) {
         this.___r.updater = updater;
-        return this;
-      },
-      to: function (srcValueCallback) {
-        this.___r.receivers.push((function (ye, srcValueCallback) {
-          return {
-            receive: function (src, value) {
-              ye.each(function () {
-                if (this === src) return;
-                srcValueCallback.call(this, src, value);
-              });
-            }
-          };
-        })(this.___r.ye.clone(), srcValueCallback));
         return this;
       },
       toHref: function (arg) {
@@ -784,7 +789,6 @@
         preferredLink: "down_and_class",
         conditional: null,
         ye: null,
-        receivers: [],
         updater: funcVoid,
         update: function () {
           this.updater.call(this.self, this.value);
@@ -880,167 +884,98 @@
         privates.ye = null;
         return privates.conditional;
       },
-      to: function (receiver) {
-        var privates = this.___r;
-        privates.receivers.push(receiver);
-        privates.ye = null;
-        return privates.chains;
-      },
       toText: function () {
         this.qualify("down_and_class");
-        var privates = this.___r;
-        return this.to((function (privates, ye) {
-          return {
-            receive: function (src, value) {
-              ye.each(function () {
-                if (this === src) return;
-                this.textContent = value;
-              });
-            }
-          };
-        })(privates, privates.ye.clone()));
+        return this.to(function (src, value) {
+          this.textContent = value;
+        });
       },
       toAttr: function (attrName, valueCallback) {
-        var privates = this.___r;
         this.qualify("down_and_class");
-        return this.to((function (ye, attrName, valueCallback) {
-          return {
-            receive: function (src, value) {
-              ye.each(function () {
-                if (this === src) return;
-                this.setAttribute(attrName, valueCallback(value));
-              });
-            }
+        return this.to((function (attrName, valueCallback) {
+          return function (src, value) {
+            this.setAttribute(attrName, valueCallback(value));
           };
-        })(privates.ye.clone(), attrName, orPassthrough(valueCallback)));
+        })(attrName, orPassthrough(valueCallback)));
       },
       toHref: function (arg) {
-        var privates = this.___r;
         this.qualify("down_and_class");
 
         var callback;
         if (isUndefined(arg)) {
           callback = passthrough;
         } else if (isString(arg)) {
-          callback = valueReplace(arg, new RegExp(":" + privates.name + "\\b", "g"));
+          callback = valueReplace(arg, new RegExp(":" + this.___r.name + "\\b", "g"));
         } else if (isFunction(arg)) {
           callback = arg;
         } else {
           throw Error("Unsupported type of argument");
         }
 
-        return this.to((function (ye, valueCallback) {
-          return {
-            receive: function (src, value) {
-              ye.each(function () {
-                if (this === src) return;
-                this.href = valueCallback(value);
-              });
-            }
+        return this.to((function (callback) {
+          return function (src, value) {
+            this.href = callback(value);
           };
-        })(privates.ye.clone(), callback));
+        })(orPassthrough(callback)));
       },
       togglesAttr: function (attrName, attrValue) {
-        var privates = this.___r;
         this.qualify("down_and_class");
-        return this.to((function (ye, attrName, attrValue) {
-          return {
-            receive: function (src, value) {
-              ye.each(function () {
-                if (this === src) return;
-                if (value) {
-                  this.setAttribute(attrName, attrValue);
-                } else {
-                  this.removeAttribute(attrName);
-                }
-              });
+        return this.to((function (attrName, attrValue) {
+          return function (src, value) {
+            if (value) {
+              this.setAttribute(attrName, attrValue);
+            } else {
+              this.removeAttribute(attrName);
             }
           };
-        })(privates.ye.clone(), attrName, attrValue));
+        })(attrName, attrValue));
       },
       antitogglesAttr: function (attrName, attrValue) {
-        var privates = this.___r;
         this.qualify("down_and_class");
-        return this.to((function (ye, attrName, attrValue) {
-          return {
-            receive: function (src, value) {
-              ye.each(function () {
-                if (this === src) return;
-                if (!value) {
-                  this.setAttribute(attrName, attrValue);
-                } else {
-                  this.removeAttribute(attrName);
-                }
-              });
+        return this.to((function (attrName, attrValue) {
+          return function (src, value) {
+            if (!value) {
+              this.setAttribute(attrName, attrValue);
+            } else {
+              this.removeAttribute(attrName);
             }
           };
-        })(privates.ye.clone(), attrName, attrValue));
+        })(attrName, attrValue));
       },
       togglesClass: function (className) {
-        var privates = this.___r;
         this.qualify("down_and_class");
-        return this.to((function (ye, className) {
-          return {
-            receive: function (src, value) {
-              ye.each(function () {
-                if (this === src) return;
-                if (value) {
-                  this.classList.add(className);
-                } else {
-                  this.classList.remove(className);
-                }
-              });
+        return this.to((function (className) {
+          return function (src, value) {
+            if (value) {
+              this.classList.add(className);
+            } else {
+              this.classList.remove(className);
             }
           };
-        })(privates.ye.clone(), className));
+        })(className));
       },
       antitogglesClass: function (className) {
-        var privates = this.___r;
         this.qualify("down_and_class");
-        return this.to((function (ye, className) {
-          return {
-            receive: function (src, value) {
-              ye.each(function () {
-                if (this === src) return;
-                if (!value) {
-                  this.classList.add(className);
-                } else {
-                  this.classList.remove(className);
-                }
-              });
+        return this.to((function (className) {
+          return function (src, value) {
+            if (!value) {
+              this.classList.add(className);
+            } else {
+              this.classList.remove(className);
             }
           };
-        })(privates.ye.clone(), className));
+        })(className));
       },
       withValue: function () {
-        var privates = this.___r;
         this.qualify("down_and_name");
-        var ye = privates.ye;
-        privates.ye = null;
-        this.to((function (privates, ye) {
-          return {
-            receive: function (src, value) {
-              ye.each(function () {
-                if (this === src) return;
-                this.value = value;
-              });
-            }
-          };
-        })(privates, ye));
-        ye.on("change", (function (self) {
+        this.___r.ye.on("change", (function (self) {
           return function (event) {
             self.receive(self, event.target.value);
           };
         })(this));
-        return privates.parent;
-      },
-      addClass: function (className) {
-        var privates = this.___r;
-        var name = privates.name;
-        var selector = "." + name + ", " +
-          "[name='" + name + "'], " +
-          "#" + name;
-        this.qualify(selector).addClass(className);
+        return this.to(function (src, value) {
+          this.value = value;
+        });
       },
       transmit: function () {
         var privates = this.___r;
@@ -1073,7 +1008,6 @@
         chains: parent,
         preferredLink: "class",
         array: [],
-        receivers: [],
         structure: array[0],
         templates: {},
         eachSets: {},

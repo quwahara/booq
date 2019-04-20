@@ -19,38 +19,7 @@
 </head>
 
 <body>
-  <div>
-    <h1>Tests</h1>
-    <h2>Status</h2>
-    <div>
-      <table>
-        <thead>
-          <th>#</th>
-          <th>Result</th>
-          <th>Title</th>
-          <th>Expected/Actual</th>
-        </thead>
-        <tbody class="status">
-
-        </tbody>
-      </table>
-    </div>
-    <h2>Bench</h2>
-    <div class="bench">
-      <div class="test1 primitiveProp_">
-        <div class="toText_"></div>
-      </div>
-
-      <div class="test2 arrayProp_ theArray">
-        <div class="theArrayProp"></div>
-      </div>
-
-      <div><a class="test3 booq_">booq_</a></div>
-    </div>
-  </div>
   <script>
-    let no = 0;
-
     // Reference: https://qiita.com/saekis/items/c2b41cd8940923863791 
     function escape_html(string) {
       if (typeof string !== 'string') {
@@ -76,6 +45,8 @@
       return s;
     }
 
+    let no = 0;
+
     function test(title, expected, actual) {
       ++no;
       let actual2;
@@ -97,13 +68,60 @@
         "</td>" +
         "");
     }
+  </script>
+  <div>
+    <h1>Tests</h1>
+    <h2>Status</h2>
+    <div>
+      <table>
+        <thead>
+          <th>#</th>
+          <th>Result</th>
+          <th>Title</th>
+          <th>Expected/Actual</th>
+        </thead>
+        <tbody class="status">
 
+        </tbody>
+      </table>
+    </div>
+    <h2>Bench</h2>
+    <div class="bench">
+      <div class="test1 primitiveProp_">
+        <div class="toText_"></div>
+        <div class="toAttr_"></div>
+        <a class="toHref_"></a>
+        <div class="togglesAttr_"></div>
+        <div class="antitogglesAttr_"></div>
+        <div class="togglesClass_"></div>
+        <div class="antitogglesClass_"></div>
+        <div><input name="withValue_" type="text"></div>
+      </div>
+
+      <div class="test2 arrayProp_ theArray">
+        <div class="theArrayProp"></div>
+      </div>
+
+      <div>
+        <a class="test3 toHref_">toHref_</a>
+        <div class="test3 toAttrs_"></div>
+      </div>
+    </div>
+  </div>
+  <script>
     window.onload = function () {
 
       const structure = {
         test1: {
           primitiveProp_: {
             toText_: "",
+            toAttr_: "",
+            toHref_: "",
+            togglesAttr_: false,
+            antitogglesAttr_: false,
+            togglesClass_: false,
+            antitogglesClass_: false,
+            withValue_: "",
           },
         },
         test2: {
@@ -114,25 +132,63 @@
           }
         },
         test3: {
-          booq_: {
+          toHref_: {
             prop1: "",
             prop2: 0,
-          }
+          },
+          toAttrs_: {
+            prop1: "",
+            prop2: 0,
+          },
         },
       };
       const booq = new Booq(structure);
 
-      test("PrimitiveProp.toText()", "value1", function () {
-        booq.test1.primitiveProp_.toText_.toText();
-        booq.setData({
-          test1: {
-            primitiveProp_: {
-              toText_: "value1",
+      test(
+        "PrimitiveProp",
+        "text1,attr1,[href1],toggles_attr1,antitoggles_attr1,true,true,value1,",
+        function () {
+          booq.test1.primitiveProp_.toText_.toText();
+          booq.test1.primitiveProp_.toAttr_.toAttr("attr");
+          booq.test1.primitiveProp_.toHref_.toHref("[:toHref_]");
+          booq.test1.primitiveProp_.togglesAttr_.togglesAttr("toggles_attr", "toggles_attr1");
+          booq.test1.primitiveProp_.antitogglesAttr_.antitogglesAttr("antitoggles_attr", "antitoggles_attr1");
+          booq.test1.primitiveProp_.togglesClass_.togglesClass("toggles_class");
+          booq.test1.primitiveProp_.antitogglesClass_.antitogglesClass("antitoggles_class");
+          booq.test1.primitiveProp_.withValue_.withValue();
+          booq.setData({
+            test1: {
+              primitiveProp_: {
+                toText_: "text1",
+                toAttr_: "attr1",
+                toHref_: "href1",
+                togglesAttr_: true,
+                antitogglesAttr_: false,
+                togglesClass_: true,
+                antitogglesClass_: false,
+                withValue_: "value1",
+              }
             }
+          });
+
+          var href = document.querySelector(".test1 .toHref_").href;
+          var subHref;
+          if (href && href.length >= 7) {
+            subHref = href.substring(href.length - 7);
+          } else {
+            subHref = "(Href string length was short)";
           }
+
+          return document.querySelector(".test1 .toText_").textContent + ","
+            + document.querySelector(".test1 .toAttr_").getAttribute("attr") + ","
+            + subHref + ","
+            + document.querySelector(".test1 .togglesAttr_").getAttribute("toggles_attr") + ","
+            + document.querySelector(".test1 .antitogglesAttr_").getAttribute("antitoggles_attr") + ","
+            + document.querySelector(".test1 .togglesClass_").classList.contains("toggles_class").toString().toLowerCase() + ","
+            + document.querySelector(".test1 .antitogglesClass_").classList.contains("antitoggles_class").toString().toLowerCase() + ","
+            + document.querySelector(".test1 [name='withValue_']").value + ","
+            ;
         });
-        return document.querySelector(".test1 .toText_").textContent;
-      });
 
       test("arrayProp_.each() for Object item",
         '<div class="theArrayProp">theArrayProp1</div>' +
@@ -158,18 +214,29 @@
           return unionOuterHTML(document.querySelectorAll(".test2 .theArrayProp"));
         });
 
-      test("Booq.toHref()", "http://test.com/test.html?prop1=value1&prop2=2", function () {
-        booq.test3.booq_.toHref("http://test.com/test.html?prop1=:prop1&prop2=:prop2");
-        booq.setData({
-          test3: {
-            booq_: {
-              prop1: "value1",
-              prop2: 2,
+      test(
+        "Booq.toHref()",
+        "http://test.com/test.html?prop1=value1&prop2=2,value1,2,",
+        function () {
+          booq.test3.toHref_.toHref("http://test.com/test.html?prop1=:prop1&prop2=:prop2");
+          booq.test3.toAttrs_.toAttrs();
+          booq.setData({
+            test3: {
+              toHref_: {
+                prop1: "value1",
+                prop2: 2,
+              },
+              toAttrs_: {
+                prop1: "value1",
+                prop2: 2,
+              },
             }
-          }
+          });
+          return document.querySelector(".test3.toHref_").href + ","
+            + document.querySelector(".test3.toAttrs_").getAttribute("prop1") + ","
+            + document.querySelector(".test3.toAttrs_").getAttribute("prop2") + ","
+            ;
         });
-        return document.querySelector(".test3").href;
-      });
 
     };
   </script>
