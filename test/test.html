@@ -40,7 +40,7 @@
     function unionOuterHTML(elements) {
       let s = "";
       for (let i = 0; i < elements.length; ++i) {
-        s += elements.item(i).outerHTML;
+        s += elements.item(i).outerHTML.replace(/(\r|\n)\s+/g, "");
       }
       return s;
     }
@@ -99,7 +99,9 @@
       </div>
 
       <div class="test2 arrayProp_ theArray">
-        <div class="theArrayProp"></div>
+        <div class="oneStepBelow">
+          <div class="twoStepsBelow"></div>
+        </div>
       </div>
 
       <div>
@@ -127,7 +129,8 @@
         test2: {
           arrayProp_: {
             theArray: [{
-              theArrayProp: "",
+              oneStepBelow: "",
+              twoStepsBelow: "",
             }]
           }
         },
@@ -191,27 +194,35 @@
         });
 
       test("arrayProp_.each() for Object item",
-        '<div class="theArrayProp">theArrayProp1</div>' +
-        '<div class="theArrayProp">theArrayProp2</div>' +
+
+        '<div class="oneStepBelow" one-step-below="oneStepBelow1">' +
+        '<div class="twoStepsBelow">twoStepsBelow1</div>' +
+        '</div>' +
+        '<div class="oneStepBelow" one-step-below="oneStepBelow2">' +
+        '<div class="twoStepsBelow">twoStepsBelow2</div>' +
+        '</div>' +
         '',
         function () {
           booq.test2.arrayProp_.theArray.each(function (element) {
-            this.theArrayProp.qualify("class").toText();
+            this.oneStepBelow.linkPreferred("class").toAttr("one-step-below");
+            this.twoStepsBelow.toText();
           });
           booq.setData({
             test2: {
               arrayProp_: {
                 theArray: [{
-                  theArrayProp: "theArrayProp1",
+                  oneStepBelow: "oneStepBelow1",
+                  twoStepsBelow: "twoStepsBelow1",
                 },
                 {
-                  theArrayProp: "theArrayProp2",
+                  oneStepBelow: "oneStepBelow2",
+                  twoStepsBelow: "twoStepsBelow2",
                 },
                 ]
               },
             }
           });
-          return unionOuterHTML(document.querySelectorAll(".test2 .theArrayProp"));
+          return unionOuterHTML(document.querySelectorAll(".test2 .oneStepBelow"));
         });
 
       test(

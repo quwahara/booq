@@ -271,6 +271,8 @@
       })(this,
         // privates
         {
+          toPreferred: "class",
+          withPreferred: "name",
           receivers: [],
         });
     };
@@ -301,15 +303,6 @@
       preferredSelector: function (preferred) {
         var privates = this.___r;
 
-        // This was item in an array
-        if (isInt(privates.index)) {
-          var selector = ">*:nth-child(" + (privates.index + 1) + ")";
-          if (isString(privates.extentSelector)) {
-            selector += privates.extentSelector;
-          }
-          return selector;
-        }
-
         var nameSelector = "";
         var name;
         if (privates.name) {
@@ -318,22 +311,33 @@
           name = "";
         }
 
-        if (privates.name) {
-          if (preferred === "id") {
-            nameSelector = "#" + name;
-          } else if (preferred === "name" || preferred === "down_and_name") {
-            if (preferred === "down_and_name") {
-              nameSelector = " ";
-            }
-            nameSelector += "[name='" + name + "']";
-          } else if (preferred === "class" || preferred === "down_and_class") {
-            if (preferred === "down_and_class") {
-              nameSelector = " ";
-            }
-            nameSelector += "." + name;
-          } else {
-            throw Error("Unsupported preferred");
+        if (preferred === "class" || preferred === "down_and_class") {
+          if (preferred === "down_and_class") {
+            nameSelector = " ";
           }
+          if (name) {
+            nameSelector += "." + name;
+          }
+        } else if (preferred === "name" || preferred === "down_and_name") {
+          if (preferred === "down_and_name") {
+            nameSelector = " ";
+          }
+          if (name) {
+            nameSelector += "[name='" + name + "']";
+          }
+        } else if (preferred === "nth_child" || preferred === "down_and_nth_child") {
+          if (preferred === "down_and_nth_child") {
+            nameSelector = " ";
+          }
+          if (isInt(privates.index)) {
+            nameSelector = ">*:nth-child(" + (privates.index + 1) + ")";
+          }
+        } else if (preferred === "id") {
+          if (name) {
+            nameSelector = "#" + name;
+          }
+        } else {
+          throw Error("Unsupported preferred");
         }
 
         if (isString(privates.extentSelector)) {
@@ -367,46 +371,23 @@
         }
 
         var selector = "";
-        var isPrevInt = false;
+
         for (var i = 0; i < parents.length; ++i) {
-
-          // "." (class) selector string directly concatenates
-          // "nth-child" selector string gives a space to concatenate
-          if (isPrevInt) {
-            selector += " ";
-          }
-
-          isPrevInt = false;
 
           parent = parents[i];
 
-          selector += parent.preferredSelector("class");
-
-          if (isInt(parent.___r.index)) {
-            isPrevInt = true;
-          }
+          selector += parent.preferredSelector(parent.___r.toPreferred);
         }
 
         selector += this.preferredSelector(preferred);
 
         return selector;
       },
-      linkByFullPath: function (preferred) {
-        this.___r.ye = new Ye(this.fullPathSelector(preferred));
-        return this;
-      },
       linkExtra: function (extra) {
-        return this.linkPreferred(this.___r.preferredLink, extra);
+        return this.linkPreferred(this.___r.toPreferred, extra);
       },
       linkPreferred: function (prferred, extra) {
         this.___r.ye = new Ye(this.fullPathSelector(prferred) + (isString(extra) ? extra : ""));
-        // var ye = new Ye(this.fullPathSelector(prferred) + (isString(extra) ? extra : ""));
-        // var privates = this.___r;
-        // if (privates.ye) {
-        //   privates.ye.add(ye);
-        // } else {
-        //   privates.ye = ye;
-        // }
         return this;
       },
       qualify: function (preferred) {
@@ -429,7 +410,9 @@
         return this.___r.chains;
       },
       to: function (srcValueCallback) {
-        this.___r.receivers.push((function (ye, srcValueCallback) {
+        var privates = this.___r;
+        this.qualify(privates.toPreferred);
+        privates.receivers.push((function (ye, srcValueCallback) {
           return {
             receive: function (src, value) {
               ye.each(function () {
@@ -438,9 +421,9 @@
               });
             }
           };
-        })(this.___r.ye.clone(), srcValueCallback));
-        this.___r.ye = null;
-        return this.___r.chains;
+        })(privates.ye.clone(), srcValueCallback));
+        privates.ye = null;
+        return privates.chains;
       },
 
       on: function (eventName, listener, opts) {
@@ -479,7 +462,9 @@
 
       elem = elem || document;
 
-      objectAssign(this.___r, {
+      var privates = this.___r;
+
+      objectAssign(privates, {
         self: this,
         structure: structure,
         data: new Booqd(this),
@@ -488,7 +473,6 @@
         name: isString(name) ? name : null,
         elem: elem,
         chains: this,
-        preferredLink: "class",
         ye: null,
         also: null,
         updater: funcVoid,
@@ -507,6 +491,11 @@
           }
         }
       });
+
+      if (isInt(index)) {
+        privates.toPreferred = "down_and_nth_child";
+        privates.withPreferred = "down_and_nth_child_and_name";
+      }
 
       (function (self) {
         Object.defineProperty(self, "data", {
@@ -629,8 +618,6 @@
         return this;
       },
       toHref: function (arg) {
-        this.qualify("class");
-
         var callback;
         if (isUndefined(arg)) {
           callback = passthrough;
@@ -667,8 +654,7 @@
        * Write-to-binding that is all properties to attributes.
        */
       toAttrs: function () {
-        this.qualify("class");
-
+        this.qualify(this.___r.toPreferred);
         for (var name in this) {
           if (!this.hasOwnProperty(name)) continue;
           var prop = this[name];
@@ -777,7 +763,9 @@
 
       this.___base();
 
-      objectAssign(this.___r, {
+      var privates = this.___r;
+
+      objectAssign(privates, {
         parent: parent,
         booqd: booqd,
         self: this,
@@ -786,7 +774,6 @@
         typeCode: typeCode(value),
         elem: elem,
         chains: parent,
-        preferredLink: "down_and_class",
         conditional: null,
         ye: null,
         updater: funcVoid,
@@ -794,6 +781,9 @@
           this.updater.call(this.self, this.value);
         }
       });
+
+      privates.toPreferred = "down_and_class";
+      privates.withPreferred = "down_and_name";
 
       (function (self, name) {
 
@@ -885,13 +875,11 @@
         return privates.conditional;
       },
       toText: function () {
-        this.qualify("down_and_class");
         return this.to(function (src, value) {
           this.textContent = value;
         });
       },
       toAttr: function (attrName, valueCallback) {
-        this.qualify("down_and_class");
         return this.to((function (attrName, valueCallback) {
           return function (src, value) {
             this.setAttribute(attrName, valueCallback(value));
@@ -899,8 +887,6 @@
         })(attrName, orPassthrough(valueCallback)));
       },
       toHref: function (arg) {
-        this.qualify("down_and_class");
-
         var callback;
         if (isUndefined(arg)) {
           callback = passthrough;
@@ -919,7 +905,6 @@
         })(orPassthrough(callback)));
       },
       togglesAttr: function (attrName, attrValue) {
-        this.qualify("down_and_class");
         return this.to((function (attrName, attrValue) {
           return function (src, value) {
             if (value) {
@@ -931,7 +916,6 @@
         })(attrName, attrValue));
       },
       antitogglesAttr: function (attrName, attrValue) {
-        this.qualify("down_and_class");
         return this.to((function (attrName, attrValue) {
           return function (src, value) {
             if (!value) {
@@ -943,7 +927,6 @@
         })(attrName, attrValue));
       },
       togglesClass: function (className) {
-        this.qualify("down_and_class");
         return this.to((function (className) {
           return function (src, value) {
             if (value) {
@@ -955,7 +938,6 @@
         })(className));
       },
       antitogglesClass: function (className) {
-        this.qualify("down_and_class");
         return this.to((function (className) {
           return function (src, value) {
             if (!value) {
@@ -1006,7 +988,6 @@
         name: name,
         elem: elem,
         chains: parent,
-        preferredLink: "class",
         array: [],
         structure: array[0],
         templates: {},
