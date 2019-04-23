@@ -274,6 +274,7 @@
           toPreferred: "class",
           withPreferred: "name",
           receivers: [],
+          traceQualify: null,
         });
     };
 
@@ -396,11 +397,28 @@
           this.linkPreferred(preferred);
         }
 
-        if (Booq.conf.debug) {
-          console.log(this.fullname ? this.fullname() : "(no fullname)", privates.ye.lastSelector, privates.ye.elems);
+        if (Booq.conf.traceQualify) {
+          var stack = Error().stack;
+          if (isString(stack)) {
+            stack = stack.split("\n");
+          }
+          privates.traceQualify = [privates.ye.elems, privates.ye.lastSelector, this.___fullName(), stack];
         }
 
         return this;
+      },
+      traceQualify: function () {
+        if (!Booq.conf.traceQualify) {
+          console.log("@traceQualify", "Call 'Booq.configure({traceQualify: true});' to activate traceQualify()");
+        } else {
+          if (this.___r.traceQualify === null) {
+            console.log("@traceQualify", "Trace was empty");
+          } else {
+            console.log("@traceQualify", this.___r.traceQualify);
+          }
+        }
+        return this;
+
       },
       selector: function (preferred) {
         this.qualify(preferred);
@@ -410,6 +428,9 @@
       },
       callFunctionWithThis: function (fun) {
         fun(this);
+        if (Booq.conf.traceQualify && privates.chains && privates.chains != this) {
+          privates.chains.___r.traceQualify = privates.traceQualify;
+        }
         return this.___r.chains;
       },
       to: function (srcValueCallback) {
@@ -426,6 +447,11 @@
           };
         })(privates.ye.clone(), srcValueCallback));
         privates.ye = null;
+
+        if (Booq.conf.traceQualify && privates.chains && privates.chains != this) {
+          privates.chains.___r.traceQualify = privates.traceQualify;
+        }
+
         return privates.chains;
       },
 
@@ -439,6 +465,11 @@
             listener.call(self, event);
           };
         })(this, listener), opts);
+
+        if (Booq.conf.traceQualify && privates.chains && privates.chains != this) {
+          privates.chains.___r.traceQualify = privates.traceQualify;
+        }
+
         return privates.chains;
       },
       /**
@@ -579,10 +610,10 @@
 
     Booq.prototype = objectAssign({
       ___base: Base.prototype.constructor,
-      fullname: function () {
+      ___fullName: function () {
         var fn = "";
         if (this.___r.parent) {
-          fn = this.___r.parent.fullname();
+          fn = this.___r.parent.___fullName();
         }
         var me;
         if (isInt(this.___r.index)) {
@@ -590,7 +621,7 @@
         } else if (isString(this.___r.name)) {
           me = this.___r.name;
         } else {
-          me = "(empty)";
+          me = "(anon)";
         }
         fn += "/(Booq)" + me;
         return fn;
@@ -729,7 +760,7 @@
             if (data === value) return;
             var tc = typeCode(value);
             if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
-              throw Error("Assigned value type was unmatch. Path:" + valueBooq.fullname());
+              throw Error("Assigned value type was unmatch. Path:" + valueBooq.___fullName());
             }
             data.replaceWith(value);
           }
@@ -810,11 +841,11 @@
 
     PrimitiveProp.prototype = objectAssign({
       ___base: Base.prototype.constructor,
-      fullname: function () {
+      ___fullName: function () {
         var privates = this.___r;
         var fn = "";
         if (privates.parent) {
-          fn = privates.parent.fullname();
+          fn = privates.parent.___fullName();
         }
         if (privates.name) {
           fn += "/(PrimitiveProp)" + privates.name;
@@ -857,7 +888,6 @@
         var privates = this.___r;
         this.qualify("down_and_class");
         var predicate = function (value) {
-          console.log("isTruthy", !!value);
           return !!value;
         };
         privates.conditional = new Conditional(privates.parent, privates.ye.clone(), predicate);
@@ -869,7 +899,6 @@
         var privates = this.___r;
         this.qualify("down_and_class");
         var predicate = function (value) {
-          console.log("isFalsy", !value);
           return !value;
         };
         privates.conditional = new Conditional(privates.parent, privates.ye.clone(), predicate);
@@ -1030,11 +1059,11 @@
 
     ArrayProp.prototype = objectAssign({
       ___base: Base.prototype.constructor,
-      fullname: function () {
+      ___fullName: function () {
         var privates = this.___r;
         var fn = "";
         if (privates.parent) {
-          fn = privates.parent.fullname();
+          fn = privates.parent.___fullName();
         }
         if (privates.name) {
           fn += "/(ArrayProp)" + privates.name;
@@ -1364,7 +1393,7 @@
     //
 
     var defaultConf = {
-      debug: false,
+      traceQualify: false,
     };
 
     Booq.configure = (function () {
