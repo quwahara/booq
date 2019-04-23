@@ -395,8 +395,11 @@
         if (privates.ye === null) {
           this.linkPreferred(preferred);
         }
-        console.log(this.fullname ? this.fullname() : "(no fullname)", privates.ye.lastSelector, privates.ye.elems);
-        // console.trace();
+
+        if (Booq.conf.debug) {
+          console.log(this.fullname ? this.fullname() : "(no fullname)", privates.ye.lastSelector, privates.ye.elems);
+        }
+
         return this;
       },
       selector: function (preferred) {
@@ -1355,6 +1358,40 @@
 
     Booq.goUpParent = goUpParent;
     Booq.goUpParentByTagName = goUpParentByTagName;
+
+    //
+    // Global configuration
+    //
+
+    var defaultConf = {
+      debug: false,
+    };
+
+    Booq.configure = (function () {
+
+      var holder = {
+        conf: objectAssign({}, defaultConf)
+      };
+
+      Object.defineProperty(Booq, "conf", {
+        enumerable: true,
+        get: function () {
+          return holder.conf;
+        }
+      });
+
+      return function (conf) {
+
+        if (!conf) {
+          return holder.conf;
+        }
+
+        var prevConf = holder.conf;
+        holder.conf = objectAssign({}, holder.conf, conf);
+
+        return prevConf;
+      };
+    })();
 
     return Booq;
   })();
