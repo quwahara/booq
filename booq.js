@@ -21,6 +21,14 @@
     var RID_MIN = 100000000000000;
     var RID_MAX = RID_MIN * 10 - 1;
 
+    function stackTraceString(error) {
+      var stack = error.stack;
+      if (isString(stack)) {
+        stack = stack.split("\n");
+      }
+      return stack;
+    }
+
     function funcVoid() { }
 
     function passthrough(v) {
@@ -275,6 +283,7 @@
           withPreferred: "name",
           receivers: [],
           traceQualify: null,
+          traceSetData: null,
         });
     };
 
@@ -398,11 +407,7 @@
         }
 
         if (Booq.conf.traceQualify) {
-          var stack = Error().stack;
-          if (isString(stack)) {
-            stack = stack.split("\n");
-          }
-          privates.traceQualify = [privates.ye.elems, privates.ye.lastSelector, this.___fullName(), stack];
+          privates.traceQualify = [privates.ye.elems, privates.ye.lastSelector, this.___fullName(), stackTraceString(Error())];
         }
 
         return this;
@@ -418,7 +423,18 @@
           }
         }
         return this;
-
+      },
+      traceSetData: function () {
+        if (!Booq.conf.traceSetData) {
+          console.log("@traceSetData", "Call 'Booq.configure({traceSetData: true});' to activate traceSetData()");
+        } else {
+          if (this.___r.traceSetData === null) {
+            console.log("@traceSetData", "Trace was empty");
+          } else {
+            console.log("@traceSetData", this.___r.traceSetData);
+          }
+        }
+        return this;
       },
       selector: function (preferred) {
         this.qualify(preferred);
@@ -627,11 +643,18 @@
         return fn;
       },
       setData: function (value) {
-        if (this.___r.data === value) return;
+        if (this.___r.data === value) {
+          return;
+        }
         var tc = typeCode(value);
         if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
           throw Error("Assigned value type was unmatch.");
         }
+
+        if (Booq.conf.traceSetData) {
+          this.___r.traceSetData = [value, stackTraceString(Error())];
+        }
+
         this.___r.data.replaceWith(value);
         this.transmit();
         return this;
@@ -1394,6 +1417,7 @@
 
     var defaultConf = {
       traceQualify: false,
+      traceSetData: false,
     };
 
     Booq.configure = (function () {
