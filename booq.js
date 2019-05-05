@@ -1196,7 +1196,6 @@
         var receivers = privates.receivers;
         for (var index = 0; index < array.length; ++index) {
           var item = array[index];
-          privates.array.push(item);
           for (var j = 0; j < receivers.length; ++j) {
             receivers[j].receive(this, item, index);
           }
