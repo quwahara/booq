@@ -282,6 +282,7 @@
           toPreferred: "class",
           withPreferred: "name",
           receivers: [],
+          traceStructure: null,
           traceQualify: null,
           traceSetData: null,
         });
@@ -412,6 +413,18 @@
 
         return this;
       },
+      traceStructure: function () {
+        if (!Booq.conf.traceStructure) {
+          console.log("@traceStructure", "Call 'Booq.configure({traceStructure: true});' to activate traceStructure()");
+        } else {
+          if (this.___r.traceStructure === null) {
+            console.log("@traceStructure", "Trace was empty");
+          } else {
+            console.log("@traceStructure", this.___r.traceStructure);
+          }
+        }
+        return this;
+      },
       traceQualify: function () {
         if (!Booq.conf.traceQualify) {
           console.log("@traceQualify", "Call 'Booq.configure({traceQualify: true});' to activate traceQualify()");
@@ -508,6 +521,10 @@
 
       if (!isObject(structure)) {
         throw Error("'structure' must be an Object.");
+      }
+
+      if (Booq.conf.traceStructure) {
+        this.___r.traceStructure = [structure, stackTraceString(Error())];
       }
 
       elem = elem || document;
@@ -1416,6 +1433,7 @@
     //
 
     var defaultConf = {
+      traceStructure: false,
       traceQualify: false,
       traceSetData: false,
     };
