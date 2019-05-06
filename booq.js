@@ -548,7 +548,6 @@
             var self = this.self;
             for (var name in self) {
               if (!self.hasOwnProperty(name)) continue;
-              if (name === "_rid") continue;
               var booqy = self[name];
               if (isBooq(booqy)) {
                 booqy.update();
@@ -660,20 +659,7 @@
         return fn;
       },
       setData: function (value) {
-        if (this.___r.data === value) {
-          return;
-        }
-        var tc = typeCode(value);
-        if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
-          throw Error("Assigned value type was unmatch.");
-        }
-
-        if (Booq.conf.traceSetData) {
-          this.___r.traceSetData = [value, stackTraceString(Error())];
-        }
-
-        this.___r.data.replaceWith(value);
-        this.transmit();
+        this.___r.data.setData(value);
         return this;
       },
       /**
@@ -772,12 +758,29 @@
     };
 
     Booqd.prototype = {
-      replaceWith: function (data) {
-        for (var name in data) {
-          if (!data.hasOwnProperty(name)) continue;
-          this[name] = data[name];
+      setData: function (value) {
+
+        if (this === value) {
+          return;
+        }
+
+        var tc = typeCode(value);
+        if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
+          throw Error("Assigned value type was unmatch.");
+        }
+
+        if (Booq.conf.traceSetData) {
+          this.___r.booq.___r.traceSetData = [value, stackTraceString(Error())];
+        }
+
+        for (var name in value) {
+          if (!value.hasOwnProperty(name)) continue;
+          if (!this.hasOwnProperty(name)) continue;
+          this[name] = value[name];
         }
         this.___r.booq.transmit();
+
+        return this;
       },
     };
 
@@ -785,9 +788,9 @@
 
     /**
      * 
-     * @param {Booqd} bodyBooqd 
-     * @param {String} name 
-     * @param {Booqd} data 
+     * @param Booqd bodyBooqd
+     * @param String name
+     * @param Booqd data
      */
     function setUpBooqdProperty(body, name, data) {
       (function (body, name, data) {
@@ -797,12 +800,7 @@
             return data;
           },
           set: function (value) {
-            if (data === value) return;
-            var tc = typeCode(value);
-            if (!isTypeCodeAssignable(TC_BOOQD, tc)) {
-              throw Error("Assigned value type was unmatch. Path:" + valueBooq.___fullName());
-            }
-            data.replaceWith(value);
+            data.setData(value);
           }
         });
       })(body, name, data);
