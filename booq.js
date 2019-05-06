@@ -1073,12 +1073,7 @@
             return self.___r.array;
           },
           set: function (value) {
-            if (self.___r.array === value) return;
-            var tc = typeCode(value);
-            if (!isTypeCodeAssignable(TC_ARRQD, tc)) {
-              throw Error("Assigned value type was unmatch.");
-            }
-            self.replaceWith(value);
+            self.setData(value);
           }
         });
 
@@ -1183,13 +1178,21 @@
         })(this, privates));
         return privates.chains;
       },
-      replaceWith: function (array) {
+      setData: function (array) {
         var privates = this.___r;
+
+        if (privates.array === array) return;
+        var tc = typeCode(array);
+        if (!isTypeCodeAssignable(TC_ARRQD, tc)) {
+          throw Error("Assigned value type was unmatch.");
+        }
+
         if (privates.ye) {
           privates.ye.each(function () {
             removeChildAll(this);
           });
         }
+
         privates.array.length = 0;
         var receivers = privates.receivers;
         for (var index = 0; index < array.length; ++index) {
