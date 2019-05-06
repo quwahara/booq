@@ -222,7 +222,7 @@
         '',
         function () {
           booq.test2.arrayProp_.theArray.each(function (element) {
-            this.oneStepBelow.linkPreferred("class").toAttr("one-step-below").traceQualify();
+            this.oneStepBelow.linkPreferred("class").toAttr("one-step-below");
             this.twoStepsBelow.toText();
           });
           booq.setData({
@@ -269,13 +269,15 @@
 
       test(
         "Booq.each",
-        "red,yellow,brown,",
+        "apple,apple,red,banana,banana,yellow,cacao,cacao,brown,",
         function () {
+
           booq.test4.theObject.each(function (element, name, value) {
+            this.linkExtra(" .name").nameToAttr("attr");
+            this.linkExtra(" .name").nameToText();
+            this.linkExtra(" .value").toText();
+          });
 
-            this.linkExtra(" .value").toText().traceQualify();
-
-          }).traceQualify();
           booq.setData({
             test4: {
               theObject: {
@@ -286,8 +288,15 @@
             }
           });
 
-          return document.querySelector(".test4>*:nth-child(1) .value").textContent + ","
+          return ""
+            + document.querySelector(".test4>*:nth-child(1) [attr]").getAttribute("attr") + ","
+            + document.querySelector(".test4>*:nth-child(1) .name").textContent + ","
+            + document.querySelector(".test4>*:nth-child(1) .value").textContent + ","
+            + document.querySelector(".test4>*:nth-child(2) [attr]").getAttribute("attr") + ","
+            + document.querySelector(".test4>*:nth-child(2) .name").textContent + ","
             + document.querySelector(".test4>*:nth-child(2) .value").textContent + ","
+            + document.querySelector(".test4>*:nth-child(3) [attr]").getAttribute("attr") + ","
+            + document.querySelector(".test4>*:nth-child(3) .name").textContent + ","
             + document.querySelector(".test4>*:nth-child(3) .value").textContent + ","
             ;
         });

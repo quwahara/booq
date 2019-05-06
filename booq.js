@@ -1023,12 +1023,26 @@
           this.textContent = value;
         });
       },
+      nameToText: function () {
+        return this.to((function (privates) {
+          return function (src, value) {
+            this.textContent = privates.name;
+          };
+        })(this.___r));
+      },
       toAttr: function (attrName, valueCallback) {
         return this.to((function (attrName, valueCallback) {
           return function (src, value) {
             this.setAttribute(attrName, valueCallback(value));
           };
         })(attrName, orPassthrough(valueCallback)));
+      },
+      nameToAttr: function (attrName, valueCallback) {
+        return this.to((function (privates, attrName, valueCallback) {
+          return function (src, value) {
+            this.setAttribute(attrName, valueCallback(privates.name));
+          };
+        })(this.___r, attrName, orPassthrough(valueCallback)));
       },
       toHref: function (arg) {
         var callback;
