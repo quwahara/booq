@@ -540,6 +540,7 @@
         name: isString(name) ? name : null,
         elem: elem,
         chains: this,
+        eachSets: {},
         ye: null,
         also: null,
         updater: funcVoid,
@@ -726,6 +727,79 @@
         }
 
         return this.___r.parent;
+      },
+      each: function (callback) {
+        var privates = this.___r;
+        this.qualify(privates.toPreferred);
+        privates.ye.each((function (self, privates) {
+          // closure for ye.each() having self and privates
+          return function () {
+
+            // eachSet exists for each element.
+            var eachSet;
+
+            // Just add callback to eachSet if eachSet already exists.
+            // Because one element can have only one eachSet.
+            if (mergeRid(this)._rid in privates.eachSets) {
+              eachSet = privates.eachSets[this._rid];
+              eachSet.callbacks.push(callback);
+              return;
+            }
+
+            //
+            // Create eachSet
+            //
+
+            // Required firstElementChild to create eachSet.
+            // Becuase firstElementChild is used to clone to create element.
+            if (!this.firstElementChild) {
+              return;
+            }
+
+            eachSet = {
+              targetElement: this,
+              // Template is parent node because of to query subnodes.
+              template: this.cloneNode(true),
+              callbacks: [callback]
+            };
+            removeChildAll(this);
+            privates.eachSets[this._rid] = eachSet;
+
+            // Receiver is created by each one element
+            privates.receivers.push((function (privates, eachSet) {
+              return {
+
+                receive: function (src, data) {
+
+                  removeChildAll(eachSet.targetElement);
+
+                  var index = 0;
+                  for (var name in data) {
+                    if (!data.hasOwnProperty(name)) continue;
+
+                    var elem = eachSet.template.cloneNode(true);
+                    var childElem = elem.removeChild(elem.firstElementChild);
+                    eachSet.targetElement.appendChild(childElem);
+
+                    for (var i = 0; i < eachSet.callbacks.length; ++i) {
+                      var callback = eachSet.callbacks[i];
+                      var prop = privates.self[name];
+                      var toPreferredBuff = prop.___r.toPreferred;
+                      prop.___r.toPreferred = "down_and_nth_child";
+                      prop.___r.index = index;
+                      callback.call(prop, eachSet.targetElement, name, data[name]);
+                      prop.___r.toPreferred = toPreferredBuff;
+                      prop.transmit();
+                      ++index;
+                    }
+                  }
+                }
+
+              };
+            })(privates, eachSet));
+          };
+        })(this, privates));
+        return privates.chains;
       },
       transmit: function () {
         var receivers = this.___r.receivers;
@@ -1163,13 +1237,13 @@
                   for (var i = 0; i < eachSet.callbacks.length; ++i) {
                     var callback = eachSet.callbacks[i];
                     if (booq) {
-                      callback.call(booq, eachSet.targetElement, i);
+                      callback.call(booq, eachSet.targetElement, i, item);
                     } else {
-                      callback.call(null, eachSet.targetElement, i);
+                      callback.call(null, eachSet.targetElement, i, item);
                     }
                   }
                   if (booq) {
-                    booq.data = item;
+                    booq.setData(item);
                   }
                 }
               };
