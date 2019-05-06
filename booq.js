@@ -423,7 +423,7 @@
             console.log("@traceStructure", this.___r.traceStructure);
           }
         }
-        return this;
+        return this.___r.chains;
       },
       traceQualify: function () {
         if (!Booq.conf.traceQualify) {
@@ -435,7 +435,7 @@
             console.log("@traceQualify", this.___r.traceQualify);
           }
         }
-        return this;
+        return this.___r.chains;
       },
       traceSetData: function () {
         if (!Booq.conf.traceSetData) {
@@ -447,7 +447,7 @@
             console.log("@traceSetData", this.___r.traceSetData);
           }
         }
-        return this;
+        return this.___r.chains;
       },
       selector: function (preferred) {
         this.qualify(preferred);
@@ -1030,6 +1030,13 @@
           };
         })(this.___r));
       },
+      valueToText: function (value) {
+        return this.to((function (theValue) {
+          return function (src, value) {
+            this.textContent = theValue;
+          };
+        })(value));
+      },
       toAttr: function (attrName, valueCallback) {
         return this.to((function (attrName, valueCallback) {
           return function (src, value) {
@@ -1061,6 +1068,13 @@
             this.href = callback(value);
           };
         })(orPassthrough(callback)));
+      },
+      nameToClass: function () {
+        return this.to((function (privates) {
+          return function (src, value) {
+            this.classList.add(privates.name);
+          };
+        })(this.___r));
       },
       togglesAttr: function (attrName, attrValue) {
         return this.to((function (attrName, attrValue) {
@@ -1251,9 +1265,9 @@
                   for (var i = 0; i < eachSet.callbacks.length; ++i) {
                     var callback = eachSet.callbacks[i];
                     if (booq) {
-                      callback.call(booq, eachSet.targetElement, i, item);
+                      callback.call(booq, eachSet.targetElement, index, item);
                     } else {
-                      callback.call(null, eachSet.targetElement, i, item);
+                      callback.call(null, eachSet.targetElement, index, item);
                     }
                   }
                   if (booq) {
@@ -1264,6 +1278,11 @@
             })(privates, eachSet));
           };
         })(this, privates));
+
+        if (Booq.conf.traceQualify) {
+          privates.chains.___r.traceQualify = privates.traceQualify;
+        }
+
         return privates.chains;
       },
       setData: function (array) {
