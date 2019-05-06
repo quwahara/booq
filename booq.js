@@ -752,8 +752,8 @@
 
             // Required firstElementChild to create eachSet.
             // Becuase firstElementChild is used to clone to create element.
-            if (!this.firstElementChild) {
-              return;
+            if (this.firstElementChild === null) {
+              throw Error("The firstElementChild of target element was null. each() requires firstElementChild.");
             }
 
             eachSet = {
@@ -1229,8 +1229,8 @@
 
             // Required firstElementChild to create eachSet.
             // Becuase firstElementChild is used to clone to create element.
-            if (!this.firstElementChild) {
-              return;
+            if (this.firstElementChild === null) {
+              throw Error("The firstElementChild of target element was null. each() requires firstElementChild.");
             }
 
             eachSet = {
