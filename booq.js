@@ -1121,7 +1121,7 @@
         })(className));
       },
       withValue: function () {
-        this.qualify("down_and_name");
+        this.qualify(this.___r.withPreferred);
         this.___r.ye.on("change", (function (self) {
           return function (event) {
             self.receive(self, event.target.value);
