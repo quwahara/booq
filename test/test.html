@@ -159,6 +159,13 @@
             cacao: "",
           },
         },
+        test5: {
+          arrayProp_: {
+            theArray: [{
+              prop1: "",
+            }]
+          }
+        },
       };
 
       Booq.configure({ traceQualify: true });
@@ -299,6 +306,22 @@
             + document.querySelector(".test4>*:nth-child(3) .name").textContent + ","
             + document.querySelector(".test4>*:nth-child(3) .value").textContent + ","
             ;
+        });
+
+      test("set array data without binding",
+        '[{"prop1":"val1"}]',
+        function () {
+          booq.setData({
+            test5: {
+              arrayProp_: {
+                theArray: [{
+                  prop1: "val1",
+                },
+                ]
+              },
+            }
+          });
+          return JSON.stringify(booq.data.test5.arrayProp_.theArray);
         });
 
     };

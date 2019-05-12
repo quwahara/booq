@@ -1245,34 +1245,21 @@
             // Receiver is created by each one element
             privates.receivers.push((function (privates, eachSet) {
               return {
-                receive: function (src, item, index) {
+                receive: function (src, itemOrBooq, index) {
 
                   var elem = eachSet.template.cloneNode(true);
                   var childElem = elem.removeChild(elem.firstElementChild);
                   eachSet.targetElement.appendChild(childElem);
 
-                  var booq = null;
-                  if (!isPrimitive(privates.structure)) {
-                    // name is null because it is skipped in Link::fullPathSelector
-                    booq = new Booq(privates.structure, eachSet.targetElement, self, index, /* name */ null);
-                  }
-                  if (booq) {
-                    privates.array.push(booq.data);
-                  } else {
-                    privates.array.push(item);
-                  }
-
                   for (var i = 0; i < eachSet.callbacks.length; ++i) {
                     var callback = eachSet.callbacks[i];
-                    if (booq) {
-                      callback.call(booq, eachSet.targetElement, index, item);
+                    if (isBooq(itemOrBooq)) {
+                      callback.call(itemOrBooq, eachSet.targetElement, index, null);
                     } else {
-                      callback.call(null, eachSet.targetElement, index, item);
+                      callback.call(null, eachSet.targetElement, index, itemOrBooq);
                     }
                   }
-                  if (booq) {
-                    booq.setData(item);
-                  }
+
                 }
               };
             })(privates, eachSet));
@@ -1304,9 +1291,28 @@
         var receivers = privates.receivers;
         for (var index = 0; index < array.length; ++index) {
           var item = array[index];
-          for (var j = 0; j < receivers.length; ++j) {
-            receivers[j].receive(this, item, index);
+
+          var booq = null;
+          var booqOrItem = null;
+
+          if (!isPrimitive(privates.structure)) {
+            // name is null because it is skipped in Link::fullPathSelector
+            booq = new Booq(privates.structure, null, this, index, /* name */ null);
+            privates.array.push(booq.data);
+            booqOrItem = booq;
+          } else {
+            privates.array.push(item);
+            booqOrItem = item;
           }
+
+          for (var j = 0; j < receivers.length; ++j) {
+            receivers[j].receive(this, booqOrItem, index);
+          }
+
+          if (booq) {
+            booq.setData(item);
+          }
+
         }
       }
     },
