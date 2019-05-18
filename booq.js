@@ -279,8 +279,10 @@
       })(this,
         // privates
         {
-          toPreferred: "class",
-          withPreferred: "name",
+          opts: {
+            toPreferred: "class",
+            withPreferred: "name",
+          },
           receivers: [],
           traceStructure: null,
           traceQualify: null,
@@ -387,15 +389,19 @@
 
           parent = parents[i];
 
-          selector += parent.preferredSelector(parent.___r.toPreferred);
+          selector += parent.preferredSelector(parent.___r.opts.toPreferred);
         }
 
         selector += this.preferredSelector(preferred);
 
         return selector;
       },
+      link: function (selector) {
+        this.___r.ye = new Ye(selector);
+        return this;
+      },
       linkExtra: function (extra) {
-        return this.linkPreferred(this.___r.toPreferred, extra);
+        return this.linkPreferred(this.___r.opts.toPreferred, extra);
       },
       linkPreferred: function (prferred, extra) {
         this.___r.ye = new Ye(this.fullPathSelector(prferred) + (isString(extra) ? extra : ""));
@@ -462,9 +468,14 @@
         }
         return this.___r.chains;
       },
+      setToPreferred: function (toPreferred) {
+        var privates = this.___r;
+        privates.opts.toPreferred = toPreferred;
+        return privates.chains;
+      },
       to: function (srcValueCallback) {
         var privates = this.___r;
-        this.qualify(privates.toPreferred);
+        this.qualify(privates.opts.toPreferred);
         privates.receivers.push((function (ye, srcValueCallback) {
           return {
             receive: function (src, value) {
@@ -515,8 +526,7 @@
 
     Base.prototype.constructor = Base;
 
-    var Booq = function Booq(structure, elem, parent, index, name) {
-
+    var Booq = function Booq(structure, inits) {
       this.___base();
 
       if (!isObject(structure)) {
@@ -527,18 +537,16 @@
         this.___r.traceStructure = [structure, stackTraceString(Error())];
       }
 
-      elem = elem || document;
-
       var privates = this.___r;
 
       objectAssign(privates, {
         self: this,
         structure: structure,
         data: new Booqd(this),
-        parent: parent || null,
-        index: isInt(index) ? index : null,
-        name: isString(name) ? name : null,
-        elem: elem,
+        parent: null,
+        index: null,
+        name: null,
+        elem: document,
         chains: this,
         eachSets: {},
         ye: null,
@@ -557,14 +565,19 @@
             }
           }
         }
-      });
-
-      if (isInt(index)) {
-        privates.toPreferred = "down_and_nth_child";
-        privates.withPreferred = "down_and_nth_child_and_name";
-      }
+      },
+        inits);
 
       (function (self) {
+        Object.defineProperty(self, "___data", {
+          get: function () {
+            return self.getData();
+            // return self.___r.data;
+          },
+          set: function (value) {
+            self.setData(value);
+          }
+        });
         Object.defineProperty(self, "data", {
           get: function () {
             return self.___r.data;
@@ -617,13 +630,17 @@
 
         var value = structure[propName];
         if (isArray(value)) {
-          setUpReadOnlyProperty(this, propName, new ArrayProp(this, this.___r.data, propName, value, elem));
+          setUpReadOnlyProperty(this, propName, new ArrayProp(this, this.___r.data, propName, value, privates.elem));
         } else if (isObject(value)) {
-          var valueBooq = new Booq(value, elem, this, /* index */ null, propName);
+          var valueBooq = new Booq(value, {
+            parent: this,
+            name: propName,
+            elem: privates.elem,
+          });
           setUpReadOnlyProperty(this, propName, valueBooq);
           setUpBooqdProperty(this.___r.data, propName, valueBooq.___r.data);
         } else if (isPrimitive(value)) {
-          setUpPrimitiveProperty(this, propName, new PrimitiveProp(this, this.___r.data, propName, value, elem));
+          setUpPrimitiveProperty(this, propName, new PrimitiveProp(this, this.___r.data, propName, value, privates.elem));
         } else {
           if (value === null) {
             throw Error("null is not allowed for value.");
@@ -658,6 +675,9 @@
         }
         fn += "/(Booq)" + me;
         return fn;
+      },
+      getData: function () {
+        return this.___r.data;
       },
       setData: function (value) {
         this.___r.data.setData(value);
@@ -715,7 +735,7 @@
        * Write-to-binding that is all properties to attributes.
        */
       toAttrs: function () {
-        this.qualify(this.___r.toPreferred);
+        this.qualify(this.___r.opts.toPreferred);
         for (var name in this) {
           if (!this.hasOwnProperty(name)) continue;
           var prop = this[name];
@@ -730,7 +750,7 @@
       },
       each: function (callback) {
         var privates = this.___r;
-        this.qualify(privates.toPreferred);
+        this.qualify(privates.opts.toPreferred);
         privates.ye.each((function (self, privates) {
           // closure for ye.each() having self and privates
           return function () {
@@ -784,11 +804,11 @@
                     for (var i = 0; i < eachSet.callbacks.length; ++i) {
                       var callback = eachSet.callbacks[i];
                       var prop = privates.self[name];
-                      var toPreferredBuff = prop.___r.toPreferred;
-                      prop.___r.toPreferred = "down_and_nth_child";
+                      var toPreferredBuff = prop.___r.opts.toPreferred;
+                      prop.___r.opts.toPreferred = "down_and_nth_child";
                       prop.___r.index = index;
-                      callback.call(prop, eachSet.targetElement, name, data[name]);
-                      prop.___r.toPreferred = toPreferredBuff;
+                      callback.call(prop, eachSet.targetElement, index + 1, name, data[name]);
+                      prop.___r.opts.toPreferred = toPreferredBuff;
                       prop.transmit();
                       ++index;
                     }
@@ -928,8 +948,8 @@
         }
       });
 
-      privates.toPreferred = "down_and_class";
-      privates.withPreferred = "down_and_name";
+      privates.opts.toPreferred = "down_and_class";
+      privates.opts.withPreferred = "down_and_name";
 
       (function (self, name) {
 
@@ -1037,6 +1057,7 @@
           };
         })(value));
       },
+
       toAttr: function (attrName, valueCallback) {
         return this.to((function (attrName, valueCallback) {
           return function (src, value) {
@@ -1121,7 +1142,7 @@
         })(className));
       },
       withValue: function () {
-        this.qualify(this.___r.withPreferred);
+        this.qualify(this.___r.opts.withPreferred);
         this.___r.ye.on("change", (function (self) {
           return function (event) {
             self.receive(self, event.target.value);
@@ -1165,6 +1186,7 @@
         templates: {},
         eachSets: {},
         ye: null,
+        itemReceivers: [],
       });
 
       (function (self, dataBody, name) {
@@ -1205,9 +1227,31 @@
         }
         return fn;
       },
-      each: function (callback) {
-        this.qualify("class");
+      each: function (callback, opts) {
+
         var privates = this.___r;
+        opts = objectAssign(privates.opts, opts);
+
+        this.qualify(opts.toPreferred);
+
+        if (privates.ye.length === 0) {
+          // Receiver is created by each one element
+          privates.itemReceivers.push((function (privates, eachSet) {
+            return {
+              receive: function (src, itemOrBooq, index) {
+                if (isBooq(itemOrBooq)) {
+                  callback.call(itemOrBooq, null, index, null);
+                } else {
+                  callback.call(null, null, index, itemOrBooq);
+                }
+              }
+            };
+          })(callback));
+        }
+
+        //
+        // Below privates.ye.each doesn't invoke function if privates.ye.length is 0
+        //
         privates.ye.each((function (self, privates) {
           // closure for ye.each() having self and privates
           return function () {
@@ -1243,7 +1287,7 @@
             privates.eachSets[this._rid] = eachSet;
 
             // Receiver is created by each one element
-            privates.receivers.push((function (privates, eachSet) {
+            privates.itemReceivers.push((function (privates, eachSet) {
               return {
                 receive: function (src, itemOrBooq, index) {
 
@@ -1272,6 +1316,17 @@
 
         return privates.chains;
       },
+      onReceive: function (fun) {
+        var privates = this.___r;
+        privates.receivers.push((function (fun, self) {
+          return {
+            receive: function (src, array) {
+              fun.call(self, array);
+            }
+          };
+        })(fun, this));
+        return privates.parent;
+      },
       setData: function (array) {
         var privates = this.___r;
 
@@ -1288,7 +1343,7 @@
         }
 
         privates.array.length = 0;
-        var receivers = privates.receivers;
+        var itemReceivers = privates.itemReceivers;
         for (var index = 0; index < array.length; ++index) {
           var item = array[index];
 
@@ -1296,8 +1351,14 @@
           var booqOrItem = null;
 
           if (!isPrimitive(privates.structure)) {
-            // name is null because it is skipped in Link::fullPathSelector
-            booq = new Booq(privates.structure, null, this, index, /* name */ null);
+            booq = new Booq(privates.structure, {
+              parent: this,
+              index: index,
+              opts: {
+                toPreferred: "down_and_nth_child",
+                withPreferred: "down_and_nth_child_and_name",
+              },
+            });
             privates.array.push(booq.data);
             booqOrItem = booq;
           } else {
@@ -1305,8 +1366,8 @@
             booqOrItem = item;
           }
 
-          for (var j = 0; j < receivers.length; ++j) {
-            receivers[j].receive(this, booqOrItem, index);
+          for (var j = 0; j < itemReceivers.length; ++j) {
+            itemReceivers[j].receive(this, booqOrItem, index);
           }
 
           if (booq) {
@@ -1314,6 +1375,12 @@
           }
 
         }
+
+        var receivers = privates.receivers;
+        for (var k = 0; k < receivers.length; ++k) {
+          receivers[k].receive(this, array);
+        }
+
       }
     },
       Base.prototype);
