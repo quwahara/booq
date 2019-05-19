@@ -396,7 +396,7 @@
 
         return selector;
       },
-      link: function (selector) {
+      setLink: function (selector) {
         this.___r.ye = new Ye(selector);
         return this;
       },
