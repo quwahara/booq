@@ -494,10 +494,10 @@
 
         return privates.chains;
       },
-
       on: function (eventName, listener, opts) {
+        eventName = eventName || "change";
         var privates = this.___r;
-        this.qualify("name");
+        this.qualify(this.___r.opts.withPreferred);
         var ye = privates.ye;
         privates.ye = null;
         ye.on(eventName, (function (self, listener) {
@@ -512,6 +512,16 @@
 
         return privates.chains;
       },
+      with: function (srcValueCallback, listener, eventName, opts) {
+        var privates = this.___r;
+        this.qualify(privates.opts.withPreferred);
+        var ye = privates.ye;
+        this.to(srcValueCallback);
+        privates.ye = ye;
+        this.on(eventName, listener, opts);
+        return this;
+      },
+
       /**
        * Copy status from src.
        * This actually clones and copies ye from src.
@@ -1142,15 +1152,16 @@
         })(className));
       },
       withValue: function () {
-        this.qualify(this.___r.opts.withPreferred);
-        this.___r.ye.on("change", (function (self) {
-          return function (event) {
-            self.receive(self, event.target.value);
-          };
-        })(this));
-        return this.to(function (src, value) {
-          this.value = value;
-        });
+        return this.with(
+          function (src, value) {
+            this.value = value;
+          },
+          (function (self) {
+            return function (event) {
+              self.receive(self, event.target.value);
+            };
+          })(this)
+        );
       },
       transmit: function () {
         var privates = this.___r;
