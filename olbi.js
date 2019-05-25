@@ -167,85 +167,139 @@
       get DOWN_AND_NTH_CHILD() { return "DOWN_AND_NTH_CHILD"; },
     };
 
-    var Lbi = function Lbi(struct, name, parent) {
 
-      // privates
-      dpReadOnly(this, "___r", {
-        self: this,
-        chain: this,
-        ecol: null,
-        struct: struct,
-        name: name || "",
-        parent: parent || null,
-      },
-      /* enumerable */ false);
-    };
 
     //
     // Link bind
     //
+    var Lbi = function Lbi(struct, opts, name, parent) {
+
+      // privates
+      dpReadOnly(this, "___r",
+        objectAssignDeep(
+          {
+            self: this,
+            chain: this,
+            ecol: null,
+            struct: struct,
+            name: name || "",
+            parent: parent || null,
+            toPreferred: preferreds.CLASS,
+            withPreferred: preferreds.NAME,
+          },
+          opts
+        ),
+      /* enumerable */ false);
+
+    };
+
     Lbi.prototype = {
-      get preferreds() { return preferreds; },
-      link: function (selector) {
-        var privates = this.___r;
-        privates.ecol = new Ecol(selector);
-        return privates.chain;
+
+      setToPreferred: function (preferred) {
+        this.___r.toPreferred = preferred;
+        return this;
       },
-      preferredSelector: function (preferred) {
+      getToPreferred: function (preferred) {
+        return this.___r.toPreferred;
+      },
+      setWithPreferred: function (preferred) {
+        this.___r.withPreferred = preferred;
+        return this;
+      },
+      getWithPreferred: function (preferred) {
+        return this.___r.withPreferred;
+      },
+
+      preferredSelector: function (preferred, appending) {
 
         var privates = this.___r;
         var p = preferred;
         var ps = preferreds;
+        var a = appending || "";
 
         var name = privates.name;
 
         if (p === ps.CLASS) {
-          if (!name) return "";
-          return "." + name;
+          if (!name) return a;
+          return "." + name + a;
         }
 
         if (p === ps.ID) {
-          if (!name) return "";
-          return "#" + name;
+          if (!name) return a;
+          return "#" + name + a;
         }
 
         if (p === ps.NAME) {
-          if (!name) return "";
-          return "[name='" + name + "']";
+          if (!name) return a;
+          return "[name='" + name + "']" + a;
         }
 
         if (p === ps.NTH_CHILD) {
           if (!isInt(privates.index) || privates.index < 0) {
-            return "";
+            return a;
           }
-          return ">*:nth-child(" + (privates.index + 1) + ")";
+          return ">*:nth-child(" + (privates.index + 1) + ")" + a;
         }
 
         if (p === ps.DOWN_AND_CLASS) {
-          if (!name) return "";
-          return " ." + name;
+          if (!name) return a;
+          return " ." + name + a;
         }
 
         if (p === ps.DOWN_AND_ID) {
-          if (!name) return "";
-          return " #" + name;
+          if (!name) return a;
+          return " #" + name + a;
         }
 
         if (p === ps.DOWN_AND_NAME) {
-          if (!name) return "";
-          return " [name='" + name + "']";
+          if (!name) return a;
+          return " [name='" + name + "']" + a;
         }
 
         if (p === ps.DOWN_AND_NTH_CHILD) {
           if (!isInt(privates.index) || privates.index < 0) {
-            return "";
+            return a;
           }
-          return " >*:nth-child(" + (privates.index + 1) + ")";
+          return " >*:nth-child(" + (privates.index + 1) + ")" + a;
         }
 
         throw Error("Unsupported preferred");
 
       },
+
+      fullPreferredSelector: function (preferred, appending) {
+
+        var privates = this.___r;
+
+        // collect all parents
+        var parents = [];
+        var parent = privates.parent;
+        while (parent) {
+          parents.splice(0, 0, parent);
+          parent = parent.___r.parent;
+        }
+
+        var selector = "";
+
+        for (var i = 0; i < parents.length; ++i) {
+
+          parent = parents[i];
+
+          selector += parent.preferredSelector(parent.___r.toPreferred);
+        }
+
+        selector += this.preferredSelector(preferred, appending);
+
+        return selector;
+      },
+
+      link: function (selector) {
+        var privates = this.___r;
+        privates.ecol = new Ecol(selector);
+        return privates.chain;
+      },
+
+
     };
 
     Lbi.prototype.constructor = Lbi;
@@ -254,8 +308,8 @@
     //
     // Object link bind
     //
-    var Olbi = function Olbi(struct, name, parent) {
-      this.___lbi(struct, name, parent);
+    var Olbi = function Olbi(struct, opts, name, parent) {
+      this.___lbi(struct, opts, name, parent);
 
       for (var propName in struct) {
         if (!Object.prototype.hasOwnProperty.call(struct, propName)) {
@@ -268,12 +322,11 @@
         var value = struct[propName];
 
         if (isObject(value)) {
-          dpReadOnly(this, propName, new Olbi(value, propName, this), /* enumerable */ true);
+          dpReadOnly(this, propName, new Olbi(value, opts, propName, this), /* enumerable */ true);
           continue;
         }
 
-
-        dpReadOnly(this, propName, new Plbi(value, propName, this), /* enumerable */ true);
+        dpReadOnly(this, propName, new Plbi(value, opts, propName, this), /* enumerable */ true);
 
 
       }
@@ -287,19 +340,24 @@
 
     Olbi.prototype.constructor = Olbi;
 
-    dp(Olbi, "preferreds", {
-      enumerable: true,
-      get: function () {
-        return preferreds;
-      }
-    });
+    dpReadOnly(Olbi, "preferreds", preferreds, /* enumerable */ true);
+
 
 
     //
     // Primitive link bind
     //
-    var Plbi = function Plbi(struct, name, parent) {
-      this.___lbi(struct, name, parent);
+    var Plbi = function Plbi(struct, opts, name, parent) {
+
+      var popts = objectAssignDeep(
+        {
+          toPreferred: preferreds.DOWN_AND_CLASS,
+          withPreferred: preferreds.DOWN_AND_NAME,
+        },
+        opts
+      );
+
+      this.___lbi(struct, popts, name, parent);
     };
 
     Plbi.prototype = objectAssignDeep({

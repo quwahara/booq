@@ -98,27 +98,40 @@
     window.onload = function () {
 
       test(
-        "Olbi.object.primitive.preferredSelector",
-        ".primitive",
+        "Olbi.object.primitive.fullPreferredSelector",
+        ".object [name='primitive'].appending",
         function () {
           var olbi = new Olbi({
             "object": {
               "primitive": "",
             },
           });
-          return olbi.object.primitive.preferredSelector(Olbi.preferreds.CLASS);
+          return olbi.object.primitive.fullPreferredSelector(Olbi.preferreds.DOWN_AND_NAME, ".appending");
+        }
+      );
+
+      test(
+        "Olbi.object.primitive.preferredSelector",
+        ".primitive.appending",
+        function () {
+          var olbi = new Olbi({
+            "object": {
+              "primitive": "",
+            },
+          });
+          return olbi.object.primitive.preferredSelector(Olbi.preferreds.CLASS, ".appending");
         }
       );
 
       test(
         "Olbi.object.preferredSelector",
-        ".object",
+        ".object.appending",
         function () {
           var olbi = new Olbi({
             "object": {
             },
           });
-          return olbi.object.preferredSelector(Olbi.preferreds.CLASS);
+          return olbi.object.preferredSelector(Olbi.preferreds.CLASS, ".appending");
         }
       );
 
