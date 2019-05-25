@@ -1,0 +1,132 @@
+<html>
+
+<head>
+  <link rel="icon" href="data:,">
+  <script src="../olbi.js"></script>
+  <style>
+    html {
+      font-size: 12px;
+      font-family: "Lucida Console", Monaco, monospace;
+    }
+
+    th,
+    td,
+    div,
+    span {
+      font-size: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    // Reference: https://qiita.com/saekis/items/c2b41cd8940923863791 
+    function escape_html(string) {
+      if (typeof string !== 'string') {
+        return string;
+      }
+      return string.replace(/[&'`"<>]/g, function (match) {
+        return {
+          '&': '&amp;',
+          "'": '&#x27;',
+          '`': '&#x60;',
+          '"': '&quot;',
+          '<': '&lt;',
+          '>': '&gt;',
+        }[match]
+      });
+    }
+
+    function unionOuterHTML(elements) {
+      let s = "";
+      for (let i = 0; i < elements.length; ++i) {
+        s += elements.item(i).outerHTML.replace(/(\r|\n)\s+/g, "");
+      }
+      return s;
+    }
+
+    let no = 0;
+
+    function test(title, expected, actual) {
+      ++no;
+      let actual2;
+      if (typeof actual === 'function') {
+        actual2 = actual();
+      } else {
+        actual2 = actual;
+      }
+      const result = expected === actual2;
+
+      document.querySelector(".status").insertAdjacentHTML("beforeend",
+        "<td>" + no + "</td>" +
+        "<td style='background-color:" + (result ? "LightGreen" : "LightCoral") + ";'>" + (result ? "OK" : "NG") +
+        "</td>" +
+        "<td>" + title + "</td>" +
+        "<td>" +
+        "<div><span>E </span><span>" + escape_html(expected) + "</span></div>" +
+        "<div><span>A </span><span>" + escape_html(actual2) + "</span></div>" +
+        "</td>" +
+        "");
+    }
+  </script>
+  <div>
+    <h1>Tests</h1>
+    <h2>Status</h2>
+    <div>
+      <table>
+        <thead>
+          <th>#</th>
+          <th>Result</th>
+          <th>Title</th>
+          <th>Expected/Actual</th>
+        </thead>
+        <tbody class="status">
+
+        </tbody>
+      </table>
+    </div>
+    <h2>Bench</h2>
+    <div class="bench">
+
+    </div>
+  </div>
+  <script>
+    window.onload = function () {
+
+      test(
+        "objectAssignDeep",
+        JSON.stringify({
+          "ppp": "PPP",
+          object: {
+            "aaa": "AAA"
+          },
+          items: [
+            "a",
+            "b",
+          ]
+        }),
+        function () {
+          return JSON.stringify(Olbi.objectAssignDeep({
+            "ppp": "P3",
+            object: {
+              "aaa": "A3"
+            },
+            items: [
+              "a",
+            ]
+          }, {
+              "ppp": "PPP",
+              object: {
+                "aaa": "AAA"
+              },
+              items: [
+                "b",
+              ]
+            }));
+        });
+
+    };
+  </script>
+</body>
+
+</html>
