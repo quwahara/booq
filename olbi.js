@@ -22,6 +22,10 @@
       return v && !Array.isArray(v) && (typeof v) === "object";
     }
 
+    function isString(v) {
+      return typeof v === "string";
+    }
+
     function clone(value) {
 
       if (isObject(value)) {
@@ -108,14 +112,71 @@
       return target2;
     }
 
-    var Lbi = function Lbi() {
+    // Object.defineProperty property
+    var dp = Object.defineProperty.bind(Object);
+
+    function toArray(elementList) {
+      return Array.prototype.slice.call(elementList);
+    }
+
+    // Element collection
+    var Ecol = function Ecol(arg) {
+      this.elems = [document];
+
+      if (isString(arg)) {
+        this.query(arg);
+      }
 
     };
 
+    Ecol.prototype = {
+      query: function (selector) {
+        var newElems = [];
+        for (var i = 0; i < this.elems.length; ++i) {
+          newElems = newElems.concat(toArray(this.elems[i].querySelectorAll(selector)));
+        }
+        this.elems = newElems;
+        return this;
+      },
+    };
+
+    var Lbi = function Lbi() {
+
+      dp(this, "___r", (function (privates) {
+        return {
+          enumerable: false,
+          get: function () {
+            return privates;
+          }
+        };
+      })(
+        // privates instance
+        {
+          self: this,
+          chain: this,
+          ecol: null,
+        }));
+    };
+
+    // Link bind
+    Lbi.prototype = {
+      link: function (selector) {
+        var privates = this.___r;
+        privates.ecol = new Ecol(selector);
+        return privates.chain;
+      },
+    };
+
+    Lbi.prototype.constructor = Lbi;
+
+    // Object link bind
     var Olbi = function Olbi(structure, opts) {
+      this.___lbi();
+
     };
 
     Olbi.prototype = objectAssignDeep({
+      ___lbi: Lbi.prototype.constructor,
     },
       Lbi.prototype);
 

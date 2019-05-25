@@ -40,7 +40,7 @@
     function unionOuterHTML(elements) {
       let s = "";
       for (let i = 0; i < elements.length; ++i) {
-        s += elements.item(i).outerHTML.replace(/(\r|\n)\s+/g, "");
+        s += elements[i].outerHTML.replace(/(\r|\n)\s+/g, "");
       }
       return s;
     }
@@ -87,6 +87,10 @@
     </div>
     <h2>Bench</h2>
     <div class="bench">
+      <div class="link">
+        <div>div1</div>
+        <div>div2</div>
+      </div>
 
     </div>
   </div>
@@ -123,7 +127,16 @@
                 "b",
               ]
             }));
-        });
+        }
+      );
+
+      test(
+        "Olbi.link",
+        "<div>div1</div><div>div2</div>",
+        function () {
+          return unionOuterHTML((new Olbi({})).link(".link>div").___r.ecol.elems);
+        }
+      );
 
     };
   </script>
