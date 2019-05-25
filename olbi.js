@@ -180,7 +180,8 @@
           {
             self: this,
             chain: this,
-            ecol: null,
+            collected: false,
+            ecol: new Ecol(),
             struct: struct,
             name: name || "",
             parent: parent || null,
@@ -191,6 +192,14 @@
         ),
       /* enumerable */ false);
 
+      dp(this, "elems",
+        {
+          enumerable: false,
+          get: function () {
+            return this.___r.ecol.elems;
+          }
+        });
+
     };
 
     Lbi.prototype = {
@@ -199,14 +208,14 @@
         this.___r.toPreferred = preferred;
         return this;
       },
-      getToPreferred: function (preferred) {
+      getToPreferred: function () {
         return this.___r.toPreferred;
       },
       setWithPreferred: function (preferred) {
         this.___r.withPreferred = preferred;
         return this;
       },
-      getWithPreferred: function (preferred) {
+      getWithPreferred: function () {
         return this.___r.withPreferred;
       },
 
@@ -295,14 +304,20 @@
 
       link: function (selector) {
         var privates = this.___r;
-        privates.ecol = new Ecol(selector);
-        return privates.chain;
+        privates.ecol.query(selector);
+        privates.collected = true;
+        return this;
       },
 
+      preferredLink: function (preferred, appending) {
+        var selector = this.fullPreferredSelector(preferred, appending);
+        return this.link(selector);
+      },
 
     };
 
     Lbi.prototype.constructor = Lbi;
+
 
 
     //

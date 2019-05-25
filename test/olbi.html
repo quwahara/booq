@@ -87,15 +87,33 @@
     </div>
     <h2>Bench</h2>
     <div class="bench">
+
       <div class="link">
         <div>div1</div>
         <div>div2</div>
+      </div>
+
+      <div class="object">
+        <div class="primitive appending">div1</div>
       </div>
 
     </div>
   </div>
   <script>
     window.onload = function () {
+
+      test(
+        "Olbi.object.primitive.preferredLink",
+        '<div class="primitive appending">div1</div>',
+        function () {
+          var olbi = new Olbi({
+            "object": {
+              "primitive": "",
+            },
+          });
+          return unionOuterHTML(olbi.object.primitive.preferredLink(Olbi.preferreds.DOWN_AND_CLASS, ".appending").elems);
+        }
+      );
 
       test(
         "Olbi.object.primitive.fullPreferredSelector",
@@ -139,7 +157,7 @@
         "Olbi.link",
         "<div>div1</div><div>div2</div>",
         function () {
-          return unionOuterHTML((new Olbi({})).link(".link>div").___r.ecol.elems);
+          return unionOuterHTML((new Olbi({})).link(".link>div").elems);
         }
       );
 
