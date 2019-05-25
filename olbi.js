@@ -18,6 +18,10 @@
       return Array.isArray(v);
     }
 
+    function isInt(v) {
+      return v === parseInt(v, 10);
+    }
+
     function isObject(v) {
       return v && !Array.isArray(v) && (typeof v) === "object";
     }
@@ -112,8 +116,20 @@
       return target2;
     }
 
-    // Object.defineProperty property
+    // Object.defineProperty alias
     var dp = Object.defineProperty.bind(Object);
+
+    // Define read only property
+    function dpReadOnly(object, name, value, enumerable) {
+      dp(object, name, {
+        enumerable: !!enumerable,
+        get: (function (value) {
+          return function () {
+            return value;
+          };
+        })(value),
+      });
+    }
 
     function toArray(elementList) {
       return Array.prototype.slice.call(elementList);
@@ -140,38 +156,127 @@
       },
     };
 
-    var Lbi = function Lbi() {
-
-      dp(this, "___r", (function (privates) {
-        return {
-          enumerable: false,
-          get: function () {
-            return privates;
-          }
-        };
-      })(
-        // privates instance
-        {
-          self: this,
-          chain: this,
-          ecol: null,
-        }));
+    var preferreds = {
+      get CLASS() { return "CLASS"; },
+      get ID() { return "ID"; },
+      get NAME() { return "NAME"; },
+      get NTH_CHILD() { return "NTH_CHILD"; },
+      get DOWN_AND_CLASS() { return "DOWN_AND_CLASS"; },
+      get DOWN_AND_ID() { return "DOWN_AND_ID"; },
+      get DOWN_AND_NAME() { return "DOWN_AND_NAME"; },
+      get DOWN_AND_NTH_CHILD() { return "DOWN_AND_NTH_CHILD"; },
     };
 
+    var Lbi = function Lbi(struct, name, parent) {
+
+      // privates
+      dpReadOnly(this, "___r", {
+        self: this,
+        chain: this,
+        ecol: null,
+        struct: struct,
+        name: name || "",
+        parent: parent || null,
+      },
+      /* enumerable */ false);
+    };
+
+    //
     // Link bind
+    //
     Lbi.prototype = {
+      get preferreds() { return preferreds; },
       link: function (selector) {
         var privates = this.___r;
         privates.ecol = new Ecol(selector);
         return privates.chain;
       },
+      preferredSelector: function (preferred) {
+
+        var privates = this.___r;
+        var p = preferred;
+        var ps = preferreds;
+
+        var name = privates.name;
+
+        if (p === ps.CLASS) {
+          if (!name) return "";
+          return "." + name;
+        }
+
+        if (p === ps.ID) {
+          if (!name) return "";
+          return "#" + name;
+        }
+
+        if (p === ps.NAME) {
+          if (!name) return "";
+          return "[name='" + name + "']";
+        }
+
+        if (p === ps.NTH_CHILD) {
+          if (!isInt(privates.index) || privates.index < 0) {
+            return "";
+          }
+          return ">*:nth-child(" + (privates.index + 1) + ")";
+        }
+
+        if (p === ps.DOWN_AND_CLASS) {
+          if (!name) return "";
+          return " ." + name;
+        }
+
+        if (p === ps.DOWN_AND_ID) {
+          if (!name) return "";
+          return " #" + name;
+        }
+
+        if (p === ps.DOWN_AND_NAME) {
+          if (!name) return "";
+          return " [name='" + name + "']";
+        }
+
+        if (p === ps.DOWN_AND_NTH_CHILD) {
+          if (!isInt(privates.index) || privates.index < 0) {
+            return "";
+          }
+          return " >*:nth-child(" + (privates.index + 1) + ")";
+        }
+
+        throw Error("Unsupported preferred");
+
+      },
     };
 
     Lbi.prototype.constructor = Lbi;
 
+
+    //
     // Object link bind
-    var Olbi = function Olbi(structure, opts) {
-      this.___lbi();
+    //
+    var Olbi = function Olbi(struct, name, parent) {
+      this.___lbi(struct, name, parent);
+
+      for (var propName in struct) {
+        if (!Object.prototype.hasOwnProperty.call(struct, propName)) {
+          continue;
+        }
+
+        // ignore "___", because of reserved word
+        if (propName === "___") continue;
+
+        var value = struct[propName];
+
+        if (isObject(value)) {
+          dpReadOnly(this, propName, new Olbi(value, propName, this), /* enumerable */ true);
+          continue;
+        }
+
+
+        dpReadOnly(this, propName, new Plbi(value, propName, this), /* enumerable */ true);
+
+
+      }
 
     };
 
@@ -181,6 +286,30 @@
       Lbi.prototype);
 
     Olbi.prototype.constructor = Olbi;
+
+    dp(Olbi, "preferreds", {
+      enumerable: true,
+      get: function () {
+        return preferreds;
+      }
+    });
+
+
+    //
+    // Primitive link bind
+    //
+    var Plbi = function Plbi(struct, name, parent) {
+      this.___lbi(struct, name, parent);
+    };
+
+    Plbi.prototype = objectAssignDeep({
+      ___lbi: Lbi.prototype.constructor,
+    },
+      Lbi.prototype);
+
+    Plbi.prototype.constructor = Plbi;
+
+
 
     Olbi.objectAssignDeep = objectAssignDeep;
 

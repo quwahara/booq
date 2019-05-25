@@ -98,6 +98,39 @@
     window.onload = function () {
 
       test(
+        "Olbi.object.primitive.preferredSelector",
+        ".primitive",
+        function () {
+          var olbi = new Olbi({
+            "object": {
+              "primitive": "",
+            },
+          });
+          return olbi.object.primitive.preferredSelector(Olbi.preferreds.CLASS);
+        }
+      );
+
+      test(
+        "Olbi.object.preferredSelector",
+        ".object",
+        function () {
+          var olbi = new Olbi({
+            "object": {
+            },
+          });
+          return olbi.object.preferredSelector(Olbi.preferreds.CLASS);
+        }
+      );
+
+      test(
+        "Olbi.link",
+        "<div>div1</div><div>div2</div>",
+        function () {
+          return unionOuterHTML((new Olbi({})).link(".link>div").___r.ecol.elems);
+        }
+      );
+
+      test(
         "objectAssignDeep",
         JSON.stringify({
           "ppp": "PPP",
@@ -130,13 +163,6 @@
         }
       );
 
-      test(
-        "Olbi.link",
-        "<div>div1</div><div>div2</div>",
-        function () {
-          return unionOuterHTML((new Olbi({})).link(".link>div").___r.ecol.elems);
-        }
-      );
 
     };
   </script>
