@@ -276,6 +276,14 @@
 
       },
 
+      toPreferredSelector: function (appending) {
+        return this.preferredSelector(this.getToPreferred(), appending);
+      },
+
+      withPreferredSelector: function (appending) {
+        return this.preferredSelector(this.getWithPreferred(), appending);
+      },
+
       fullPreferredSelector: function (preferred, appending) {
 
         var privates = this.___r;
@@ -294,7 +302,7 @@
 
           parent = parents[i];
 
-          selector += parent.preferredSelector(parent.___r.toPreferred);
+          selector += parent.toPreferredSelector();
         }
 
         selector += this.preferredSelector(preferred, appending);
@@ -312,6 +320,14 @@
       preferredLink: function (preferred, appending) {
         var selector = this.fullPreferredSelector(preferred, appending);
         return this.link(selector);
+      },
+
+      linkByToPreferred: function (appending) {
+        return this.preferredLink(this.getToPreferred(), appending);
+      },
+
+      linkByWithPreferred: function (appending) {
+        return this.preferredLink(this.getWithPreferred(), appending);
       },
 
     };
