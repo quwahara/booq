@@ -49,6 +49,21 @@
       return value;
     }
 
+    function argumentsToArray(args) {
+      return (args.length === 1 ? [args[0]] : Array.apply(null, args));
+    }
+
+    function superConstructorOf(instance) {
+      return Object.getPrototypeOf(Object.getPrototypeOf(instance)).constructor;
+    }
+
+    function callSuperConstructorOf(instance, varArguments) {
+      var args = argumentsToArray(arguments);
+      args.shift();
+      return superConstructorOf(instance).apply(instance, args);
+    }
+
+
     function cloneArray(array) {
       return array.map(clone);
     }
@@ -198,6 +213,7 @@
 
       clear: function () {
         this.___r.queried = false;
+        this.lastSelector = "";
         this.elems.length = 0;
         return this;
       },
@@ -481,7 +497,8 @@
     // Object link bind
     //
     var Olbi = function Olbi(struct, opts, name, index, parent) {
-      this.___lbi(struct, opts, name, index, parent);
+
+      callSuperConstructorOf(this, struct, opts, name, index, parent);
 
       for (var propName in struct) {
 
@@ -511,40 +528,39 @@
 
     };
 
-    Olbi.prototype = objectAssign({
-      ___lbi: Lbi.prototype.constructor,
+    Olbi.prototype = objectAssign(
+      Object.create(Lbi.prototype),
+      {
+        setData: function (data, src) {
+          var privates = this.___r;
 
-      setData: function (data, src) {
-        var privates = this.___r;
+          src = src || this;
 
-        src = src || this;
+          var struct = privates.struct;
+          var self = privates.self;
 
-        var struct = privates.struct;
-        var self = privates.self;
+          for (var propName in data) {
 
-        for (var propName in data) {
+            // ignore "___", because of reserved word
+            if (propName === "___") {
+              continue;
+            }
 
-          // ignore "___", because of reserved word
-          if (propName === "___") {
-            continue;
+            if (!Object.prototype.hasOwnProperty.call(data, propName)) {
+              continue;
+            }
+
+            if (!Object.prototype.hasOwnProperty.call(struct, propName)) {
+              continue;
+            }
+
+            self[propName].setData(data[propName]);
           }
 
-          if (!Object.prototype.hasOwnProperty.call(data, propName)) {
-            continue;
-          }
+          return this;
+        },
 
-          if (!Object.prototype.hasOwnProperty.call(struct, propName)) {
-            continue;
-          }
-
-          self[propName].setData(data[propName]);
-        }
-
-        return this;
-      },
-
-    },
-      Lbi.prototype);
+      });
 
     Olbi.prototype.constructor = Olbi;
 
@@ -557,7 +573,11 @@
     //
     var Plbi = function Plbi(struct, opts, name, index, parent) {
 
-      var popts = objectAssign(
+      callSuperConstructorOf(this, struct, opts, name, index, parent);
+
+      var privates = this.___r;
+      objectAssign(
+        privates,
         {
           chain: parent,
           toPreferred: preferreds.DOWN_AND_CLASS,
@@ -568,65 +588,63 @@
         opts
       );
 
-      this.___lbi(struct, popts, name, index, parent);
     };
 
-    Plbi.prototype = objectAssign({
+    Plbi.prototype = objectAssign(
+      Object.create(Lbi.prototype),
+      {
+        setData: function (data, src) {
+          var privates = this.___r;
+          privates.data = data;
+          src = src || this;
 
-      ___lbi: Lbi.prototype.constructor,
+          for (var i = 0; i < privates.receivers.length; ++i) {
+            privates.receivers[i](data, src);
+          }
 
-      setData: function (data, src) {
-        var privates = this.___r;
-        privates.data = data;
-        src = src || this;
+          return this;
+        },
 
-        for (var i = 0; i < privates.receivers.length; ++i) {
-          privates.receivers[i](data, src);
-        }
+        withValue: function (opts) {
 
-        return this;
-      },
+          var privates = this.___r;
 
-      withValue: function (opts) {
+          opts = objectAssign({
+            eventName: "change",
+          }, opts);
 
-        var privates = this.___r;
+          if (!this.collected) {
+            this.linkByWithPreferred();
+          }
 
-        opts = objectAssign({
-          eventName: "change",
-        }, opts);
+          var ecol = privates.ecol.clone();
 
-        if (!this.collected) {
-          this.linkByWithPreferred();
-        }
+          ecol.on(opts.eventName, (function (self) {
+            return function (event) {
+              self.setData(event.target.value, event.target);
+            };
+          })(this));
 
-        var ecol = privates.ecol.clone();
+          var receiver = (function (ecol) {
+            return function (data, src) {
+              ecol.each(function (element) {
+                if (src !== element) {
+                  element.value = data;
+                }
+              });
+            };
+          })(ecol);
 
-        ecol.on(opts.eventName, (function (self) {
-          return function (event) {
-            self.setData(event.target.value, event.target);
-          };
-        })(this));
+          privates.receivers.push(receiver);
 
-        var receiver = (function (ecol) {
-          return function (data, src) {
-            ecol.each(function (element) {
-              if (src !== element) {
-                element.value = data;
-              }
-            });
-          };
-        })(ecol);
+          privates.parent.___r.traceLink = privates.traceLink;
 
-        privates.receivers.push(receiver);
+          this.clearElemCollection();
 
-        privates.parent.___r.traceLink = privates.traceLink;
-
-        this.clearElemCollection();
-
-        return privates.chain;
-      },
-    },
-      Lbi.prototype);
+          return privates.chain;
+        },
+      }
+    );
 
     Plbi.prototype.constructor = Plbi;
 
@@ -636,7 +654,8 @@
     // Array link bind
     //
     var Albi = function Albi(struct, opts, name, index, parent) {
-      this.___lbi(struct, opts, name, index, parent);
+
+      callSuperConstructorOf(this, struct, opts, name, index, parent);
 
       if (!isArray(struct)) {
         throw Error("The struct must be an Array");
@@ -655,152 +674,152 @@
 
     };
 
-    Albi.prototype = objectAssign({
-      ___lbi: Lbi.prototype.constructor,
+    Albi.prototype = objectAssign(
+      Object.create(Lbi.prototype),
+      {
+        each: function (callback, opts) {
 
-      each: function (callback, opts) {
+          /*
+          The element that is linked on each method, must be the parent that is for automatically generated element.
+          each で link される Element は、each メソッドによって自動で生成される element の親であることを前提にしている。
+          For example, if there is a HTML as below,
+          例えば、次のようなHTMLがあったとする。
+          ```
+          <tbody>
+            <tr>
+            </tr>
+          </tbody>
+          ```
+          and you want to generate `<tr>` tag by each item in an array.
+          この `<tr>` タグを、配列の要素ごとに自動で生成したいとする。
+          Then linked tag by each method must be `<tbody>`
+          そのとき、linkされる each メソッドで link されるタグは、`<tbody>` でなければならない。
+       
+          eachSets[]
+            eachSet
+              itemReceiver
+              templateSets[]
+                templateSet
+                  target
+                  template
+       
+          */
 
-        /*
-        The element that is linked on each method, must be the parent that is for automatically generated element.
-        each で link される Element は、each メソッドによって自動で生成される element の親であることを前提にしている。
-        For example, if there is a HTML as below,
-        例えば、次のようなHTMLがあったとする。
-        ```
-        <tbody>
-          <tr>
-          </tr>
-        </tbody>
-        ```
-        and you want to generate `<tr>` tag by each item in an array.
-        この `<tr>` タグを、配列の要素ごとに自動で生成したいとする。
-        Then linked tag by each method must be `<tbody>`
-        そのとき、linkされる each メソッドで link されるタグは、`<tbody>` でなければならない。
-     
-        eachSets[]
-          eachSet
-            itemReceiver
-            templateSets[]
-              templateSet
-                target
-                template
-     
-        */
+          var privates = this.___r;
+          var eachSet = {
+            itemReceiver: null,
+            templateSets: [],
+            callback: callback,
+          };
 
-        var privates = this.___r;
-        var eachSet = {
-          itemReceiver: null,
-          templateSets: [],
-          callback: callback,
-        };
+          if (privates.itemStruct == null || isPrimitive(privates.itemStruct)) {
+            eachSet.itemReceiver = (function (self, privates) {
+              return function (src, value, name, index) {
 
-        if (privates.itemStruct == null || isPrimitive(privates.itemStruct)) {
-          eachSet.itemReceiver = (function (self, privates) {
-            return function (src, value, name, index) {
+                var eachSet = this;
+                var templateSetIndex, templateSet;
 
-              var eachSet = this;
-              var templateSetIndex, templateSet;
+                // create element
+                for (templateSetIndex = 0; templateSetIndex < eachSet.templateSets.length; ++templateSetIndex) {
+                  templateSet = eachSet.templateSets[templateSetIndex];
 
-              // create element
-              for (templateSetIndex = 0; templateSetIndex < eachSet.templateSets.length; ++templateSetIndex) {
-                templateSet = eachSet.templateSets[templateSetIndex];
+                  var childElem = null;
+                  if (templateSet.template) {
+                    childElem = templateSet.template.cloneNode(true);
+                    templateSet.target.appendChild(childElem);
+                  }
 
-                var childElem = null;
-                if (templateSet.template) {
-                  childElem = templateSet.template.cloneNode(true);
-                  templateSet.target.appendChild(childElem);
+                  // create Plbi
+                  templateSet.xlbi = new Plbi(privates.itemStruct, null, null, index, self);
+
+                  eachSet.callback.call(templateSet.xlbi, index, childElem);
                 }
 
-                // create Plbi
-                templateSet.xlbi = new Plbi(privates.itemStruct, null, null, index, self);
+                // Set value to data
+                for (templateSetIndex = 0; templateSetIndex < eachSet.templateSets.length; ++templateSetIndex) {
+                  templateSet = eachSet.templateSets[templateSetIndex];
+                  templateSet.xlbi.setData(value);
+                }
 
-                eachSet.callback.call(templateSet.xlbi, index, childElem);
-              }
+              };
+            })(this, privates);
+          }
+          else {
+            // TODO not implemented
+            throw Error("not implemented");
+          }
 
-              // Set value to data
-              for (templateSetIndex = 0; templateSetIndex < eachSet.templateSets.length; ++templateSetIndex) {
-                templateSet = eachSet.templateSets[templateSetIndex];
-                templateSet.xlbi.setData(value);
-              }
+          if (!this.collected) {
+            this.linkByToPreferred();
+          }
 
+          // prepare template element
+          privates.ecol.each(function (elem) {
+
+            var firstElementChild = null;
+            if (elem.firstElementChild) {
+              firstElementChild = elem.firstElementChild.cloneNode(true);
+            }
+
+            removeChildAll(elem);
+            var templateSet = {
+              target: elem,
+              template: firstElementChild,
+              xlbi: null,
             };
-          })(this, privates);
-        }
-        else {
-          // TODO not implemented
-          throw Error("not implemented");
-        }
+            eachSet.templateSets.push(templateSet);
+          });
 
-        if (!this.collected) {
-          this.linkByToPreferred();
-        }
+          privates.eachSets.push(eachSet);
 
-        // prepare template element
-        privates.ecol.each(function (elem) {
+          this.clearElemCollection();
 
-          var firstElementChild = null;
-          if (elem.firstElementChild) {
-            firstElementChild = elem.firstElementChild.cloneNode(true);
-          }
-
-          removeChildAll(elem);
-          var templateSet = {
-            target: elem,
-            template: firstElementChild,
-            xlbi: null,
-          };
-          eachSet.templateSets.push(templateSet);
-        });
-
-        privates.eachSets.push(eachSet);
-
-        this.clearElemCollection();
-
-        return this;
-      },
-
-      setData: function (data) {
-
-        var privates = this.___r;
-        if (privates.data === data) {
           return this;
-        }
+        },
 
-        // copy data into privates.data
-        privates.data.length = 0;
-        for (var dataIndex = 0; dataIndex < data.length; ++dataIndex) {
-          privates.data.push(data[dataIndex]);
-        }
+        setData: function (data) {
 
-        // clear element
-        var eachSetIndex, eachSet, templateSetIndex, templateSet;
-        for (eachSetIndex = 0; eachSetIndex < privates.eachSets.length; ++eachSetIndex) {
-
-          eachSet = privates.eachSets[eachSetIndex];
-
-          for (templateSetIndex = 0; templateSetIndex < eachSet.templateSets.length; ++templateSetIndex) {
-            templateSet = eachSet.templateSets[templateSetIndex];
-            removeChildAll(templateSet.target);
+          var privates = this.___r;
+          if (privates.data === data) {
+            return this;
           }
-        }
 
-        // call itemReceiver by each item
-        for (var index = 0; index < privates.data.length; ++index) {
-          var item = privates.data[index];
+          // copy data into privates.data
+          privates.data.length = 0;
+          for (var dataIndex = 0; dataIndex < data.length; ++dataIndex) {
+            privates.data.push(data[dataIndex]);
+          }
 
+          // clear element
+          var eachSetIndex, eachSet, templateSetIndex, templateSet;
           for (eachSetIndex = 0; eachSetIndex < privates.eachSets.length; ++eachSetIndex) {
 
             eachSet = privates.eachSets[eachSetIndex];
-            eachSet.itemReceiver(this, item, /* name */null, index);
+
+            for (templateSetIndex = 0; templateSetIndex < eachSet.templateSets.length; ++templateSetIndex) {
+              templateSet = eachSet.templateSets[templateSetIndex];
+              removeChildAll(templateSet.target);
+            }
           }
-        }
 
-        // TODO call onReceive
+          // call itemReceiver by each item
+          for (var index = 0; index < privates.data.length; ++index) {
+            var item = privates.data[index];
 
-        return this;
-      },
+            for (eachSetIndex = 0; eachSetIndex < privates.eachSets.length; ++eachSetIndex) {
 
-    },
-      Lbi.prototype);
+              eachSet = privates.eachSets[eachSetIndex];
+              eachSet.itemReceiver(this, item, /* name */null, index);
+            }
+          }
+
+          // TODO call onReceive
+
+          return this;
+        },
+
+      }
+    );
 
     Albi.prototype.constructor = Albi;
 
