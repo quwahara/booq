@@ -88,19 +88,94 @@
     <h2>Bench</h2>
     <div class="bench">
 
-      <div class="link">
-        <div>div1</div>
-        <div>div2</div>
+      <div class="olbi.primitiveForSetData">
+        <input name="primitiveForSetData" type="text">
+      </div>
+
+      <div class="array2">
+        <div class="array2-item"></div>
+      </div>
+
+      <div class="array1">
+        <div class="array1-item"></div>
       </div>
 
       <div class="object">
         <div class="primitive appending">div1</div>
       </div>
 
+      <div class="link">
+        <div>div1</div>
+        <div>div2</div>
+      </div>
+
     </div>
   </div>
   <script>
     window.onload = function () {
+
+      Olbi.configure({ traceLink: true });
+
+      test(
+        "olbi.primitiveForSetData",
+        'value',
+        function () {
+          var olbi = new Olbi({
+            "primitiveForSetData": "",
+          });
+          olbi
+            .primitiveForSetData.withValue().traceLink()
+            .setData({
+              "primitiveForSetData": "value",
+            });
+
+          return document.querySelector("[name='primitiveForSetData']").value;
+        }
+      );
+
+      test(
+        "olbi.array2.each",
+        '[{"templateSets":[{"target":"array2","template":"array2-item","xlbi":{}}]}]',
+        function () {
+          var olbi = new Olbi({
+            "array2": [
+              ""
+            ]
+          });
+          olbi.array2.each(function () {
+
+          })
+            .setData(["apple"])
+            ;
+
+          var eachSets = olbi.array2.___r.eachSets;
+          eachSets[0].templateSets[0].target = eachSets[0].templateSets[0].target.className;
+          eachSets[0].templateSets[0].template = eachSets[0].templateSets[0].template.className;
+
+          return JSON.stringify(olbi.array2.___r.eachSets);
+        }
+      );
+
+      test(
+        "olbi.array1.each",
+        '[{"templateSets":[{"target":"array1","template":"array1-item","xlbi":null}]}]',
+        function () {
+          var olbi = new Olbi({
+            "array1": [
+              ""
+            ]
+          });
+          olbi.array1.each(function () {
+
+          });
+
+          var eachSets = olbi.array1.___r.eachSets;
+          eachSets[0].templateSets[0].target = eachSets[0].templateSets[0].target.className;
+          eachSets[0].templateSets[0].template = eachSets[0].templateSets[0].template.className;
+
+          return JSON.stringify(olbi.array1.___r.eachSets);
+        }
+      );
 
       test(
         "Olbi.object.primitive.preferredLink",
@@ -111,7 +186,7 @@
               "primitive": "",
             },
           });
-          return unionOuterHTML(olbi.object.primitive.preferredLink(Olbi.preferreds.DOWN_AND_CLASS, ".appending").elems);
+          return unionOuterHTML(olbi.object.primitive.preferredLink(Olbi.preferreds.DOWN_AND_CLASS, ".appending").elemCollection);
         }
       );
 
@@ -157,7 +232,7 @@
         "Olbi.link",
         "<div>div1</div><div>div2</div>",
         function () {
-          return unionOuterHTML((new Olbi({})).link(".link>div").elems);
+          return unionOuterHTML((new Olbi({})).link(".link>div").elemCollection);
         }
       );
 
