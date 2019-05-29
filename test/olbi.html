@@ -88,8 +88,12 @@
     <h2>Bench</h2>
     <div class="bench">
 
-      <div class="olbi.primitiveForSetData">
-        <input name="primitiveForSetData" type="text">
+      <div class="olbi.primitiveToText">
+        <div class="primitiveToText"></div>
+      </div>
+
+      <div class="olbi.primitiveWithValue">
+        <input name="primitiveWithValue" type="text">
       </div>
 
       <div class="array2">
@@ -117,19 +121,36 @@
       Olbi.configure({ traceLink: true });
 
       test(
-        "olbi.primitiveForSetData",
+        "olbi.primitiveToText",
         'value',
         function () {
           var olbi = new Olbi({
-            "primitiveForSetData": "",
+            "primitiveToText": "",
           });
           olbi
-            .primitiveForSetData.withValue().traceLink()
+            .primitiveToText.toText().traceLink()
             .setData({
-              "primitiveForSetData": "value",
+              "primitiveToText": "value",
             });
 
-          return document.querySelector("[name='primitiveForSetData']").value;
+          return document.querySelector(".primitiveToText").textContent;
+        }
+      );
+
+      test(
+        "olbi.primitiveWithValue",
+        'value',
+        function () {
+          var olbi = new Olbi({
+            "primitiveWithValue": "",
+          });
+          olbi
+            .primitiveWithValue.withValue().traceLink()
+            .setData({
+              "primitiveWithValue": "value",
+            });
+
+          return document.querySelector("[name='primitiveWithValue']").value;
         }
       );
 

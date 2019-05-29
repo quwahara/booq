@@ -605,6 +605,35 @@
           return this;
         },
 
+        toText: function (opts) {
+
+          var privates = this.___r;
+
+          if (!this.collected) {
+            this.linkByToPreferred();
+          }
+
+          var ecol = privates.ecol.clone();
+
+          var receiver = (function (ecol) {
+            return function (data, src) {
+              ecol.each(function (element) {
+                if (src !== element) {
+                  element.textContent = data;
+                }
+              });
+            };
+          })(ecol);
+
+          privates.receivers.push(receiver);
+
+          privates.parent.___r.traceLink = privates.traceLink;
+
+          this.clearElemCollection();
+
+          return privates.chain;
+        },
+
         withValue: function (opts) {
 
           var privates = this.___r;
@@ -643,6 +672,8 @@
 
           return privates.chain;
         },
+
+
       }
     );
 
