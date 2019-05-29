@@ -698,9 +698,12 @@
 
       var privates = this.___r;
       objectAssign(privates, {
+        itemToPreferred: preferreds.DOWN_AND_NTH_CHILD,
+        itemWithPreferred: preferreds.DOWN_AND_NTH_CHILD,
         itemStruct: struct[0],
         eachSets: [],
         data: [],
+
       });
 
     };
@@ -737,14 +740,20 @@
           */
 
           var privates = this.___r;
+          objectAssign(privates, opts);
           var eachSet = {
             itemReceiver: null,
             templateSets: [],
             callback: callback,
           };
 
+          var itemOpts = {
+            toPreferred: privates.itemToPreferred,
+            withPreferred: privates.itemToPreferred,
+          };
+
           if (privates.itemStruct == null || isPrimitive(privates.itemStruct)) {
-            eachSet.itemReceiver = (function (self, privates) {
+            eachSet.itemReceiver = (function (self, privates, itemOpts) {
               return function (src, value, name, index) {
 
                 var eachSet = this;
@@ -761,7 +770,7 @@
                   }
 
                   // create Plbi
-                  templateSet.xlbi = new Plbi(privates.itemStruct, null, null, index, self);
+                  templateSet.xlbi = new Plbi(privates.itemStruct, itemOpts, null, index, self);
 
                   eachSet.callback.call(templateSet.xlbi, index, childElem);
                 }
@@ -773,7 +782,7 @@
                 }
 
               };
-            })(this, privates);
+            })(this, privates, itemOpts);
           }
           else {
             // TODO not implemented

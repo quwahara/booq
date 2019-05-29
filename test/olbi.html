@@ -88,6 +88,10 @@
     <h2>Bench</h2>
     <div class="bench">
 
+      <div class="object array3">
+        <div class="array3-item"></div>
+      </div>
+
       <div class="olbi.primitiveToText">
         <div class="primitiveToText"></div>
       </div>
@@ -119,6 +123,33 @@
     window.onload = function () {
 
       Olbi.configure({ traceLink: true });
+
+      test(
+        "olbi.array3.each",
+        '[{"templateSets":[{"target":"array3","template":"array3-item","xlbi":{}}]}]',
+        function () {
+          var olbi = new Olbi({
+            "object": {
+              "array3": [
+                ""
+              ]
+            },
+          });
+          olbi.object.array3.each(function () {
+            this.toText().traceLink();
+          }).traceLink()
+            .setData(["apple", "banana"])
+            ;
+
+          var eachSets = olbi.object.array3.___r.eachSets;
+          eachSets[0].templateSets[0].target = eachSets[0].templateSets[0].target.className;
+          eachSets[0].templateSets[0].template = eachSets[0].templateSets[0].template.className;
+
+          return JSON.stringify(olbi.object.array3.___r.eachSets);
+        }
+      );
+
+      return;
 
       test(
         "olbi.primitiveToText",
