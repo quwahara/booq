@@ -126,7 +126,7 @@
 
       test(
         "olbi.array3.each",
-        '[{"templateSets":[{"target":"array3","template":"array3-item","xlbi":{}}]}]',
+        '<div class="array3-item">apple</div><div class="array3-item">banana</div>',
         function () {
           var olbi = new Olbi({
             "object": {
@@ -141,15 +141,9 @@
             .setData(["apple", "banana"])
             ;
 
-          var eachSets = olbi.object.array3.___r.eachSets;
-          eachSets[0].templateSets[0].target = eachSets[0].templateSets[0].target.className;
-          eachSets[0].templateSets[0].template = eachSets[0].templateSets[0].template.className;
-
-          return JSON.stringify(olbi.object.array3.___r.eachSets);
+          return unionOuterHTML(document.querySelectorAll(".array3-item"));
         }
       );
-
-      return;
 
       test(
         "olbi.primitiveToText",
