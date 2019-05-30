@@ -593,6 +593,11 @@
     Plbi.prototype = objectAssign(
       Object.create(Lbi.prototype),
       {
+        addReceiver: function (receiver) {
+          this.___r.receivers.push(receiver);
+          return this;
+        },
+
         setData: function (data, src) {
           var privates = this.___r;
           privates.data = data;
@@ -664,7 +669,7 @@
             };
           })(ecol);
 
-          privates.receivers.push(receiver);
+          this.addReceiver(receiver);
 
           privates.parent.___r.traceLink = privates.traceLink;
 
