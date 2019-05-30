@@ -702,6 +702,7 @@
         itemWithPreferred: preferreds.DOWN_AND_NTH_CHILD,
         itemStruct: struct[0],
         eachSets: [],
+        itemReceivers: [],
         data: [],
 
       });
@@ -711,6 +712,12 @@
     Albi.prototype = objectAssign(
       Object.create(Lbi.prototype),
       {
+
+        addItemReceiver: function (itemReceiver) {
+          this.___r.itemReceivers.push(itemReceiver);
+          return this;
+        },
+
         each: function (callback, opts) {
 
           /*
@@ -741,8 +748,8 @@
 
           var privates = this.___r;
           objectAssign(privates, opts);
+
           var eachSet = {
-            itemReceiver: null,
             templateSets: [],
             callback: callback,
           };
@@ -753,10 +760,11 @@
           };
 
           if (privates.itemStruct == null || isPrimitive(privates.itemStruct)) {
-            eachSet.itemReceiver = (function (self, privates, itemOpts) {
+
+            var itemReceiver = (function (eachSet, self, privates, itemOpts) {
+
               return function (src, value, name, index) {
 
-                var eachSet = this;
                 var templateSetIndex, templateSet;
 
                 // create element
@@ -778,11 +786,14 @@
                 // Set value to data
                 for (templateSetIndex = 0; templateSetIndex < eachSet.templateSets.length; ++templateSetIndex) {
                   templateSet = eachSet.templateSets[templateSetIndex];
-                  templateSet.xlbi.setData(value);
+                  templateSet.xlbi.setData(value, src);
                 }
 
               };
-            })(this, privates, itemOpts);
+
+            })(eachSet, this, privates, itemOpts);
+
+            this.addItemReceiver(itemReceiver);
           }
           else {
             // TODO not implemented
@@ -817,12 +828,14 @@
           return this;
         },
 
-        setData: function (data) {
+        setData: function (data, src) {
 
           var privates = this.___r;
           if (privates.data === data) {
             return this;
           }
+
+          src = src || this;
 
           // copy data into privates.data
           privates.data.length = 0;
@@ -844,14 +857,14 @@
 
           // call itemReceiver by each item
           for (var index = 0; index < privates.data.length; ++index) {
+
             var item = privates.data[index];
-
-            for (eachSetIndex = 0; eachSetIndex < privates.eachSets.length; ++eachSetIndex) {
-
-              eachSet = privates.eachSets[eachSetIndex];
-              eachSet.itemReceiver(this, item, /* name */null, index);
+            for (var iItemReceiver = 0; iItemReceiver < privates.itemReceivers.length; ++iItemReceiver) {
+              privates.itemReceivers[iItemReceiver](src, item, /* name */ null, index);
             }
+
           }
+
 
           // TODO call onReceive
 
