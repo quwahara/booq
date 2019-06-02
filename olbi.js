@@ -13,7 +13,6 @@
   'use strict';
   return (function () {
 
-
     function isArray(v) {
       return Array.isArray(v);
     }
@@ -298,9 +297,12 @@
             name: name || "",
             index: isInt(index) ? index : null,
             parent: parent || null,
+            data: null,
             toPreferred: preferreds.CLASS,
             withPreferred: preferreds.NAME,
             traceLink: null,
+            setDataRev: 0,
+            getDataRev: 0,
           },
           opts
         ),
@@ -493,12 +495,23 @@
 
 
 
+
+
     //
     // Object link bind
     //
     var Olbi = function Olbi(struct, opts, name, index, parent) {
 
       callSuperConstructorOf(this, struct, opts, name, index, parent);
+
+      var privates = this.___r;
+      objectAssign(
+        privates,
+        {
+          data: {},
+        },
+        opts
+      );
 
       for (var propName in struct) {
 
@@ -511,19 +524,19 @@
           continue;
         }
 
-        var value = struct[propName];
+        var subStruct = struct[propName];
 
-        if (isObject(value)) {
-          dpReadOnly(this, propName, new Olbi(value, opts, propName, /* index */ null, this), /* enumerable */ true);
+        if (isObject(subStruct)) {
+          dpReadOnly(this, propName, new Olbi(subStruct, opts, propName, /* index */ null, this), /* enumerable */ true);
           continue;
         }
 
-        if (isArray(value)) {
-          dpReadOnly(this, propName, new Albi(value, opts, propName, /* index */ null, this), /* enumerable */ true);
+        if (isArray(subStruct)) {
+          dpReadOnly(this, propName, new Albi(subStruct, opts, propName, /* index */ null, this), /* enumerable */ true);
           continue;
         }
 
-        dpReadOnly(this, propName, new Plbi(value, opts, propName, /* index */ null, this), /* enumerable */ true);
+        dpReadOnly(this, propName, new Plbi(subStruct, opts, propName, /* index */ null, this), /* enumerable */ true);
       }
 
     };
@@ -532,6 +545,11 @@
       Object.create(Lbi.prototype),
       {
         setData: function (data, src) {
+
+          if (!isObject(data)) {
+            throw Error("Requires Object for data");
+          }
+
           var privates = this.___r;
 
           src = src || this;
@@ -557,7 +575,37 @@
             self[propName].setData(data[propName]);
           }
 
+          privates.setDataRev += 1;
+
           return this;
+        },
+
+        getData: function () {
+
+          var privates = this.___r;
+          if (privates.getDataRev === privates.setDataRev) {
+            return privates.data;
+          }
+
+          var struct = privates.struct;
+
+          for (var propName in struct) {
+
+            // ignore "___", because of reserved word
+            if (propName === "___") {
+              continue;
+            }
+
+            if (!Object.prototype.hasOwnProperty.call(struct, propName)) {
+              continue;
+            }
+
+            privates.data[propName] = this[propName].getData();
+          }
+
+          privates.getDataRev = privates.setDataRev;
+
+          return privates.data;
         },
 
       });
@@ -582,7 +630,6 @@
           chain: parent,
           toPreferred: preferreds.DOWN_AND_CLASS,
           withPreferred: preferreds.DOWN_AND_NAME,
-          data: null,
           receivers: [],
         },
         opts
@@ -599,6 +646,11 @@
         },
 
         setData: function (data, src) {
+
+          if (data != null && !isPrimitive(data)) {
+            throw Error("Requires primitive value or null for data");
+          }
+
           var privates = this.___r;
           privates.data = data;
           src = src || this;
@@ -608,6 +660,10 @@
           }
 
           return this;
+        },
+
+        getData: function () {
+          return this.___r.data;
         },
 
         toText: function (opts) {
@@ -812,6 +868,10 @@
 
         setData: function (data, src, opts) {
 
+          if (!isArray(data)) {
+            throw Error("Requires Array for data");
+          }
+
           var privates = this.___r;
           if (privates.data === data) {
             return this;
@@ -821,7 +881,7 @@
 
           // copy data into privates.data
           privates.xlbis.length = 0;
-          privates.data.length = 0;
+          privates.setDataRev += 1;
 
           var xlbiConsturctor;
           var itemStruct = privates.itemStruct;
@@ -840,7 +900,6 @@
 
           for (var dataIndex = 0; dataIndex < data.length; ++dataIndex) {
             privates.xlbis.push(new xlbiConsturctor(itemStruct, itemOpts, /* name */ null, dataIndex, this));
-            privates.data.push(data[dataIndex]);
           }
 
           // clear element
@@ -856,27 +915,44 @@
           }
 
           // call eachReceiver by each item
-          for (var index = 0; index < privates.data.length; ++index) {
+          for (var index = 0; index < privates.xlbis.length; ++index) {
 
             var xlbi = privates.xlbis[index];
             for (var iEachReceiver = 0; iEachReceiver < privates.eachReceivers.length; ++iEachReceiver) {
               privates.eachReceivers[iEachReceiver](index, xlbi);
             }
-
           }
 
           // call setData by each item
-          for (var index2 = 0; index2 < privates.data.length; ++index2) {
+          for (var index2 = 0; index2 < privates.xlbis.length; ++index2) {
 
-            var item2 = privates.data[index2];
             var xlbi2 = privates.xlbis[index2];
-            xlbi2.setData(item2, src);
+            xlbi2.setData(data[index2], src);
           }
 
 
           // TODO call onReceive
 
           return this;
+        },
+
+        getData: function () {
+
+          var privates = this.___r;
+          if (privates.getDataRev === privates.setDataRev) {
+            return privates.data;
+          }
+
+          privates.data.length = 0;
+          for (var index = 0; index < privates.xlbis.length; ++index) {
+
+            var xlbi = privates.xlbis[index];
+            privates.data.push(xlbi.getData());
+          }
+
+          privates.getDataRev = privates.setDataRev;
+
+          return privates.data;
         },
 
       }

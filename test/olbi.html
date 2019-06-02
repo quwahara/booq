@@ -125,6 +125,79 @@
       Olbi.configure({ traceLink: true });
 
       test(
+        "olbi.array6.getData",
+        '[[[{"p1":"111-0-0-1","p2":"111-0-0-2"},{"p1":"111-0-1-1","p2":"111-0-1-2"}],[{"p1":"111-1-0-1","p2":"111-1-0-2"},{"p1":"111-1-1-1","p2":"111-1-1-2"}]],[[{"p1":"222-0-0-1","p2":"222-0-0-2"},{"p1":"222-0-1-1","p2":"222-0-1-2"}],[{"p1":"222-1-0-1","p2":"222-1-0-2"},{"p1":"222-1-1-1","p2":"222-1-1-2"}]]]',
+        function () {
+          var olbi = new Olbi({
+            "object": {
+              "array6": [
+                [
+                  {
+                    "p1": "",
+                    "p2": "",
+                  },
+                ],
+              ]
+            },
+          });
+          var act = [
+            [].concat(olbi.object.array6.setData([
+              [{ p1: "111-0-0-1", p2: "111-0-0-2" }, { p1: "111-0-1-1", p2: "111-0-1-2" }],
+              [{ p1: "111-1-0-1", p2: "111-1-0-2" }, { p1: "111-1-1-1", p2: "111-1-1-2" }],
+            ]).getData()),
+            [].concat(olbi.object.array6.setData([
+              [{ p1: "222-0-0-1", p2: "222-0-0-2" }, { p1: "222-0-1-1", p2: "222-0-1-2" }],
+              [{ p1: "222-1-0-1", p2: "222-1-0-2" }, { p1: "222-1-1-1", p2: "222-1-1-2" }],
+            ]).getData()),
+          ];
+          return JSON.stringify(act);
+        }
+      );
+
+      test(
+        "olbi.array5.getData",
+        '[[{"p1":"111-0-1","p2":"111-0-2"},{"p1":"111-1-1","p2":"111-1-2"}],[{"p1":"222-0-1","p2":"222-0-2"},{"p1":"222-1-1","p2":"222-1-2"}]]',
+        function () {
+          var olbi = new Olbi({
+            "object": {
+              "array5": [
+                {
+                  "p1": "",
+                  "p2": "",
+                }
+              ]
+            },
+          });
+
+          var act = [
+            [].concat(olbi.object.array5.setData([{ p1: "111-0-1", p2: "111-0-2" }, { p1: "111-1-1", p2: "111-1-2" }]).getData()),
+            [].concat(olbi.object.array5.setData([{ p1: "222-0-1", p2: "222-0-2" }, { p1: "222-1-1", p2: "222-1-2" }]).getData()),
+          ];
+          return JSON.stringify(act);
+        }
+      );
+
+      test(
+        "olbi.array4.getData",
+        '[["apple","banana"],["coconut","durian"]]',
+        function () {
+          var olbi = new Olbi({
+            "object": {
+              "array4": [
+                ""
+              ]
+            },
+          });
+
+          var act = [
+            [].concat(olbi.object.array4.setData(["apple", "banana"]).getData()),
+            [].concat(olbi.object.array4.setData(["coconut", "durian"]).getData())
+          ];
+          return JSON.stringify(act);
+        }
+      );
+
+      test(
         "olbi.array3.each",
         '<div class="array3-item">apple</div><div class="array3-item">banana</div>',
         function () {
