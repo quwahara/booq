@@ -707,9 +707,9 @@
         itemWithPreferred: preferreds.DOWN_AND_NTH_CHILD,
         itemStruct: struct[0],
         eachSets: [],
-        itemReceivers: [],
+        eachReceivers: [],
+        xlbis: [],
         data: [],
-
       });
 
     };
@@ -718,8 +718,8 @@
       Object.create(Lbi.prototype),
       {
 
-        addItemReceiver: function (itemReceiver) {
-          this.___r.itemReceivers.push(itemReceiver);
+        addEachReceiver: function (eachReceiver) {
+          this.___r.eachReceivers.push(eachReceiver);
           return this;
         },
 
@@ -743,7 +743,7 @@
        
           eachSets[]
             eachSet
-              itemReceiver
+              eachReceiver
               templateSets[]
                 templateSet
                   target
@@ -759,51 +759,29 @@
             callback: callback,
           };
 
-          var itemOpts = {
-            toPreferred: privates.itemToPreferred,
-            withPreferred: privates.itemToPreferred,
-          };
+          var eachReceiver = (function (eachSet) {
 
-          if (privates.itemStruct == null || isPrimitive(privates.itemStruct)) {
+            return function (index, xlbi) {
 
-            var itemReceiver = (function (eachSet, self, privates, itemOpts) {
+              var templateSetIndex, templateSet;
 
-              return function (src, value, name, index) {
+              // create element
+              for (templateSetIndex = 0; templateSetIndex < eachSet.templateSets.length; ++templateSetIndex) {
+                templateSet = eachSet.templateSets[templateSetIndex];
 
-                var templateSetIndex, templateSet;
-
-                // create element
-                for (templateSetIndex = 0; templateSetIndex < eachSet.templateSets.length; ++templateSetIndex) {
-                  templateSet = eachSet.templateSets[templateSetIndex];
-
-                  var childElem = null;
-                  if (templateSet.template) {
-                    childElem = templateSet.template.cloneNode(true);
-                    templateSet.target.appendChild(childElem);
-                  }
-
-                  // create Plbi
-                  templateSet.xlbi = new Plbi(privates.itemStruct, itemOpts, null, index, self);
-
-                  eachSet.callback.call(templateSet.xlbi, index, childElem);
+                var childElem = null;
+                if (templateSet.template) {
+                  childElem = templateSet.template.cloneNode(true);
+                  templateSet.target.appendChild(childElem);
                 }
 
-                // Set value to data
-                for (templateSetIndex = 0; templateSetIndex < eachSet.templateSets.length; ++templateSetIndex) {
-                  templateSet = eachSet.templateSets[templateSetIndex];
-                  templateSet.xlbi.setData(value, src);
-                }
+                eachSet.callback.call(xlbi, index, childElem);
+              }
+            };
 
-              };
+          })(eachSet);
 
-            })(eachSet, this, privates, itemOpts);
-
-            this.addItemReceiver(itemReceiver);
-          }
-          else {
-            // TODO not implemented
-            throw Error("not implemented");
-          }
+          this.addEachReceiver(eachReceiver);
 
           if (!this.collected) {
             this.linkByToPreferred();
@@ -821,7 +799,6 @@
             var templateSet = {
               target: elem,
               template: firstElementChild,
-              xlbi: null,
             };
             eachSet.templateSets.push(templateSet);
           });
@@ -833,7 +810,7 @@
           return this;
         },
 
-        setData: function (data, src) {
+        setData: function (data, src, opts) {
 
           var privates = this.___r;
           if (privates.data === data) {
@@ -843,8 +820,26 @@
           src = src || this;
 
           // copy data into privates.data
+          privates.xlbis.length = 0;
           privates.data.length = 0;
+
+          var xlbiConsturctor;
+          var itemStruct = privates.itemStruct;
+          if (isObject(itemStruct)) {
+            xlbiConsturctor = Olbi;
+          } else if (isArray(itemStruct)) {
+            xlbiConsturctor = Albi;
+          } else {
+            xlbiConsturctor = Plbi;
+          }
+
+          var itemOpts = {
+            toPreferred: privates.itemToPreferred,
+            withPreferred: privates.itemToPreferred,
+          };
+
           for (var dataIndex = 0; dataIndex < data.length; ++dataIndex) {
+            privates.xlbis.push(new xlbiConsturctor(itemStruct, itemOpts, /* name */ null, dataIndex, this));
             privates.data.push(data[dataIndex]);
           }
 
@@ -860,14 +855,22 @@
             }
           }
 
-          // call itemReceiver by each item
+          // call eachReceiver by each item
           for (var index = 0; index < privates.data.length; ++index) {
 
-            var item = privates.data[index];
-            for (var iItemReceiver = 0; iItemReceiver < privates.itemReceivers.length; ++iItemReceiver) {
-              privates.itemReceivers[iItemReceiver](src, item, /* name */ null, index);
+            var xlbi = privates.xlbis[index];
+            for (var iEachReceiver = 0; iEachReceiver < privates.eachReceivers.length; ++iEachReceiver) {
+              privates.eachReceivers[iEachReceiver](index, xlbi);
             }
 
+          }
+
+          // call setData by each item
+          for (var index2 = 0; index2 < privates.data.length; ++index2) {
+
+            var item2 = privates.data[index2];
+            var xlbi2 = privates.xlbis[index2];
+            xlbi2.setData(item2, src);
           }
 
 
