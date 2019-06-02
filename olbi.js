@@ -502,6 +502,48 @@
         return receiver;
       },
 
+      to: function (elementDataCallback, opts) {
+
+        var privates = this.___r;
+
+        if (!this.collected) {
+          this.linkByToPreferred();
+        }
+
+        var receiver = this.produceElementReceiver(elementDataCallback);
+
+        this.addReceiver(receiver);
+
+        privates.parent.___r.traceLink = privates.traceLink;
+
+        this.clearElemCollection();
+
+        return privates.chain;
+      },
+
+      with: function (elementDataCallback, dataSetterCallback, eventName) {
+
+        var privates = this.___r;
+
+        if (!this.collected) {
+          this.linkByWithPreferred();
+        }
+
+        var receiver = this.produceElementReceiver(elementDataCallback);
+
+        this.addReceiver(receiver);
+
+        eventName = eventName || "change";
+
+        this.bindDataSetter(eventName, dataSetterCallback);
+
+        privates.parent.___r.traceLink = privates.traceLink;
+
+        this.clearElemCollection();
+
+        return privates.chain;
+      },
+
       clearElemCollection: function () {
         var privates = this.___r;
         privates.ecol.clear();
@@ -705,54 +747,22 @@
         },
 
         toText: function (opts) {
-
-          var privates = this.___r;
-
-          if (!this.collected) {
-            this.linkByToPreferred();
-          }
-
-          var receiver = this.produceElementReceiver(function (element, data) {
+          return this.to(function (element, data) {
             element.textContent = data;
           });
-
-          this.addReceiver(receiver);
-
-          privates.parent.___r.traceLink = privates.traceLink;
-
-          this.clearElemCollection();
-
-          return privates.chain;
         },
 
-        withValue: function (opts) {
-
-          var privates = this.___r;
-
-          opts = objectAssign({
-            eventName: "change",
-          }, opts);
-
-          if (!this.collected) {
-            this.linkByWithPreferred();
-          }
-
-          this.bindDataSetter(opts.eventName, function (event) {
-            var element = event.target;
-            this.setData(element.value, element);
-          });
-
-          var receiver = this.produceElementReceiver(function (element, data) {
-            element.value = data;
-          });
-
-          this.addReceiver(receiver);
-
-          privates.parent.___r.traceLink = privates.traceLink;
-
-          this.clearElemCollection();
-
-          return privates.chain;
+        withValue: function (eventName) {
+          return this.with(
+            function (element, data) {
+              element.value = data;
+            },
+            function (event) {
+              var element = event.target;
+              this.setData(element.value, element);
+            },
+            eventName
+          );
         },
 
       }
