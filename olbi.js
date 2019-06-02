@@ -470,7 +470,22 @@
         return this.preferredLink(this.getWithPreferred(), appending);
       },
 
-      produceToElementReceiver: function (elementDataCallback) {
+      bindDataSetter: function (eventName, dataSetterCallback) {
+
+        var privates = this.___r;
+
+        var ecol = privates.ecol.clone();
+
+        ecol.on(eventName, (function (self, dataSetterCallback) {
+          return function (event) {
+            dataSetterCallback.call(self, event);
+          };
+        })(this, dataSetterCallback));
+
+        return this;
+      },
+
+      produceElementReceiver: function (elementDataCallback) {
 
         var ecol = this.___r.ecol.clone();
 
@@ -509,8 +524,6 @@
     };
 
     Lbi.prototype.constructor = Lbi;
-
-
 
 
 
@@ -699,7 +712,7 @@
             this.linkByToPreferred();
           }
 
-          var receiver = this.produceToElementReceiver(function (element, data) {
+          var receiver = this.produceElementReceiver(function (element, data) {
             element.textContent = data;
           });
 
@@ -724,15 +737,12 @@
             this.linkByWithPreferred();
           }
 
-          var ecol = privates.ecol.clone();
+          this.bindDataSetter(opts.eventName, function (event) {
+            var element = event.target;
+            this.setData(element.value, element);
+          });
 
-          ecol.on(opts.eventName, (function (self) {
-            return function (event) {
-              self.setData(event.target.value, event.target);
-            };
-          })(this));
-
-          var receiver = this.produceToElementReceiver(function (element, data) {
+          var receiver = this.produceElementReceiver(function (element, data) {
             element.value = data;
           });
 
