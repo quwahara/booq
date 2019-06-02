@@ -470,6 +470,23 @@
         return this.preferredLink(this.getWithPreferred(), appending);
       },
 
+      produceToElementReceiver: function (elementDataCallback) {
+
+        var ecol = this.___r.ecol.clone();
+
+        var receiver = (function (self, ecol, elementDataCallback) {
+          return function (data, src) {
+            ecol.each(function (element) {
+              if (src !== element) {
+                elementDataCallback.call(self, element, data);
+              }
+            });
+          };
+        })(this, ecol, elementDataCallback);
+
+        return receiver;
+      },
+
       clearElemCollection: function () {
         var privates = this.___r;
         privates.ecol.clear();
@@ -682,17 +699,9 @@
             this.linkByToPreferred();
           }
 
-          var ecol = privates.ecol.clone();
-
-          var receiver = (function (ecol) {
-            return function (data, src) {
-              ecol.each(function (element) {
-                if (src !== element) {
-                  element.textContent = data;
-                }
-              });
-            };
-          })(ecol);
+          var receiver = this.produceToElementReceiver(function (element, data) {
+            element.textContent = data;
+          });
 
           this.addReceiver(receiver);
 
@@ -723,15 +732,9 @@
             };
           })(this));
 
-          var receiver = (function (ecol) {
-            return function (data, src) {
-              ecol.each(function (element) {
-                if (src !== element) {
-                  element.value = data;
-                }
-              });
-            };
-          })(ecol);
+          var receiver = this.produceToElementReceiver(function (element, data) {
+            element.value = data;
+          });
 
           this.addReceiver(receiver);
 
@@ -741,7 +744,6 @@
 
           return privates.chain;
         },
-
 
       }
     );
