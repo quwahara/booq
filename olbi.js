@@ -502,6 +502,10 @@
     //
     var Olbi = function Olbi(struct, opts, name, index, parent) {
 
+      if (!isObject(struct)) {
+        throw Error("The struct must be an Object");
+      }
+
       callSuperConstructorOf(this, struct, opts, name, index, parent);
 
       var privates = this.___r;
@@ -547,7 +551,7 @@
         setData: function (data, src) {
 
           if (!isObject(data)) {
-            throw Error("Requires Object for data");
+            throw Error("The data must be an Object");
           }
 
           var privates = this.___r;
@@ -621,6 +625,10 @@
     //
     var Plbi = function Plbi(struct, opts, name, index, parent) {
 
+      if (struct != null && !isPrimitive(struct)) {
+        throw Error("The struct must be a primitive value or null");
+      }
+
       callSuperConstructorOf(this, struct, opts, name, index, parent);
 
       var privates = this.___r;
@@ -648,7 +656,7 @@
         setData: function (data, src) {
 
           if (data != null && !isPrimitive(data)) {
-            throw Error("Requires primitive value or null for data");
+            throw Error("The data must be a primitive value or null");
           }
 
           var privates = this.___r;
@@ -686,7 +694,7 @@
             };
           })(ecol);
 
-          privates.receivers.push(receiver);
+          this.addReceiver(receiver);
 
           privates.parent.___r.traceLink = privates.traceLink;
 
@@ -869,7 +877,7 @@
         setData: function (data, src, opts) {
 
           if (!isArray(data)) {
-            throw Error("Requires Array for data");
+            throw Error("The data must be an Array");
           }
 
           var privates = this.___r;
