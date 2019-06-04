@@ -283,29 +283,26 @@
     //
     // Link bind
     //
-    var Lbi = function Lbi(struct, opts, name, index, parent) {
+    var Lbi = function Lbi(struct, name, index, parent) {
 
       // privates
       dpReadOnly(this, "___r",
-        objectAssign(
-          {
-            self: this,
-            chain: this,
-            collected: false,
-            ecol: new Ecol(),
-            struct: struct,
-            name: name || "",
-            index: isInt(index) ? index : null,
-            parent: parent || null,
-            data: null,
-            toPreferred: preferreds.CLASS,
-            withPreferred: preferreds.NAME,
-            traceLink: null,
-            setDataRev: 0,
-            getDataRev: 0,
-          },
-          opts
-        ),
+        {
+          self: this,
+          chain: this,
+          collected: false,
+          ecol: new Ecol(),
+          struct: struct,
+          name: name || "",
+          index: isInt(index) ? index : null,
+          parent: parent || null,
+          data: null,
+          toPreferred: preferreds.CLASS,
+          withPreferred: preferreds.NAME,
+          traceLink: null,
+          setDataRev: 0,
+          getDataRev: 0,
+        },
       /* enumerable */ false);
 
       dp(this, "elemCollection",
@@ -502,7 +499,7 @@
         return receiver;
       },
 
-      to: function (elementDataCallback, opts) {
+      to: function (elementDataCallback) {
 
         var privates = this.___r;
 
@@ -572,21 +569,20 @@
     //
     // Object link bind
     //
-    var Olbi = function Olbi(struct, opts, name, index, parent) {
+    var Olbi = function Olbi(struct, name, index, parent) {
 
       if (!isObject(struct)) {
         throw Error("The struct must be an Object");
       }
 
-      callSuperConstructorOf(this, struct, opts, name, index, parent);
+      callSuperConstructorOf(this, struct, name, index, parent);
 
       var privates = this.___r;
       objectAssign(
         privates,
         {
           data: {},
-        },
-        opts
+        }
       );
 
       for (var propName in struct) {
@@ -603,16 +599,16 @@
         var subStruct = struct[propName];
 
         if (isObject(subStruct)) {
-          dpReadOnly(this, propName, new Olbi(subStruct, /* opts */ null, propName, /* index */ null, this), /* enumerable */ true);
+          dpReadOnly(this, propName, new Olbi(subStruct, propName, /* index */ null, this), /* enumerable */ true);
           continue;
         }
 
         if (isArray(subStruct)) {
-          dpReadOnly(this, propName, new Albi(subStruct, /* opts */ null, propName, /* index */ null, this), /* enumerable */ true);
+          dpReadOnly(this, propName, new Albi(subStruct, propName, /* index */ null, this), /* enumerable */ true);
           continue;
         }
 
-        dpReadOnly(this, propName, new Plbi(subStruct, /* opts */ null, propName, /* index */ null, this), /* enumerable */ true);
+        dpReadOnly(this, propName, new Plbi(subStruct, propName, /* index */ null, this), /* enumerable */ true);
       }
 
     };
@@ -695,13 +691,13 @@
     //
     // Primitive link bind
     //
-    var Plbi = function Plbi(struct, opts, name, index, parent) {
+    var Plbi = function Plbi(struct, name, index, parent) {
 
       if (struct != null && !isPrimitive(struct)) {
         throw Error("The struct must be a primitive value or null");
       }
 
-      callSuperConstructorOf(this, struct, opts, name, index, parent);
+      callSuperConstructorOf(this, struct, name, index, parent);
 
       var privates = this.___r;
       objectAssign(
@@ -711,8 +707,7 @@
           toPreferred: preferreds.DOWN_AND_CLASS,
           withPreferred: preferreds.DOWN_AND_NAME,
           receivers: [],
-        },
-        opts
+        }
       );
 
     };
@@ -746,7 +741,7 @@
           return this.___r.data;
         },
 
-        toText: function (opts) {
+        toText: function () {
           return this.to(function (element, data) {
             element.textContent = data;
           });
@@ -775,9 +770,9 @@
     //
     // Array link bind
     //
-    var Albi = function Albi(struct, opts, name, index, parent) {
+    var Albi = function Albi(struct, name, index, parent) {
 
-      callSuperConstructorOf(this, struct, opts, name, index, parent);
+      callSuperConstructorOf(this, struct, name, index, parent);
 
       if (!isArray(struct)) {
         throw Error("The struct must be an Array");
@@ -807,7 +802,7 @@
           return this;
         },
 
-        each: function (callback, opts) {
+        each: function (callback) {
 
           /*
           The element that is linked on each method, must be the parent that is for automatically generated element.
@@ -836,7 +831,6 @@
           */
 
           var privates = this.___r;
-          objectAssign(privates, opts);
 
           var eachSet = {
             templateSets: [],
@@ -908,7 +902,7 @@
           return this;
         },
 
-        setData: function (data, src, opts) {
+        setData: function (data, src) {
 
           if (!isArray(data)) {
             throw Error("The data must be an Array");
@@ -936,7 +930,7 @@
           }
 
           for (var dataIndex = 0; dataIndex < data.length; ++dataIndex) {
-            var xlbi = new xlbiConsturctor(itemStruct, /* opts */ null, /* name */ null, dataIndex, this);
+            var xlbi = new xlbiConsturctor(itemStruct, /* name */ null, dataIndex, this);
             xlbi
               .setToPreferred(preferreds.DOWN_AND_NTH_CHILD)
               .setWithPreferred(preferreds.DOWN_AND_NTH_CHILD);
