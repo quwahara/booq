@@ -51,7 +51,13 @@
       ++no;
       let actual2;
       if (typeof actual === 'function') {
-        actual2 = actual();
+        try {
+          actual2 = actual();
+        } catch (e) {
+          actual2 = "(catched exception)";
+          console.log("No " + no);
+          console.log(e);
+        }
       } else {
         actual2 = actual;
       }
@@ -88,30 +94,45 @@
     <h2>Bench</h2>
     <div class="bench">
 
+      <h3>array7</h3>
+      <div class="object array7">
+        <div class="array7-item">
+          <div class="apple"></div>
+          <div class="banana"></div>
+        </div>
+      </div>
+
+      <h3>array3</h3>
       <div class="object array3">
         <div class="array3-item"></div>
       </div>
 
+      <h3>olbi.primitiveToText</h3>
       <div class="olbi.primitiveToText">
         <div class="primitiveToText"></div>
       </div>
 
+      <h3>olbi.primitiveWithValue</h3>
       <div class="olbi.primitiveWithValue">
         <input name="primitiveWithValue" type="text">
       </div>
 
+      <h3>array2</h3>
       <div class="array2">
         <div class="array2-item"></div>
       </div>
 
+      <h3>array1</h3>
       <div class="array1">
         <div class="array1-item"></div>
       </div>
 
+      <h3>object</h3>
       <div class="object">
         <div class="primitive appending">div1</div>
       </div>
 
+      <h3>link</h3>
       <div class="link">
         <div>div1</div>
         <div>div2</div>

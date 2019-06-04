@@ -560,7 +560,7 @@
             console.log("@traceLink", this.___r.traceLink);
           }
         }
-        return this.___r.chain;
+        return this;
       },
 
     };
@@ -845,30 +845,6 @@
             callback: callback,
           };
 
-          var eachReceiver = (function (eachSet) {
-
-            return function (index, xlbi) {
-
-              var templateSetIndex, templateSet;
-
-              // create element
-              for (templateSetIndex = 0; templateSetIndex < eachSet.templateSets.length; ++templateSetIndex) {
-                templateSet = eachSet.templateSets[templateSetIndex];
-
-                var childElem = null;
-                if (templateSet.template) {
-                  childElem = templateSet.template.cloneNode(true);
-                  templateSet.target.appendChild(childElem);
-                }
-
-                eachSet.callback.call(xlbi, index, childElem);
-              }
-            };
-
-          })(eachSet);
-
-          this.addEachReceiver(eachReceiver);
-
           if (!this.collected) {
             this.linkByToPreferred();
           }
@@ -887,9 +863,47 @@
               template: firstElementChild,
             };
             eachSet.templateSets.push(templateSet);
+
           });
 
+
           privates.eachSets.push(eachSet);
+
+          var eachReceiver;
+          if (eachSet.templateSets.length === 0) {
+            eachReceiver = (function (eachSet) {
+
+              return function (index, xlbi) {
+                eachSet.callback.call(xlbi, index, /* element */ null);
+              };
+
+            })(eachSet);
+
+          } else {
+            eachReceiver = (function (eachSet) {
+
+              return function (index, xlbi) {
+
+                var templateSetIndex, templateSet;
+
+                // create element
+                for (templateSetIndex = 0; templateSetIndex < eachSet.templateSets.length; ++templateSetIndex) {
+                  templateSet = eachSet.templateSets[templateSetIndex];
+
+                  var childElem = null;
+                  if (templateSet.template) {
+                    childElem = templateSet.template.cloneNode(true);
+                    templateSet.target.appendChild(childElem);
+                  }
+
+                  eachSet.callback.call(xlbi, index, childElem);
+                }
+              };
+
+            })(eachSet);
+          }
+
+          this.addEachReceiver(eachReceiver);
 
           this.clearElemCollection();
 
