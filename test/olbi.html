@@ -37,6 +37,10 @@
       });
     }
 
+    function dqToSq(string) {
+      return string.replace(/"/g, "'");
+    }
+
     function unionOuterHTML(elements) {
       let s = "";
       for (let i = 0; i < elements.length; ++i) {
@@ -97,8 +101,8 @@
       <h3>array7</h3>
       <div class="object array7">
         <div class="array7-item">
-          <div class="apple"></div>
-          <div class="banana"></div>
+          <div class="ape"></div>
+          <div class="bee"></div>
         </div>
       </div>
 
@@ -144,6 +148,81 @@
     window.onload = function () {
 
       Olbi.configure({ traceLink: true });
+
+      test(
+        "array7",
+        "[\"<div class='array7-item'><div class='ape'>0-ape</div><div class='bee'>0-bee</div></div><div class='array7-item'><div class='ape'>1-ape</div><div class='bee'>1-bee</div></div>\""
+        + ",\"\""
+        + ",\"<div class='array7-item'><div class='ape'>2-ape</div><div class='bee'>2-bee</div></div><div class='array7-item'><div class='ape'>3-ape</div><div class='bee'>3-bee</div></div><div class='array7-item'><div class='ape'>4-ape</div><div class='bee'>4-bee</div></div>\"]",
+        function () {
+          var olbi = new Olbi({
+            "object": {
+              "array7": [
+                {
+                  "ape": "",
+                  "bee": "",
+                }
+              ]
+            },
+          });
+
+          olbi
+            .object.array7.each(function (element) {
+              this
+                .ape.toText()
+                .bee.toText()
+                ;
+            })
+            ;
+
+          var acts = [];
+
+          olbi.setData({
+            "object": {
+              "array7": [
+                {
+                  "ape": "0-ape",
+                  "bee": "0-bee",
+                },
+                {
+                  "ape": "1-ape",
+                  "bee": "1-bee",
+                },
+              ]
+            },
+          });
+
+          acts.push(dqToSq(unionOuterHTML(document.querySelectorAll(".array7-item"))));
+
+          olbi.object.array7.setData([]);
+
+          acts.push(dqToSq(unionOuterHTML(document.querySelectorAll(".array7-item"))));
+
+          olbi.object.setData({
+            "array7": [
+              {
+                "ape": "2-ape",
+                "bee": "2-bee",
+              },
+              {
+                "ape": "3-ape",
+                "bee": "3-bee",
+              },
+              {
+                "ape": "4-ape",
+                "bee": "4-bee",
+              },
+            ]
+          });
+
+          acts.push(dqToSq(unionOuterHTML(document.querySelectorAll(".array7-item"))));
+
+
+
+
+          return JSON.stringify(acts);
+        }
+      );
 
       test(
         "olbi.array6.getData",
