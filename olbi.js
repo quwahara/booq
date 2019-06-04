@@ -603,16 +603,16 @@
         var subStruct = struct[propName];
 
         if (isObject(subStruct)) {
-          dpReadOnly(this, propName, new Olbi(subStruct, opts, propName, /* index */ null, this), /* enumerable */ true);
+          dpReadOnly(this, propName, new Olbi(subStruct, /* opts */ null, propName, /* index */ null, this), /* enumerable */ true);
           continue;
         }
 
         if (isArray(subStruct)) {
-          dpReadOnly(this, propName, new Albi(subStruct, opts, propName, /* index */ null, this), /* enumerable */ true);
+          dpReadOnly(this, propName, new Albi(subStruct, /* opts */ null, propName, /* index */ null, this), /* enumerable */ true);
           continue;
         }
 
-        dpReadOnly(this, propName, new Plbi(subStruct, opts, propName, /* index */ null, this), /* enumerable */ true);
+        dpReadOnly(this, propName, new Plbi(subStruct, /* opts */ null, propName, /* index */ null, this), /* enumerable */ true);
       }
 
     };
@@ -789,8 +789,6 @@
 
       var privates = this.___r;
       objectAssign(privates, {
-        itemToPreferred: preferreds.DOWN_AND_NTH_CHILD,
-        itemWithPreferred: preferreds.DOWN_AND_NTH_CHILD,
         itemStruct: struct[0],
         eachSets: [],
         eachReceivers: [],
@@ -937,13 +935,12 @@
             xlbiConsturctor = Plbi;
           }
 
-          var itemOpts = {
-            toPreferred: privates.itemToPreferred,
-            withPreferred: privates.itemToPreferred,
-          };
-
           for (var dataIndex = 0; dataIndex < data.length; ++dataIndex) {
-            privates.xlbis.push(new xlbiConsturctor(itemStruct, itemOpts, /* name */ null, dataIndex, this));
+            var xlbi = new xlbiConsturctor(itemStruct, /* opts */ null, /* name */ null, dataIndex, this);
+            xlbi
+              .setToPreferred(preferreds.DOWN_AND_NTH_CHILD)
+              .setWithPreferred(preferreds.DOWN_AND_NTH_CHILD);
+            privates.xlbis.push(xlbi);
           }
 
           // clear element
