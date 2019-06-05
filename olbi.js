@@ -930,11 +930,11 @@
           }
 
           for (var dataIndex = 0; dataIndex < data.length; ++dataIndex) {
-            var xlbi = new xlbiConsturctor(itemStruct, /* name */ null, dataIndex, this);
-            xlbi
+            var xlbi1 = new xlbiConsturctor(itemStruct, /* name */ null, dataIndex, this);
+            xlbi1
               .setToPreferred(preferreds.DOWN_AND_NTH_CHILD)
               .setWithPreferred(preferreds.DOWN_AND_NTH_CHILD);
-            privates.xlbis.push(xlbi);
+            privates.xlbis.push(xlbi1);
           }
 
           // clear element
@@ -952,17 +952,17 @@
           // call eachReceiver by each item
           for (var index = 0; index < privates.xlbis.length; ++index) {
 
-            var xlbi = privates.xlbis[index];
+            var xlbi2 = privates.xlbis[index];
             for (var iEachReceiver = 0; iEachReceiver < privates.eachReceivers.length; ++iEachReceiver) {
-              privates.eachReceivers[iEachReceiver](index, xlbi);
+              privates.eachReceivers[iEachReceiver](index, xlbi2);
             }
           }
 
           // call setData by each item
           for (var index2 = 0; index2 < privates.xlbis.length; ++index2) {
 
-            var xlbi2 = privates.xlbis[index2];
-            xlbi2.setData(data[index2], src);
+            var xlbi3 = privates.xlbis[index2];
+            xlbi3.setData(data[index2], src);
           }
 
 
