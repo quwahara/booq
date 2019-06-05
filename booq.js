@@ -519,7 +519,7 @@
         this.to(srcValueCallback);
         privates.ye = ye;
         this.on(eventName, listener, opts);
-        return this;
+        return privates.chains;
       },
 
       /**
