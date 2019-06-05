@@ -862,7 +862,10 @@
           privates.eachSets.push(eachSet);
 
           var eachReceiver;
+
+          // In case of no element to generate
           if (eachSet.templateSets.length === 0) {
+
             eachReceiver = (function (eachSet) {
 
               return function (index, xlbi) {
@@ -872,6 +875,8 @@
             })(eachSet);
 
           } else {
+
+            // In case of having elements to generate
             eachReceiver = (function (eachSet) {
 
               return function (index, xlbi) {
