@@ -585,6 +585,17 @@
         }
       );
 
+      dp(this, "data", {
+        enumerable: false,
+        set: function (data) {
+          this.setData(data);
+        },
+        get: function () {
+          return this.getData();
+        }
+      });
+
+      var xlbi;
       for (var propName in struct) {
 
         // ignore "___", because of reserved word
@@ -599,16 +610,30 @@
         var subStruct = struct[propName];
 
         if (isObject(subStruct)) {
-          dpReadOnly(this, propName, new Olbi(subStruct, propName, /* index */ null, this), /* enumerable */ true);
-          continue;
+          xlbi = new Olbi(subStruct, propName, /* index */ null, this);
+
+        } else if (isArray(subStruct)) {
+          xlbi = new Albi(subStruct, propName, /* index */ null, this);
+
+        } else {
+          xlbi = new Plbi(subStruct, propName, /* index */ null, this);
+
         }
 
-        if (isArray(subStruct)) {
-          dpReadOnly(this, propName, new Albi(subStruct, propName, /* index */ null, this), /* enumerable */ true);
-          continue;
-        }
+        dpReadOnly(this, propName, xlbi, /* enumerable */ true);
 
-        dpReadOnly(this, propName, new Plbi(subStruct, propName, /* index */ null, this), /* enumerable */ true);
+        (function (data, propName, xlbi) {
+          dp(data, propName, {
+            enumerable: true,
+            set: function (data) {
+              xlbi.setData(data);
+            },
+            get: function () {
+              return xlbi.getData();
+            }
+          });
+        })(privates.data, propName, xlbi);
+
       }
 
     };
@@ -1004,6 +1029,10 @@
 
     Olbi.objectAssign = objectAssign;
     Olbi.objectAssignDeep = objectAssignDeep;
+    Olbi.query = function (selector) {
+      return (new Ecol()).query(selector);
+    };
+
 
 
     //
