@@ -192,7 +192,9 @@
       return Array.prototype.slice.call(elementList);
     }
 
+    // 
     // Element collection
+    // 
     var Ecol = function Ecol(arg) {
 
       dpReadOnly(this, "___r", {
@@ -209,6 +211,13 @@
     };
 
     Ecol.prototype = {
+
+      addClass: function (className) {
+        this.each(function (element) {
+          element.classList.add(className);
+        });
+        return this;
+      },
 
       clear: function () {
         this.___r.queried = false;
@@ -265,7 +274,34 @@
 
         return this;
       },
+
+      removeClass: function (className) {
+
+        this.each(function (element) {
+          element.classList.remove(className);
+        });
+
+        return this;
+      },
+
+      set: function (element) {
+        this.clear();
+        this.elems.push(element);
+        this.___r.queried = true;
+        return this;
+      },
+
+      toggleClassByFlag: function (className, flag) {
+        if (flag) {
+          this.addClass(className);
+        } else {
+          this.removeClass(className);
+        }
+        return this;
+      },
+
     };
+
 
     var preferreds = {
       get CLASS() { return "CLASS"; },
@@ -277,7 +313,6 @@
       get DOWN_AND_NAME() { return "DOWN_AND_NAME"; },
       get DOWN_AND_NTH_CHILD() { return "DOWN_AND_NTH_CHILD"; },
     };
-
 
 
     //
@@ -297,9 +332,10 @@
           index: isInt(index) ? index : null,
           parent: parent || null,
           data: null,
-          toPreferred: preferreds.CLASS,
-          withPreferred: preferreds.NAME,
+          simplexPreferred: preferreds.CLASS,
+          duplexPreferred: preferreds.NAME,
           extentSelector: "",
+          predicates: [],
           traceLink: null,
           setDataRev: 0,
           getDataRev: 0,
@@ -337,19 +373,22 @@
         return fn;
       },
 
-      setToPreferred: function (preferred) {
-        this.___r.toPreferred = preferred;
+      setSimplexPreferred: function (preferred) {
+        this.___r.simplexPreferred = preferred;
         return this;
       },
-      getToPreferred: function () {
-        return this.___r.toPreferred;
+
+      getSimplexPreferred: function () {
+        return this.___r.simplexPreferred;
       },
-      setWithPreferred: function (preferred) {
-        this.___r.withPreferred = preferred;
+
+      setDuplexPreferred: function (preferred) {
+        this.___r.duplexPreferred = preferred;
         return this;
       },
-      getWithPreferred: function () {
-        return this.___r.withPreferred;
+
+      getDuplexPreferred: function () {
+        return this.___r.duplexPreferred;
       },
 
       /**
@@ -454,12 +493,12 @@
         return sel + privates.extentSelector;
       },
 
-      toPreferredSelector: function (appending) {
-        return this.preferredSelector(this.getToPreferred(), appending);
+      simplexSelector: function (appending) {
+        return this.preferredSelector(this.getSimplexPreferred(), appending);
       },
 
-      withPreferredSelector: function (appending) {
-        return this.preferredSelector(this.getWithPreferred(), appending);
+      duplexSelector: function (appending) {
+        return this.preferredSelector(this.getDuplexPreferred(), appending);
       },
 
       fullPreferredSelector: function (preferred, appending) {
@@ -480,7 +519,7 @@
 
           parent = parents[i];
 
-          selector += parent.toPreferredSelector();
+          selector += parent.simplexSelector();
         }
 
         selector += this.preferredSelector(preferred, appending);
@@ -488,7 +527,7 @@
         return selector;
       },
 
-      link: function (selector) {
+      linkSelector: function (selector) {
         var privates = this.___r;
         privates.ecol.query(selector);
         privates.collected = true;
@@ -500,17 +539,23 @@
         return this;
       },
 
-      preferredLink: function (preferred, appending) {
+      link: function (preferred, appending) {
         var selector = this.fullPreferredSelector(preferred, appending);
-        return this.link(selector);
+        return this.linkSelector(selector);
       },
 
-      linkByToPreferred: function (appending) {
-        return this.preferredLink(this.getToPreferred(), appending);
+      linkSimplex: function (appending) {
+        return this.link(this.getSimplexPreferred(), appending);
       },
 
-      linkByWithPreferred: function (appending) {
-        return this.preferredLink(this.getWithPreferred(), appending);
+      linkDuplex: function (appending) {
+        return this.link(this.getDuplexPreferred(), appending);
+      },
+
+      clearElemCollection: function () {
+        var privates = this.___r;
+        privates.ecol.clear();
+        privates.collected = false;
       },
 
       bindDataSetter: function (eventName, dataSetterCallback) {
@@ -550,7 +595,7 @@
         var privates = this.___r;
 
         if (!this.collected) {
-          this.linkByToPreferred();
+          this.linkSimplex();
         }
 
         var receiver = this.produceElementReceiver(elementDataCallback);
@@ -569,7 +614,7 @@
         var privates = this.___r;
 
         if (!this.collected) {
-          this.linkByWithPreferred();
+          this.linkDuplex();
         }
 
         var receiver = this.produceElementReceiver(elementDataCallback);
@@ -587,10 +632,62 @@
         return privates.chain;
       },
 
-      clearElemCollection: function () {
+      addPredicate: function (predicate) {
+        this.___r.predicates.push(predicate);
+        return this;
+      },
+
+      then: function (elementDataCallback) {
         var privates = this.___r;
-        privates.ecol.clear();
-        privates.collected = false;
+
+        var predicates = privates.predicates;
+        if (predicates.length === 0) {
+          throw Error("The then method requires one predicate or more before but no predicates");
+        }
+
+        if (!this.collected) {
+          this.linkSimplex();
+        }
+
+        var ecol = this.___r.ecol.clone();
+
+        var receiver = (function (self, ecol, predicates, elementDataCallback) {
+          return function (data, src) {
+
+            var accept = true;
+            for (var i = 0; i < predicates.length; ++i) {
+              accept = accept && predicates[i](data);
+              if (!accept) {
+                return;
+              }
+            }
+
+            ecol.each(function (element) {
+              if (src !== element) {
+                elementDataCallback.call(self, element, accept);
+              }
+            });
+
+          };
+        })(this, ecol, predicates.splice(0), elementDataCallback);
+
+        this.addReceiver(receiver);
+
+        privates.parent.___r.traceLink = privates.traceLink;
+
+        this.clearElemCollection();
+
+        return privates.chain;
+      },
+
+      thenUntitoggle: function (clasName) {
+
+        return this.then((function (clasName) {
+          return function (element, data) {
+            new Ecol().set(element).toggleClassByFlag(clasName, !data);
+          };
+        })(clasName));
+
       },
 
       traceLink: function () {
@@ -775,8 +872,8 @@
         privates,
         {
           chain: parent,
-          toPreferred: preferreds.DOWN_AND_CLASS,
-          withPreferred: preferreds.DOWN_AND_NAME,
+          simplexPreferred: preferreds.DOWN_AND_CLASS,
+          duplexPreferred: preferreds.DOWN_AND_NAME,
           receivers: [],
         }
       );
@@ -829,6 +926,14 @@
             },
             eventName
           );
+        },
+
+        eq: function (condition) {
+          return this.addPredicate((function (condition) {
+            return function (data) {
+              return data === condition;
+            };
+          })(condition));
         },
 
       }
@@ -909,7 +1014,7 @@
           };
 
           if (!this.collected) {
-            this.linkByToPreferred();
+            this.linkSimplex();
           }
 
           // prepare template element
@@ -1008,8 +1113,8 @@
           for (var dataIndex = 0; dataIndex < data.length; ++dataIndex) {
             var xlbi1 = new xlbiConsturctor(itemStruct, /* name */ null, dataIndex, this);
             xlbi1
-              .setToPreferred(preferreds.DOWN_AND_NTH_CHILD)
-              .setWithPreferred(preferreds.DOWN_AND_NTH_CHILD);
+              .setSimplexPreferred(preferreds.DOWN_AND_NTH_CHILD)
+              .setDuplexPreferred(preferreds.DOWN_AND_NTH_CHILD);
             privates.xlbis.push(xlbi1);
           }
 

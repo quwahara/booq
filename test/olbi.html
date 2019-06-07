@@ -137,7 +137,7 @@
       </div>
 
       <h3>link</h3>
-      <div class="link">
+      <div class="linkSelector">
         <div>div1</div>
         <div>div2</div>
       </div>
@@ -397,7 +397,7 @@
       );
 
       test(
-        "Olbi.object.primitive.preferredLink",
+        "Olbi.object.primitive.link",
         '<div class="primitive appending">div1</div>',
         function () {
           var olbi = new Olbi({
@@ -405,7 +405,7 @@
               "primitive": "",
             },
           });
-          return unionOuterHTML(olbi.object.primitive.preferredLink(Olbi.preferreds.DOWN_AND_CLASS, ".appending").elemCollection);
+          return unionOuterHTML(olbi.object.primitive.link(Olbi.preferreds.DOWN_AND_CLASS, ".appending").elemCollection);
         }
       );
 
@@ -448,10 +448,10 @@
       );
 
       test(
-        "Olbi.link",
+        "Olbi.linkSelector",
         "<div>div1</div><div>div2</div>",
         function () {
-          return unionOuterHTML((new Olbi({})).link(".link>div").elemCollection);
+          return unionOuterHTML((new Olbi({})).linkSelector(".linkSelector>div").elemCollection);
         }
       );
 
