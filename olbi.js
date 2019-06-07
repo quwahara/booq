@@ -299,6 +299,7 @@
           data: null,
           toPreferred: preferreds.CLASS,
           withPreferred: preferreds.NAME,
+          extentSelector: "",
           traceLink: null,
           setDataRev: 0,
           getDataRev: 0,
@@ -351,61 +352,106 @@
         return this.___r.withPreferred;
       },
 
+      /**
+       * Extends selector string
+       * 
+       * Selector string is generated from property name automatically.
+       * The argument, extentSeletor string appends to genereted
+       * selector string.
+       * For example, the generated selector string will be ".prop_name",
+       * if the paroperty name is "prop_name".
+       * The selector string will be ".prop_name.extent",
+       * if the extentSeletor argument is ".extent";
+       * The selector string will be ".prop_name .extent",
+       * if the extentSeletor argument is " .extent";
+       * You can put a space if you want to select lower tag.
+       * 
+       * @param {string} extentSelector It is a selector string that you want to extend 
+       *                                for generated selector.
+       */
+      extent: function (extentSelector) {
+        this.___r.extentSelector = extentSelector;
+        return this;
+      },
+
       preferredSelector: function (preferred, appending) {
 
         var privates = this.___r;
         var p = preferred;
         var ps = preferreds;
         var a = appending || "";
+        var sel = "";
 
         var name = privates.name;
 
         if (p === ps.CLASS) {
-          if (!name) return a;
-          return "." + name + a;
-        }
-
-        if (p === ps.ID) {
-          if (!name) return a;
-          return "#" + name + a;
-        }
-
-        if (p === ps.NAME) {
-          if (!name) return a;
-          return "[name='" + name + "']" + a;
-        }
-
-        if (p === ps.NTH_CHILD) {
-          if (!isInt(privates.index) || privates.index < 0) {
-            return a;
+          if (!name) {
+            sel = a;
           }
-          return ">*:nth-child(" + (privates.index + 1) + ")" + a;
-        }
-
-        if (p === ps.DOWN_AND_CLASS) {
-          if (!name) return a;
-          return " ." + name + a;
-        }
-
-        if (p === ps.DOWN_AND_ID) {
-          if (!name) return a;
-          return " #" + name + a;
-        }
-
-        if (p === ps.DOWN_AND_NAME) {
-          if (!name) return a;
-          return " [name='" + name + "']" + a;
-        }
-
-        if (p === ps.DOWN_AND_NTH_CHILD) {
-          if (!isInt(privates.index) || privates.index < 0) {
-            return a;
+          else {
+            sel = "." + name + a;
           }
-          return " >*:nth-child(" + (privates.index + 1) + ")" + a;
+
+        } else if (p === ps.ID) {
+          if (!name) {
+            sel = a;
+          }
+          else {
+            sel = "#" + name + a;
+          }
+
+        } else if (p === ps.NAME) {
+          if (!name) {
+            sel = a;
+          }
+          else {
+            sel = "[name='" + name + "']" + a;
+          }
+
+        } else if (p === ps.NTH_CHILD) {
+          if (!isInt(privates.index) || privates.index < 0) {
+
+            sel = a;
+          } else {
+            sel = ">*:nth-child(" + (privates.index + 1) + ")" + a;
+          }
+
+        } else if (p === ps.DOWN_AND_CLASS) {
+          if (!name) {
+            sel = a;
+          }
+          else {
+            sel = " ." + name + a;
+          }
+
+        } else if (p === ps.DOWN_AND_ID) {
+          if (!name) {
+            sel = a;
+          }
+          else {
+            sel = " #" + name + a;
+          }
+
+        } else if (p === ps.DOWN_AND_NAME) {
+          if (!name) {
+            sel = a;
+          }
+          else {
+            sel = " [name='" + name + "']" + a;
+          }
+
+        } else if (p === ps.DOWN_AND_NTH_CHILD) {
+          if (!isInt(privates.index) || privates.index < 0) {
+            sel = a;
+          } else {
+            sel = " >*:nth-child(" + (privates.index + 1) + ")" + a;
+          }
+
+        } else {
+          throw Error("Unsupported preferred");
         }
 
-        throw Error("Unsupported preferred");
-
+        return sel + privates.extentSelector;
       },
 
       toPreferredSelector: function (appending) {
