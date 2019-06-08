@@ -13,8 +13,18 @@
   'use strict';
   return (function () {
 
+    function hasConstructor(target, constructor) {
+      if (target == null) return false;
+      var proto = Object.getPrototypeOf(target);
+      return proto && proto.constructor === constructor;
+    }
+
     function isArray(v) {
       return Array.isArray(v);
+    }
+
+    function isFunction(fun) {
+      return fun && {}.toString.call(fun) === '[object Function]';
     }
 
     function isInt(v) {
@@ -25,6 +35,10 @@
       return v && !Array.isArray(v) && (typeof v) === "object";
     }
 
+    function isPlbi(target) {
+      return hasConstructor(target, Plbi);
+    }
+
     function isPrimitive(v) {
       if (v == null) return false;
       var t = typeof v;
@@ -33,6 +47,10 @@
 
     function isString(v) {
       return typeof v === "string";
+    }
+
+    function isUndefined(v) {
+      return typeof v === "undefined";
     }
 
     function clone(value) {
@@ -76,6 +94,21 @@
         theClone[key] = clone(object[key]);
       }
       return theClone;
+    }
+
+    // Object.defineProperty alias
+    var dp = Object.defineProperty.bind(Object);
+
+    // Define read only property
+    function dpReadOnly(object, name, value, enumerable) {
+      dp(object, name, {
+        enumerable: !!enumerable,
+        get: (function (value) {
+          return function () {
+            return value;
+          };
+        })(value),
+      });
     }
 
     function objectAssign(target, varArgs) {
@@ -158,6 +191,14 @@
       return target2;
     }
 
+    function orPassthrough(func) {
+      return isUndefined(func) ? passthrough : func;
+    }
+
+    function passthrough(v) {
+      return v;
+    }
+
     function removeChildAll(parent) {
       while (parent.firstChild) {
         parent.removeChild(parent.firstChild);
@@ -173,19 +214,10 @@
       return stack;
     }
 
-    // Object.defineProperty alias
-    var dp = Object.defineProperty.bind(Object);
-
-    // Define read only property
-    function dpReadOnly(object, name, value, enumerable) {
-      dp(object, name, {
-        enumerable: !!enumerable,
-        get: (function (value) {
-          return function () {
-            return value;
-          };
-        })(value),
-      });
+    function valueReplace(template, re) {
+      return function (value) {
+        return template.replace(re, value);
+      };
     }
 
     function toArray(elementList) {
@@ -200,6 +232,13 @@
       dpReadOnly(this, "___r", {
         queried: false,
       }, false);
+
+      dp(this, "queried", {
+        enumerable: true,
+        get: function () {
+          return this.___r.queried;
+        }
+      });
 
       this.elems = [];
       this.clear();
@@ -291,6 +330,13 @@
         return this;
       },
 
+      setAll: function (elements) {
+        this.clear();
+        Array.prototype.splice.apply(this.elems, [0, 0].concat(elements));
+        this.___r.queried = true;
+        return this;
+      },
+
       toggleClassByFlag: function (className, flag) {
         if (flag) {
           this.addClass(className);
@@ -325,7 +371,6 @@
         {
           self: this,
           chain: this,
-          collected: false,
           ecol: new Ecol(),
           struct: struct,
           name: name || "",
@@ -335,12 +380,21 @@
           simplexPreferred: preferreds.CLASS,
           duplexPreferred: preferreds.NAME,
           extentSelector: "",
+          receivers: [],
           predicates: [],
           traceLink: null,
           setDataRev: 0,
           getDataRev: 0,
         },
       /* enumerable */ false);
+
+      dp(this, "collected",
+        {
+          enumerable: false,
+          get: function () {
+            return this.___r.ecol.queried;
+          }
+        });
 
       dp(this, "elemCollection",
         {
@@ -391,6 +445,11 @@
         return this.___r.duplexPreferred;
       },
 
+      addReceiver: function (receiver) {
+        this.___r.receivers.push(receiver);
+        return this;
+      },
+
       /**
        * Extends selector string
        * 
@@ -416,7 +475,7 @@
       preferredSelector: function (preferred, appending) {
 
         var privates = this.___r;
-        var p = preferred;
+        var p = (preferred || "").toString().toUpperCase();
         var ps = preferreds;
         var a = appending || "";
         var sel = "";
@@ -530,7 +589,6 @@
       linkSelector: function (selector) {
         var privates = this.___r;
         privates.ecol.query(selector);
-        privates.collected = true;
 
         if (Olbi.conf.traceLink) {
           privates.traceLink = [privates.ecol.clone().elems, privates.ecol.lastSelector, this.___fullName(), stackTraceString(Error())];
@@ -555,7 +613,6 @@
       clearElemCollection: function () {
         var privates = this.___r;
         privates.ecol.clear();
-        privates.collected = false;
       },
 
       bindDataSetter: function (eventName, dataSetterCallback) {
@@ -588,6 +645,34 @@
         })(this, ecol, elementDataCallback);
 
         return receiver;
+      },
+
+      callWithThis: function (fun) {
+        fun(this);
+        return this.___r.chain;
+      },
+
+      on: function (eventName, listener, opts) {
+
+        var privates = this.___r;
+
+        if (!this.collected) {
+          this.linkDuplex();
+        }
+
+        eventName = eventName || "change";
+
+        privates.ecol.on(eventName, (function (self, listener) {
+          return function (event) {
+            listener.call(self, event);
+          };
+        })(this, listener), opts);
+
+        privates.parent.___r.traceLink = privates.traceLink;
+
+        this.clearElemCollection();
+
+        return privates.chain;
       },
 
       to: function (elementDataCallback) {
@@ -654,17 +739,17 @@
         var receiver = (function (self, ecol, predicates, elementDataCallback) {
           return function (data, src) {
 
-            var accept = true;
+            var boolean = true;
             for (var i = 0; i < predicates.length; ++i) {
-              accept = accept && predicates[i](data);
-              if (!accept) {
-                return;
+              boolean = boolean && predicates[i](data);
+              if (!boolean) {
+                break;
               }
             }
 
             ecol.each(function (element) {
               if (src !== element) {
-                elementDataCallback.call(self, element, accept);
+                elementDataCallback.call(self, element, boolean);
               }
             });
 
@@ -688,6 +773,14 @@
           };
         })(clasName));
 
+      },
+
+      /**
+       * Set struct to data.
+       * The struct is a parameter of constructor.
+       */
+      setStructAsData: function () {
+        return this.setData(this.___r.struct);
       },
 
       traceLink: function () {
@@ -817,6 +910,12 @@
 
           privates.setDataRev += 1;
 
+          var privateData = this.getData();
+
+          for (var i = 0; i < privates.receivers.length; ++i) {
+            privates.receivers[i](privateData, src);
+          }
+
           return this;
         },
 
@@ -848,6 +947,73 @@
           return privates.data;
         },
 
+        /**
+         * Write-to-binding that is all properties to attributes.
+         */
+        toAttrs: function () {
+
+          var privates = this.___r;
+
+          if (!this.collected) {
+            this.linkSimplex();
+          }
+
+          for (var name in this) {
+            if (!this.hasOwnProperty(name)) continue;
+            var prop = this[name];
+            if (isPlbi(prop)) {
+              prop.___r.ecol.setAll(privates.ecol.elems);
+              prop.toAttr(name);
+            } else {
+              throw Error("toAttrs() does not support property of Object.");
+            }
+          }
+
+          privates.parent.___r.traceLink = privates.traceLink;
+
+          this.clearElemCollection();
+
+          return this.___r.parent;
+        },
+
+        toHref: function (arg) {
+          var callback;
+          if (isUndefined(arg)) {
+            callback = passthrough;
+
+          } else if (isString(arg)) {
+            var template = arg;
+            callback = (function (template) {
+              return function (data) {
+                var href = template;
+                for (var name in data) {
+                  var v = data[name];
+                  if (v == null) {
+                    v = "";
+                  }
+                  if (!isPrimitive(v)) {
+                    continue;
+                  }
+                  href = href.replace(new RegExp(":" + name + "\\b", "g"), v);
+                }
+                return href;
+              };
+            })(template);
+
+          } else if (isFunction(arg)) {
+            callback = arg;
+
+          } else {
+            throw Error("Unsupported type of argument");
+          }
+
+          return this.to((function (dataCallback) {
+            return function (element, data) {
+              element.href = dataCallback(data);
+            };
+          })(callback));
+        },
+
       });
 
     Olbi.prototype.constructor = Olbi;
@@ -874,7 +1040,6 @@
           chain: parent,
           simplexPreferred: preferreds.DOWN_AND_CLASS,
           duplexPreferred: preferreds.DOWN_AND_NAME,
-          receivers: [],
         }
       );
 
@@ -883,11 +1048,6 @@
     Plbi.prototype = objectAssign(
       Object.create(Lbi.prototype),
       {
-        addReceiver: function (receiver) {
-          this.___r.receivers.push(receiver);
-          return this;
-        },
-
         setData: function (data, src) {
 
           if (data != null && !isPrimitive(data)) {
@@ -907,6 +1067,41 @@
 
         getData: function () {
           return this.___r.data;
+        },
+
+        toAttr: function (attrName, dataCallback) {
+          return this.to((function (attrName, dataCallback) {
+            return function (element, data) {
+              element.setAttribute(attrName, dataCallback(data));
+            };
+          })(attrName, orPassthrough(dataCallback)));
+        },
+
+        toHref: function (arg) {
+
+          var callback;
+
+          if (isUndefined(arg)) {
+            callback = passthrough;
+
+          } else if (isString(arg)) {
+            var template = arg;
+            callback = valueReplace(template, new RegExp(":" + this.___r.name + "\\b", "g"));
+
+          } else if (isFunction(arg)) {
+            callback = arg;
+
+          } else {
+            throw Error("Unsupported type of argument");
+
+          }
+
+          return this.to((function (self, callback) {
+            return function (element, data) {
+              element.href = callback.call(self, data);
+            };
+          })(this, callback));
+
         },
 
         toText: function () {
