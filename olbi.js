@@ -388,6 +388,8 @@
         },
       /* enumerable */ false);
 
+      dpReadOnly(this, "___", this, false);
+
       dp(this, "collected",
         {
           enumerable: false,
@@ -668,7 +670,9 @@
           };
         })(this, listener), opts);
 
-        privates.parent.___r.traceLink = privates.traceLink;
+        if (privates.parent) {
+          privates.parent.___r.traceLink = privates.traceLink;
+        }
 
         this.clearElemCollection();
 
@@ -687,7 +691,9 @@
 
         this.addReceiver(receiver);
 
-        privates.parent.___r.traceLink = privates.traceLink;
+        if (privates.parent) {
+          privates.parent.___r.traceLink = privates.traceLink;
+        }
 
         this.clearElemCollection();
 
@@ -710,7 +716,9 @@
 
         this.bindDataSetter(eventName, dataSetterCallback);
 
-        privates.parent.___r.traceLink = privates.traceLink;
+        if (privates.parent) {
+          privates.parent.___r.traceLink = privates.traceLink;
+        }
 
         this.clearElemCollection();
 
@@ -758,7 +766,9 @@
 
         this.addReceiver(receiver);
 
-        privates.parent.___r.traceLink = privates.traceLink;
+        if (privates.parent) {
+          privates.parent.___r.traceLink = privates.traceLink;
+        }
 
         this.clearElemCollection();
 
@@ -830,6 +840,25 @@
           return this.getData();
         }
       });
+
+      dp(this, "end", {
+        enumerable: false,
+        get: function () {
+          var privates = this.___r;
+          privates.extentSelector = "";
+          return privates.parent;
+        }
+      });
+
+      var n = privates.name;
+      if (n) {
+        dp(this, "end" + n.slice(0, 1).toUpperCase() + n.slice(1), {
+          enumerable: false,
+          get: function () {
+            return this.end;
+          }
+        });
+      }
 
       var xlbi;
       for (var propName in struct) {
@@ -969,7 +998,9 @@
             }
           }
 
-          privates.parent.___r.traceLink = privates.traceLink;
+          if (privates.parent) {
+            privates.parent.___r.traceLink = privates.traceLink;
+          }
 
           this.clearElemCollection();
 
@@ -1129,6 +1160,18 @@
               return data === condition;
             };
           })(condition));
+        },
+
+        isFalsy: function (condition) {
+          return this.addPredicate(function (data) {
+            return !data;
+          });
+        },
+
+        isTruthy: function (condition) {
+          return this.addPredicate(function (data) {
+            return !!data;
+          });
         },
 
       }
