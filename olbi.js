@@ -817,17 +817,39 @@
     //
     var Olbi = function Olbi(struct, name, index, parent) {
 
+      callSuperConstructorOf(this, struct, name, index, parent);
+
       if (!isObject(struct)) {
         throw Error("The struct must be an Object");
       }
 
-      callSuperConstructorOf(this, struct, name, index, parent);
-
       var privates = this.___r;
+
+      var keys = [];
+
+      var rawKeys = Object.keys(struct);
+      var rawKey;
+      for (var i = 0; i < rawKeys.length; ++i) {
+        rawKey = rawKeys[i];
+
+        // ignore "___", because of reserved word
+        if (rawKey === "___") {
+          continue;
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(struct, rawKey)) {
+          continue;
+        }
+
+        keys.push(rawKey);
+      }
+
       objectAssign(
         privates,
         {
           data: {},
+          keys: keys,
+          firstCallOfEach: true,
         }
       );
 
@@ -976,6 +998,88 @@
           return privates.data;
         },
 
+        each: function (callback) {
+
+          var privates = this.___r;
+
+          if (!this.collected) {
+            this.linkSimplex();
+          }
+
+          var templateSets = [];
+
+          // prepare template element
+          privates.ecol.each(function (elem) {
+
+            var firstElementChild = null;
+            if (elem.firstElementChild) {
+              firstElementChild = elem.firstElementChild.cloneNode(true);
+            }
+
+            removeChildAll(elem);
+            var templateSet = {
+              target: elem,
+              template: firstElementChild,
+            };
+            templateSets.push(templateSet);
+
+          });
+
+          var i, j, keys, key, xlbi;
+
+          keys = privates.keys;
+
+          if (privates.firstCallOfEach) {
+
+            for (i = 0; i < keys.length; ++i) {
+              key = keys[i];
+              xlbi = this[key];
+              xlbi.___r.index = i;
+              xlbi
+                .setSimplexPreferred(preferreds.DOWN_AND_NTH_CHILD)
+                .setDuplexPreferred(preferreds.DOWN_AND_NTH_CHILD);
+            }
+
+            privates.firstCallOfEach = false;
+          }
+
+          if (templateSets.length === 0) {
+
+            for (i = 0; i < keys.length; ++i) {
+              key = keys[i];
+              callback.call(this[key], i, key, /* element */ null);
+            }
+
+          } else {
+
+            var templateSet;
+
+            for (i = 0; i < keys.length; ++i) {
+
+              key = keys[i];
+              xlbi = this[key];
+
+              for (j = 0; j < templateSets.length; ++j) {
+
+                templateSet = templateSets[j];
+
+                var childElem = null;
+                if (templateSet.template) {
+                  childElem = templateSet.template.cloneNode(true);
+                  templateSet.target.appendChild(childElem);
+                }
+
+                callback.call(xlbi, i, key, childElem);
+
+              }
+            }
+          }
+
+          this.clearElemCollection();
+
+          return this.chain;
+        },
+
         /**
          * Write-to-binding that is all properties to attributes.
          */
@@ -1098,6 +1202,60 @@
 
         getData: function () {
           return this.___r.data;
+        },
+
+        addClassFromName: function () {
+
+          var privates = this.___r;
+
+          if (!this.collected) {
+            this.linkSimplex();
+          }
+
+          privates.ecol.each(function (element) {
+            element.classList.add(privates.name);
+          });
+
+          if (privates.parent) {
+            privates.parent.___r.traceLink = privates.traceLink;
+          }
+
+          this.clearElemCollection();
+
+          return this.chain;
+        },
+
+        setText: function (value) {
+
+          var privates = this.___r;
+
+          if (!this.collected) {
+            this.linkSimplex();
+          }
+
+          privates.ecol.each(function (element) {
+            element.textContent = value;
+          });
+
+          if (privates.parent) {
+            privates.parent.___r.traceLink = privates.traceLink;
+          }
+
+          this.clearElemCollection();
+
+          return this.chain;
+        },
+
+        antitogglesClass: function (className) {
+          return this.to((function (className) {
+            return function (element, data) {
+              if (!data) {
+                element.classList.add(className);
+              } else {
+                element.classList.remove(className);
+              }
+            };
+          })(className));
         },
 
         toAttr: function (attrName, dataCallback) {
@@ -1383,9 +1541,6 @@
             var xlbi3 = privates.xlbis[index2];
             xlbi3.setData(data[index2], src);
           }
-
-
-          // TODO call onReceive
 
           return this;
         },
