@@ -1077,7 +1077,7 @@
 
           this.clearElemCollection();
 
-          return this.chain;
+          return privates.chain;
         },
 
         /**
@@ -1222,7 +1222,32 @@
 
           this.clearElemCollection();
 
-          return this.chain;
+          return privates.chain;
+        },
+
+        setAttr: function (attrName, value) {
+
+          var privates = this.___r;
+
+          if (!this.collected) {
+            this.linkSimplex();
+          }
+
+          privates.ecol.each(function (element) {
+            element.setAttribute(attrName, value);
+          });
+
+          if (privates.parent) {
+            privates.parent.___r.traceLink = privates.traceLink;
+          }
+
+          this.clearElemCollection();
+
+          return privates.chain;
+        },
+
+        setAttrFromName: function (attrName) {
+          return this.setAttr(attrName, this.___r.name);
         },
 
         setText: function (value) {
@@ -1243,7 +1268,11 @@
 
           this.clearElemCollection();
 
-          return this.chain;
+          return privates.chain;
+        },
+
+        setTextFromName: function () {
+          return this.setText(this.___r.name);
         },
 
         antitogglesClass: function (className) {
