@@ -13,6 +13,22 @@
   'use strict';
   return (function () {
 
+    function goUpParent(element, predicate) {
+      if (element == null) {
+        return null;
+      }
+      if (predicate(element)) {
+        return element;
+      }
+      return goUpParent(element.parentElement, predicate);
+    }
+
+    function goUpParentByTagName(element, tagName) {
+      return goUpParent(element.parentElement, function (elem) {
+        return elem.tagName === tagName.toUpperCase();
+      });
+    }
+
     function hasConstructor(target, constructor) {
       if (target == null) return false;
       var proto = Object.getPrototypeOf(target);
@@ -1599,13 +1615,17 @@
     Albi.prototype.constructor = Albi;
 
 
+    //
+    // Utilities
+    //
 
+    Olbi.goUpParent = goUpParent;
+    Olbi.goUpParentByTagName = goUpParentByTagName;
     Olbi.objectAssign = objectAssign;
     Olbi.objectAssignDeep = objectAssignDeep;
     Olbi.query = function (selector) {
       return (new Ecol()).query(selector);
     };
-
 
 
     //
