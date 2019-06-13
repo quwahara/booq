@@ -374,10 +374,10 @@
       get ID() { return "ID"; },
       get NAME() { return "NAME"; },
       get NTH_CHILD() { return "NTH_CHILD"; },
-      get DOWN_AND_CLASS() { return "DOWN_AND_CLASS"; },
-      get DOWN_AND_ID() { return "DOWN_AND_ID"; },
-      get DOWN_AND_NAME() { return "DOWN_AND_NAME"; },
-      get DOWN_AND_NTH_CHILD() { return "DOWN_AND_NTH_CHILD"; },
+      get DESCENDANT_CLASS() { return "DESCENDANT_CLASS"; },
+      get DESCENDANT_ID() { return "DESCENDANT_ID"; },
+      get DESCENDANT_NAME() { return "DESCENDANT_NAME"; },
+      get CHILD_UNIVERSAL_NTH_CHILD() { return "CHILD_UNIVERSAL_NTH_CHILD"; },
     };
 
 
@@ -533,10 +533,10 @@
 
             sel = a;
           } else {
-            sel = ">*:nth-child(" + (privates.index + 1) + ")" + a;
+            sel = "nth-child(" + (privates.index + 1) + ")" + a;
           }
 
-        } else if (p === ps.DOWN_AND_CLASS) {
+        } else if (p === ps.DESCENDANT_CLASS) {
           if (!name) {
             sel = a;
           }
@@ -544,7 +544,7 @@
             sel = " ." + name + a;
           }
 
-        } else if (p === ps.DOWN_AND_ID) {
+        } else if (p === ps.DESCENDANT_ID) {
           if (!name) {
             sel = a;
           }
@@ -552,7 +552,7 @@
             sel = " #" + name + a;
           }
 
-        } else if (p === ps.DOWN_AND_NAME) {
+        } else if (p === ps.DESCENDANT_NAME) {
           if (!name) {
             sel = a;
           }
@@ -560,7 +560,7 @@
             sel = " [name='" + name + "']" + a;
           }
 
-        } else if (p === ps.DOWN_AND_NTH_CHILD) {
+        } else if (p === ps.CHILD_UNIVERSAL_NTH_CHILD) {
           if (!isInt(privates.index) || privates.index < 0) {
             sel = a;
           } else {
@@ -1056,8 +1056,8 @@
               xlbi = this[key];
               xlbi.___r.index = i;
               xlbi
-                .setSimplexPreferred(preferreds.DOWN_AND_NTH_CHILD)
-                .setDuplexPreferred(preferreds.DOWN_AND_NTH_CHILD);
+                .setSimplexPreferred(preferreds.CHILD_UNIVERSAL_NTH_CHILD)
+                .setDuplexPreferred(preferreds.CHILD_UNIVERSAL_NTH_CHILD);
             }
 
             privates.firstCallOfEach = false;
@@ -1193,8 +1193,8 @@
         privates,
         {
           chain: parent,
-          simplexPreferred: preferreds.DOWN_AND_CLASS,
-          duplexPreferred: preferreds.DOWN_AND_NAME,
+          simplexPreferred: preferreds.DESCENDANT_CLASS,
+          duplexPreferred: preferreds.DESCENDANT_NAME,
         }
       );
 
@@ -1558,8 +1558,8 @@
           for (var dataIndex = 0; dataIndex < data.length; ++dataIndex) {
             var xlbi1 = new xlbiConsturctor(itemStruct, /* name */ null, dataIndex, this);
             xlbi1
-              .setSimplexPreferred(preferreds.DOWN_AND_NTH_CHILD)
-              .setDuplexPreferred(preferreds.DOWN_AND_NTH_CHILD);
+              .setSimplexPreferred(preferreds.CHILD_UNIVERSAL_NTH_CHILD)
+              .setDuplexPreferred(preferreds.CHILD_UNIVERSAL_NTH_CHILD);
             privates.xlbis.push(xlbi1);
           }
 
