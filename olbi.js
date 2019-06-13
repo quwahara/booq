@@ -283,10 +283,14 @@
 
       clone: function () {
         var clone = new Ecol();
+        if (!this.queried) {
+          return clone;
+        }
         clone.elems.length = 0;
         for (var i = 0; i < this.elems.length; ++i) {
           clone.elems.push(this.elems[i]);
         }
+        clone.___r.queried = true;
         return clone;
       },
 
@@ -560,7 +564,7 @@
           if (!isInt(privates.index) || privates.index < 0) {
             sel = a;
           } else {
-            sel = " >*:nth-child(" + (privates.index + 1) + ")" + a;
+            sel = ">*:nth-child(" + (privates.index + 1) + ")" + a;
           }
 
         } else {
@@ -1178,11 +1182,11 @@
     //
     var Plbi = function Plbi(struct, name, index, parent) {
 
+      callSuperConstructorOf(this, struct, name, index, parent);
+
       if (struct != null && !isPrimitive(struct)) {
         throw Error("The struct must be a primitive value or null");
       }
-
-      callSuperConstructorOf(this, struct, name, index, parent);
 
       var privates = this.___r;
       objectAssign(
@@ -1365,13 +1369,13 @@
           })(condition));
         },
 
-        isFalsy: function (condition) {
+        isFalsy: function () {
           return this.addPredicate(function (data) {
             return !data;
           });
         },
 
-        isTruthy: function (condition) {
+        isTruthy: function () {
           return this.addPredicate(function (data) {
             return !!data;
           });
