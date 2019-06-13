@@ -430,17 +430,17 @@
 
     Lbi.prototype = {
 
-      ___fullName: function () {
+      getFullName: function () {
         var privates = this.___r;
         var fn = "";
         if (privates.parent) {
-          fn = privates.parent.___fullName();
+          fn = privates.parent.getFullName();
         }
         var me;
         var type = Object.getPrototypeOf(this).constructor.name.substring(0, 1);
         if (isInt(privates.index)) {
           me = privates.index;
-        } else if (isString(privates.name)) {
+        } else if (privates.name && isString(privates.name)) {
           me = privates.name;
         } else {
           me = "(anon)";
@@ -613,7 +613,7 @@
         privates.ecol.query(selector);
 
         if (Olbi.conf.traceLink) {
-          privates.traceLink = [privates.ecol.clone().elems, privates.ecol.lastSelector, this.___fullName(), stackTraceString(Error())];
+          privates.traceLink = [privates.ecol.clone().elems, privates.ecol.lastSelector, this.getFullName(), stackTraceString(Error())];
         }
 
         return this;
