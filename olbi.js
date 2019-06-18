@@ -400,6 +400,7 @@
           simplexPreferred: preferreds.CLASS,
           duplexPreferred: preferreds.NAME,
           extentSelector: "",
+          appending: "",
           receivers: [],
           predicates: [],
           traceLink: null,
@@ -574,6 +575,11 @@
         return sel + privates.extentSelector;
       },
 
+      append: function (appending) {
+        this.___r.appending = appending;
+        return this;
+      },
+
       simplexSelector: function (appending) {
         return this.preferredSelector(this.getSimplexPreferred(), appending);
       },
@@ -632,9 +638,11 @@
         return this.link(this.getDuplexPreferred(), appending);
       },
 
-      clearElemCollection: function () {
+      clearLinking: function () {
         var privates = this.___r;
         privates.ecol.clear();
+        privates.appending = "";
+        return this;
       },
 
       bindDataSetter: function (eventName, dataSetterCallback) {
@@ -694,7 +702,7 @@
           privates.parent.___r.traceLink = privates.traceLink;
         }
 
-        this.clearElemCollection();
+        this.clearLinking();
 
         return privates.chain;
       },
@@ -704,7 +712,7 @@
         var privates = this.___r;
 
         if (!this.collected) {
-          this.linkSimplex();
+          this.linkSimplex(privates.appending);
         }
 
         var receiver = this.produceElementReceiver(elementDataCallback);
@@ -715,7 +723,7 @@
           privates.parent.___r.traceLink = privates.traceLink;
         }
 
-        this.clearElemCollection();
+        this.clearLinking();
 
         return privates.chain;
       },
@@ -725,7 +733,7 @@
         var privates = this.___r;
 
         if (!this.collected) {
-          this.linkDuplex();
+          this.linkDuplex(privates.appending);
         }
 
         var receiver = this.produceElementReceiver(elementDataCallback);
@@ -740,7 +748,7 @@
           privates.parent.___r.traceLink = privates.traceLink;
         }
 
-        this.clearElemCollection();
+        this.clearLinking();
 
         return privates.chain;
       },
@@ -759,7 +767,7 @@
         }
 
         if (!this.collected) {
-          this.linkSimplex();
+          this.linkSimplex(privates.appending);
         }
 
         var ecol = this.___r.ecol.clone();
@@ -790,7 +798,7 @@
           privates.parent.___r.traceLink = privates.traceLink;
         }
 
-        this.clearElemCollection();
+        this.clearLinking();
 
         return privates.chain;
       },
@@ -1023,7 +1031,7 @@
           var privates = this.___r;
 
           if (!this.collected) {
-            this.linkSimplex();
+            this.linkSimplex(privates.appending);
           }
 
           var templateSets = [];
@@ -1095,7 +1103,7 @@
             }
           }
 
-          this.clearElemCollection();
+          this.clearLinking();
 
           return privates.chain;
         },
@@ -1126,7 +1134,7 @@
             privates.parent.___r.traceLink = privates.traceLink;
           }
 
-          this.clearElemCollection();
+          this.clearLinking();
 
           return this.___r.parent;
         },
@@ -1229,7 +1237,7 @@
           var privates = this.___r;
 
           if (!this.collected) {
-            this.linkSimplex();
+            this.linkSimplex(privates.appending);
           }
 
           privates.ecol.each(function (element) {
@@ -1240,7 +1248,7 @@
             privates.parent.___r.traceLink = privates.traceLink;
           }
 
-          this.clearElemCollection();
+          this.clearLinking();
 
           return privates.chain;
         },
@@ -1250,7 +1258,7 @@
           var privates = this.___r;
 
           if (!this.collected) {
-            this.linkSimplex();
+            this.linkSimplex(privates.appending);
           }
 
           privates.ecol.each(function (element) {
@@ -1261,7 +1269,7 @@
             privates.parent.___r.traceLink = privates.traceLink;
           }
 
-          this.clearElemCollection();
+          this.clearLinking();
 
           return privates.chain;
         },
@@ -1275,7 +1283,7 @@
           var privates = this.___r;
 
           if (!this.collected) {
-            this.linkSimplex();
+            this.linkSimplex(privates.appending);
           }
 
           privates.ecol.each(function (element) {
@@ -1286,7 +1294,7 @@
             privates.parent.___r.traceLink = privates.traceLink;
           }
 
-          this.clearElemCollection();
+          this.clearLinking();
 
           return privates.chain;
         },
@@ -1459,7 +1467,7 @@
           };
 
           if (!this.collected) {
-            this.linkSimplex();
+            this.linkSimplex(privates.appending);
           }
 
           // prepare template element
@@ -1523,7 +1531,7 @@
 
           this.addEachReceiver(eachReceiver);
 
-          this.clearElemCollection();
+          this.clearLinking();
 
           return this;
         },
