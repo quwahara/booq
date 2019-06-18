@@ -495,84 +495,60 @@
         return this;
       },
 
-      preferredSelector: function (preferred, appending) {
+      preferredSelector: function (preferred) {
 
         var privates = this.___r;
         var p = (preferred || "").toString().toUpperCase();
         var ps = preferreds;
-        var a = appending || "";
         var sel = "";
 
         var name = privates.name;
 
         if (p === ps.CLASS) {
-          if (!name) {
-            sel = a;
-          }
-          else {
-            sel = "." + name + a;
+          if (name) {
+            sel = "." + name;
           }
 
         } else if (p === ps.ID) {
-          if (!name) {
-            sel = a;
-          }
-          else {
-            sel = "#" + name + a;
+          if (name) {
+            sel = "#" + name;
           }
 
         } else if (p === ps.NAME) {
-          if (!name) {
-            sel = a;
-          }
-          else {
-            sel = "[name='" + name + "']" + a;
+          if (name) {
+            sel = "[name='" + name + "']";
           }
 
         } else if (p === ps.NTH_CHILD) {
-          if (!isInt(privates.index) || privates.index < 0) {
-
-            sel = a;
-          } else {
-            sel = "nth-child(" + (privates.index + 1) + ")" + a;
+          if (isInt(privates.index) && privates.index >= 0) {
+            sel = "nth-child(" + (privates.index + 1) + ")";
           }
 
         } else if (p === ps.DESCENDANT_CLASS) {
-          if (!name) {
-            sel = a;
-          }
-          else {
-            sel = " ." + name + a;
+          if (name) {
+            sel = " ." + name;
           }
 
         } else if (p === ps.DESCENDANT_ID) {
-          if (!name) {
-            sel = a;
-          }
-          else {
-            sel = " #" + name + a;
+          if (name) {
+            sel = " #" + name;
           }
 
         } else if (p === ps.DESCENDANT_NAME) {
-          if (!name) {
-            sel = a;
-          }
-          else {
-            sel = " [name='" + name + "']" + a;
+          if (name) {
+            sel = " [name='" + name + "']";
           }
 
         } else if (p === ps.CHILD_UNIVERSAL_NTH_CHILD) {
-          if (!isInt(privates.index) || privates.index < 0) {
-            sel = a;
-          } else {
-            sel = ">*:nth-child(" + (privates.index + 1) + ")" + a;
+          if (isInt(privates.index) && privates.index >= 0) {
+            sel = ">*:nth-child(" + (privates.index + 1) + ")";
           }
 
         } else {
           throw Error("Unsupported preferred");
         }
 
-        return sel + privates.extentSelector;
+        return sel + privates.appending + privates.extentSelector;
       },
 
       append: function (appending) {
@@ -580,15 +556,15 @@
         return this;
       },
 
-      simplexSelector: function (appending) {
-        return this.preferredSelector(this.getSimplexPreferred(), appending);
+      simplexSelector: function () {
+        return this.preferredSelector(this.getSimplexPreferred());
       },
 
-      duplexSelector: function (appending) {
-        return this.preferredSelector(this.getDuplexPreferred(), appending);
+      duplexSelector: function () {
+        return this.preferredSelector(this.getDuplexPreferred());
       },
 
-      fullPreferredSelector: function (preferred, appending) {
+      fullPreferredSelector: function (preferred) {
 
         var privates = this.___r;
 
@@ -609,7 +585,7 @@
           selector += parent.simplexSelector();
         }
 
-        selector += this.preferredSelector(preferred, appending);
+        selector += this.preferredSelector(preferred);
 
         return selector;
       },
@@ -625,17 +601,17 @@
         return this;
       },
 
-      link: function (preferred, appending) {
-        var selector = this.fullPreferredSelector(preferred, appending);
+      link: function (preferred) {
+        var selector = this.fullPreferredSelector(preferred);
         return this.linkSelector(selector);
       },
 
-      linkSimplex: function (appending) {
-        return this.link(this.getSimplexPreferred(), appending);
+      linkSimplex: function () {
+        return this.link(this.getSimplexPreferred());
       },
 
-      linkDuplex: function (appending) {
-        return this.link(this.getDuplexPreferred(), appending);
+      linkDuplex: function () {
+        return this.link(this.getDuplexPreferred());
       },
 
       clearLinking: function () {
@@ -712,7 +688,7 @@
         var privates = this.___r;
 
         if (!this.collected) {
-          this.linkSimplex(privates.appending);
+          this.linkSimplex();
         }
 
         var receiver = this.produceElementReceiver(elementDataCallback);
@@ -733,7 +709,7 @@
         var privates = this.___r;
 
         if (!this.collected) {
-          this.linkDuplex(privates.appending);
+          this.linkDuplex();
         }
 
         var receiver = this.produceElementReceiver(elementDataCallback);
@@ -767,7 +743,7 @@
         }
 
         if (!this.collected) {
-          this.linkSimplex(privates.appending);
+          this.linkSimplex();
         }
 
         var ecol = this.___r.ecol.clone();
@@ -1031,7 +1007,7 @@
           var privates = this.___r;
 
           if (!this.collected) {
-            this.linkSimplex(privates.appending);
+            this.linkSimplex();
           }
 
           var templateSets = [];
@@ -1237,7 +1213,7 @@
           var privates = this.___r;
 
           if (!this.collected) {
-            this.linkSimplex(privates.appending);
+            this.linkSimplex();
           }
 
           privates.ecol.each(function (element) {
@@ -1258,7 +1234,7 @@
           var privates = this.___r;
 
           if (!this.collected) {
-            this.linkSimplex(privates.appending);
+            this.linkSimplex();
           }
 
           privates.ecol.each(function (element) {
@@ -1283,7 +1259,7 @@
           var privates = this.___r;
 
           if (!this.collected) {
-            this.linkSimplex(privates.appending);
+            this.linkSimplex();
           }
 
           privates.ecol.each(function (element) {
@@ -1467,7 +1443,7 @@
           };
 
           if (!this.collected) {
-            this.linkSimplex(privates.appending);
+            this.linkSimplex();
           }
 
           // prepare template element
