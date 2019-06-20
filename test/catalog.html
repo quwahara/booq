@@ -1,0 +1,174 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.8/styles/default.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.8/highlight.min.js"></script>
+  <script src="../olbi.js"></script>
+  <style>
+    html {
+      font-size: 12px;
+      font-family: "Lucida Console", Monaco, monospace;
+    }
+
+    th,
+    td,
+    div,
+    span {
+      font-size: 1rem;
+    }
+
+    .bench {
+      margin: 12px 0 12px 0;
+      padding: 6px;
+      background-color: #cff3cf;
+    }
+  </style>
+  <script>
+    // Reference: https://qiita.com/saekis/items/c2b41cd8940923863791 
+    function escape_html(string) {
+      if (typeof string !== 'string') {
+        return string;
+      }
+      return string.replace(/[&'`"<>]/g, function (match) {
+        return {
+          '&': '&amp;',
+          "'": '&#x27;',
+          '`': '&#x60;',
+          '"': '&quot;',
+          '<': '&lt;',
+          '>': '&gt;',
+        }[match]
+      });
+    }
+
+    function testElm(callback, elm) {
+
+      var beforeHtml = elm.querySelector(".bench").innerHTML;
+      var script = elm.querySelector("script").textContent;
+      var results = callback();
+      var afterHtml = elm.querySelector(".bench").innerHTML;
+
+      elm.insertAdjacentHTML("beforeend",
+        "<h4>Before HTML Bench</h4>" +
+        "<pre><code class='html'>" + escape_html(beforeHtml) + "</code></pre>" +
+        "<h4>After HTML Bench</h4>" +
+        "<pre><code class='html'>" + escape_html(afterHtml) + "</code></pre>" +
+        "<h4>Script</h4>" +
+        "<pre><code class='JavaScript'>" + escape_html(script) + "</code></pre>" +
+        "");
+    }
+
+    function test(callback) {
+      var elms = document.querySelectorAll(".test");
+      if (elms.length === 0) {
+        return;
+      }
+      testElm(callback, elms.item(elms.length - 1));
+    }
+  </script>
+</head>
+
+<body>
+  <div>
+    <h1>Olbi</h1>
+    <div>
+
+      <h2>概要</h2>
+      <div>
+        <p>
+          Olbi は Object の値を Element へ反映するライブラリです。
+        </p>
+        <p>
+          次の3つのステップで、値の反映を実現します。
+          <ul>
+            <li>データ構造を Olbi へ宣言</li>
+            <li>Olbi のデータ項目を Element に結びつける</li>
+            <li>データを Olbi へ設定する</li>
+          </ul>
+        </p>
+      </div>
+
+      <h2>データ構造を Olbi へ宣言</h2>
+      <div>
+        <p>
+
+          例えば、次のようなデータを扱いたいとします。
+          <pre>
+            <code class="javascript">
+              var data = {
+                person: {
+                  name: "Ann"
+                }
+              };
+            </code>
+          </pre>
+        </p>
+        <p>
+          この単純なデータを 次の
+          <span>&lt;span class="name"&gt;&lt;/span&gt;</span> の
+          <span>textContent</span> へ反映することをめざします。
+          <pre>
+            <code class="html">
+              &lt;div class="person"&gt;
+                &lt;span class="name"&gt;&lt;/span&gt;
+              &lt;/div&gt;
+            </code>
+          </pre>
+
+        </p>
+
+
+
+      </div>
+
+
+    </div>
+    <h1>Tests</h1>
+    <div>
+
+      <div class="test">
+        <h3>to_.text()</h3>
+
+        <h4>HTML bench</h4>
+
+        <div class="bench">
+          <div class="object">
+            <div class="prop"></div>
+          </div>
+        </div>
+
+        <script>
+          test(function () {
+            var struct = new Olbi({
+              object: {
+                prop: "",
+              }
+            })
+              .object.prop.to_.text()
+              .set({
+                prop: "val",
+              });
+          });
+        </script>
+
+      </div><!-- End of test -->
+
+
+    </div>
+  </div>
+
+  <script>
+    window.onload = function () {
+      hljs.initHighlighting();
+    };
+  </script>
+
+
+
+
+
+</body>
+
+</html>

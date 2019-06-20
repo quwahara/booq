@@ -932,6 +932,48 @@
     Olbi.prototype = objectAssign(
       Object.create(Lbi.prototype),
       {
+        set: function (data, src) {
+
+          if (!isObject(data)) {
+            throw Error("The data must be an Object");
+          }
+
+          var privates = this.___r;
+
+          src = src || this;
+
+          var struct = privates.struct;
+          var self = privates.self;
+
+          for (var propName in data) {
+
+            // ignore "___", because of reserved word
+            if (propName === "___") {
+              continue;
+            }
+
+            if (!Object.prototype.hasOwnProperty.call(data, propName)) {
+              continue;
+            }
+
+            if (!Object.prototype.hasOwnProperty.call(struct, propName)) {
+              continue;
+            }
+
+            self[propName].setData(data[propName]);
+          }
+
+          privates.setDataRev += 1;
+
+          var privateData = this.getData();
+
+          for (var i = 0; i < privates.receivers.length; ++i) {
+            privates.receivers[i](privateData, src);
+          }
+
+          return this;
+        },
+
         setData: function (data, src) {
 
           if (!isObject(data)) {
@@ -1179,6 +1221,7 @@
           chain: parent,
           simplexPreferred: preferreds.DESCENDANT_CLASS,
           duplexPreferred: preferreds.DESCENDANT_NAME,
+          simplex: new PlbiSimplex(this),
         }
       );
 
@@ -1367,6 +1410,13 @@
 
       }
     );
+
+    dp(Plbi.prototype, "to_", {
+      enumerable: false,
+      get: function () {
+        return this.___r.simplex;
+      },
+    });
 
     Plbi.prototype.constructor = Plbi;
 
@@ -1601,6 +1651,114 @@
     );
 
     Albi.prototype.constructor = Albi;
+
+
+    var PlbiSimplex = function PlbiSimplex(plbi) {
+
+      // privates
+      dpReadOnly(this, "___r",
+        {
+          plbi: plbi,
+          r: plbi.___r,
+        },
+      /* enumerable */ false);
+
+    };
+
+    PlbiSimplex.prototype = {
+
+      prepareReceiver: function (elementDataCallback) {
+
+        var r = this.___r;
+        var plbi = r.plbi;
+
+        if (!plbi.collected) {
+          plbi.linkSimplex();
+        }
+
+        var receiver = (function (self, ecol, elementDataCallback) {
+          return function (data, src) {
+            ecol.each(function (element) {
+              if (src !== element) {
+                elementDataCallback.call(self, element, data);
+              }
+            });
+          };
+        })(plbi, r.r.ecol.clone(), elementDataCallback);
+
+        plbi.addReceiver(receiver);
+
+        if (r.r.parent) {
+          r.r.parent.___r.traceLink = r.r.traceLink;
+        }
+
+        plbi.clearLinking();
+
+        return receiver;
+      },
+
+      antitogglesClass: function (className) {
+        var r = this.___r;
+        this.prepareReceiver(function (element, data) {
+          if (!data) {
+            element.classList.add(className);
+          } else {
+            element.classList.remove(className);
+          }
+        });
+        return r.r.chain;
+      },
+
+      attr: function (attrName, dataCallback) {
+        var r = this.___r;
+        this.prepareReceiver((function (attrName, dataCallback) {
+          return function (element, data) {
+            element.setAttribute(attrName, dataCallback(data));
+          };
+        })(attrName, orPassthrough(dataCallback)));
+        return r.r.chain;
+      },
+
+      href: function (arg) {
+
+        var callback;
+
+        if (isUndefined(arg)) {
+          callback = passthrough;
+
+        } else if (isString(arg)) {
+          var template = arg;
+          callback = valueReplace(template, new RegExp(":" + this.___r.name + "\\b", "g"));
+
+        } else if (isFunction(arg)) {
+          callback = arg;
+
+        } else {
+          throw Error("Unsupported type of argument");
+
+        }
+
+        var r = this.___r;
+        this.prepareReceiver((function (attrName, callback) {
+          return function (element, data) {
+            element.href = callback.call(self, data);
+          };
+        })(attrName, orPassthrough(callback)));
+        return r.r.chain;
+      },
+
+      text: function () {
+        var r = this.___r;
+        this.prepareReceiver(function (element, data) {
+          element.textContent = data;
+        });
+        return r.r.chain;
+      },
+
+    };
+
+    PlbiSimplex.prototype.constructor = PlbiSimplex;
+
 
 
     //
