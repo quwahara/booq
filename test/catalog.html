@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.8/styles/default.min.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.8/styles/github-gist.min.css">
   <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.8/highlight.min.js"></script>
   <script src="../olbi.js"></script>
   <style>
     html {
-      font-size: 12px;
-      font-family: "Lucida Console", Monaco, monospace;
+      font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, メイリオ, Osaka, 'MS PGothic', arial, helvetica, sans-serif;
+      font-size: 14px;
     }
 
     th,
@@ -19,6 +19,18 @@
       font-size: 1rem;
     }
 
+    pre {
+      margin: 0;
+    }
+
+    code.hl {
+      display: inline;
+    }
+
+    code.hljs {
+      background-color: #eee;
+    }
+
     .bench {
       margin: 12px 0 12px 0;
       padding: 6px;
@@ -26,6 +38,8 @@
     }
   </style>
   <script>
+    Olbi.configure({ traceLink: true });
+
     // Reference: https://qiita.com/saekis/items/c2b41cd8940923863791 
     function escape_html(string) {
       if (typeof string !== 'string') {
@@ -75,51 +89,170 @@
     <h1>Olbi</h1>
     <div>
 
-      <h2>概要</h2>
+      <h2>Olbi とは</h2>
       <div>
         <p>
-          Olbi は Object の値を Element へ反映するライブラリです。
+          Olbi はデータをHTMLタグへうめこむことを目的にしたライブラリです。
         </p>
         <p>
-          次の3つのステップで、値の反映を実現します。
-          <ul>
-            <li>データ構造を Olbi へ宣言</li>
-            <li>Olbi のデータ項目を Element に結びつける</li>
-            <li>データを Olbi へ設定する</li>
-          </ul>
+          単純な構成のページでの利用を想定した、シンプルなライブラリです。
+        </p>
+        <p>
+          手軽に使えることを考え、トランスパイルせず使えます。
         </p>
       </div>
 
-      <h2>データ構造を Olbi へ宣言</h2>
+      <h2>Olbi を動作させるための基本的なステップ</h2>
+      <div>
+
+        <p>
+          Olbi を使いデータをHTMLタグにうめこむには、次の3つステップが必要です。
+        </p>
+
+        <ul>
+          <li>データ構造を Olbi へ宣言する</li>
+          <li>Olbi のデータ項目を Element に結びつける</li>
+          <li>データを Olbi へ設定する</li>
+        </ul>
+
+        <p>
+          3つのステップについて、単純な例を使って説明します。
+        </p>
+
+      </div>
+
+      <h2>データとタグ</h2>
       <div>
         <p>
-
-          例えば、次のようなデータを扱いたいとします。
-          <pre>
-            <code class="javascript">
-              var data = {
-                person: {
-                  name: "Ann"
-                }
-              };
-            </code>
-          </pre>
+          ステップの説明をする前に、例で対象にするデータとタグを示します。
         </p>
+        <label>データ</label>
+        <pre><code class="js">
+var data = {
+  party: {
+    person: {
+      name: "Ann"
+    }
+  }
+};
+        </code></pre>
+        <label>タグ</label>
+        <pre><code class="html">
+  &lt;div class="party person"&gt;
+    &lt;span class="name"&gt;&lt;/span&gt;
+  &lt;/div&gt;
+        </code></pre>
         <p>
-          この単純なデータを 次の
-          <span>&lt;span class="name"&gt;&lt;/span&gt;</span> の
-          <span>textContent</span> へ反映することをめざします。
-          <pre>
-            <code class="html">
-              &lt;div class="person"&gt;
-                &lt;span class="name"&gt;&lt;/span&gt;
-              &lt;/div&gt;
-            </code>
-          </pre>
+          例では、データにある
+          <code class="hl javascript">"Ann"</code>
+          を、タグの
+          <code class="hl html">&lt;span class="name"&gt;&lt;/span&gt;</code>
+          にうめこむことをめざします。
+        </p>
+      </div>
 
+      <h2>データ構造を Olbi へ宣言する</h2>
+      <div>
+
+        <p>
+          最初のステップです。
+          データ構造を Olbi へ宣言します。
+          Olbi はデータを扱うために、データ構造を要求します。
+          先に示したデータと同じ構造のオブジェクトリテラルを、
+          コンストラクタの引数へ指定し、
+          Olbi にデータ構造を宣言します。
         </p>
 
+        <p>
+          Olbi コンストラクタは、受けっとったデータ構造と同じプロパティを、インスタンスに作成します。
+          作成したプロパティは、次のステップで使います。
+        </p>
 
+        <pre><code class="js">
+          var olbi = new Olbi({
+            party: {
+              person: {
+                name: ""
+              }
+            }
+          });
+        </code></pre>
+
+      </div>
+
+      <h2>Olbi のデータ項目を Element に結びつける</h2>
+      <div>
+
+        <p>
+          2番めのステップです。
+          Olbi のデータ項目を Element に結びつけます。
+          Olbi は次のコードで、
+          セレクター文字列生成と Element 選択、
+          Element とデータ項目の結びつけをおこないます。
+        </p>
+
+        <pre><code class="js">
+          olbi.party.person.name.to.text();
+        </code></pre>
+
+        <p>
+          セレクター文字列の生成は
+          <code class="hl javascript">to</code>プロパティの呼び出しでおこないます。
+          <code class="hl javascript">to</code> プロパティの前にある、
+          <code class="hl javascript">party</code> プロパティと
+          <code class="hl javascript">person</code> プロパティ、
+          <code class="hl javascript">name</code> プロパティを元に
+          次のセレクター文字列が生成されます。
+        </p>
+
+        <pre><code class="js">
+          ".party.person .name"
+        </code></pre>
+
+        <p>
+          セレクター文字列はプロパティ名からクラスセレクター、
+          つまり、ドット "<code>.</code>" ではじまるセレクターを生成します。
+          注意点があり、セレクター文字列の
+          <code class="hl javascript">".party"</code> と
+          <code class="hl javascript">".person"</code> のあいだにはスペースがありませんが、
+          <code class="hl javascript">".person"</code> と
+          <code class="hl javascript">".name"</code> のあいだにはスペースがあるところです。
+          Olbi はプロパティの型が Object のときは、
+          親になる Object のプロパティと、
+          クラスセレクターを連結して、あいだのスペースはなしで生成します。
+          プロパティ型が String や Number、null のときは、
+          親になる Object のプロパティと、
+          クラスセレクターを子孫結合子(Descendant combinator)、
+          あいだにスペースをはさんで生成します。
+        </p>
+
+        <p>
+          さらに
+          <code class="hl javascript">to</code>プロパティは、
+          生成したセレクター文字列を引数に
+          <code class="hl javascript">document.querySelectorAll()</code> メソッドを呼び出し、
+          Element を選択します。
+          <code class="hl html">&lt;span class="name"&gt;&lt;/span&gt;</code>
+          が選択されます。
+        </p>
+
+        <p>
+          <code class="hl javascript">.text()</code>メソッドで、
+          選択した Element の
+          <code class="hl javascript">textContent</code>
+          に
+          <code class="hl javascript">party.person.name</code>
+          の値を設定するよう、結びつけます。
+        </p>
+
+      </div>
+
+      <h2>データを Olbi へ設定する</h2>
+      <div>
+
+        <p>
+          TBD
+        </p>
 
       </div>
 
@@ -134,22 +267,30 @@
         <h4>HTML bench</h4>
 
         <div class="bench">
-          <div class="object">
-            <div class="prop"></div>
+          <div class="party person">
+            <div class="name"></div>
           </div>
         </div>
 
         <script>
           test(function () {
-            var struct = new Olbi({
-              object: {
-                prop: "",
+            var olbi = new Olbi({
+              party: {
+                person: {
+                  name: "",
+                }
               }
-            })
-              .object.prop.to_.text()
-              .set({
-                prop: "val",
-              });
+            });
+
+            olbi.party.person.name.to_.traceLink().text();
+
+            olbi.set({
+              party: {
+                person: {
+                  name: "Ann",
+                }
+              }
+            });
           });
         </script>
 
@@ -162,6 +303,11 @@
   <script>
     window.onload = function () {
       hljs.initHighlighting();
+
+      var hls = document.querySelectorAll("code.hl");
+      for (var i = 0; i < hls.length; ++i) {
+        hljs.highlightBlock(hls.item(i));
+      }
     };
   </script>
 

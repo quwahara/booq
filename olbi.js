@@ -799,7 +799,7 @@
 
       traceLink: function () {
         if (!Olbi.conf.traceLink) {
-          console.log("@traceLink", "Call 'Olbi.configure({traceLink: true});' to activate traceLink()");
+          console.log("@traceLink", "Call 'Olbi.configure({ traceLink: true });' to activate traceLink()");
         } else {
           if (this.___r.traceLink === null) {
             console.log("@traceLink", "Trace was empty");
@@ -1414,9 +1414,13 @@
     dp(Plbi.prototype, "to_", {
       enumerable: false,
       get: function () {
+        if (!this.collected) {
+          this.linkSimplex();
+        }
         return this.___r.simplex;
       },
     });
+
 
     Plbi.prototype.constructor = Plbi;
 
@@ -1672,10 +1676,6 @@
         var r = this.___r;
         var plbi = r.plbi;
 
-        if (!plbi.collected) {
-          plbi.linkSimplex();
-        }
-
         var receiver = (function (self, ecol, elementDataCallback) {
           return function (data, src) {
             ecol.each(function (element) {
@@ -1753,6 +1753,13 @@
           element.textContent = data;
         });
         return r.r.chain;
+      },
+
+      traceLink: function () {
+
+        this.___r.plbi.traceLink();
+
+        return this;
       },
 
     };
