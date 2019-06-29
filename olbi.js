@@ -13,6 +13,24 @@
   'use strict';
   return (function () {
 
+    function getFunctionName(func) {
+
+      if (!isFunction(func)) {
+        return "";
+      }
+
+      if (isString(func.name)) {
+        return func.name;
+      }
+
+      var r = (/(function\s+)([^(]+)/g).exec(func.toString());
+      if (r && r.length >= 3) {
+        return r[2];
+      }
+
+      return "";
+    }
+
     function goUpParent(element, predicate) {
       if (element == null) {
         return null;
@@ -226,6 +244,8 @@
       var stack = error.stack;
       if (isString(stack)) {
         stack = stack.split("\n");
+      } else {
+        stack = "(No stack trace)";
       }
       return stack;
     }
@@ -370,14 +390,30 @@
 
 
     var preferreds = {
-      get CLASS() { return "CLASS"; },
-      get ID() { return "ID"; },
-      get NAME() { return "NAME"; },
-      get NTH_CHILD() { return "NTH_CHILD"; },
-      get DESCENDANT_CLASS() { return "DESCENDANT_CLASS"; },
-      get DESCENDANT_ID() { return "DESCENDANT_ID"; },
-      get DESCENDANT_NAME() { return "DESCENDANT_NAME"; },
-      get CHILD_UNIVERSAL_NTH_CHILD() { return "CHILD_UNIVERSAL_NTH_CHILD"; },
+      get CLASS() {
+        return "CLASS";
+      },
+      get ID() {
+        return "ID";
+      },
+      get NAME() {
+        return "NAME";
+      },
+      get NTH_CHILD() {
+        return "NTH_CHILD";
+      },
+      get DESCENDANT_CLASS() {
+        return "DESCENDANT_CLASS";
+      },
+      get DESCENDANT_ID() {
+        return "DESCENDANT_ID";
+      },
+      get DESCENDANT_NAME() {
+        return "DESCENDANT_NAME";
+      },
+      get CHILD_UNIVERSAL_NTH_CHILD() {
+        return "CHILD_UNIVERSAL_NTH_CHILD";
+      },
     };
 
 
@@ -387,8 +423,7 @@
     var Lbi = function Lbi(struct, name, index, parent) {
 
       // privates
-      dpReadOnly(this, "___r",
-        {
+      dpReadOnly(this, "___r", {
           self: this,
           chain: this,
           ecol: new Ecol(),
@@ -407,25 +442,24 @@
           setDataRev: 0,
           getDataRev: 0,
         },
-      /* enumerable */ false);
+        /* enumerable */
+        false);
 
       dpReadOnly(this, "___", this, false);
 
-      dp(this, "collected",
-        {
-          enumerable: false,
-          get: function () {
-            return this.___r.ecol.queried;
-          }
-        });
+      dp(this, "collected", {
+        enumerable: false,
+        get: function () {
+          return this.___r.ecol.queried;
+        }
+      });
 
-      dp(this, "elemCollection",
-        {
-          enumerable: false,
-          get: function () {
-            return this.___r.ecol.elems;
-          }
-        });
+      dp(this, "elemCollection", {
+        enumerable: false,
+        get: function () {
+          return this.___r.ecol.elems;
+        }
+      });
 
     };
 
@@ -438,7 +472,8 @@
           fn = privates.parent.getFullName();
         }
         var me;
-        var type = Object.getPrototypeOf(this).constructor.name.substring(0, 1);
+
+        var type = getFunctionName(Object.getPrototypeOf(this).constructor).substring(0, 1);
         if (isInt(privates.index)) {
           me = privates.index;
         } else if (privates.name && isString(privates.name)) {
@@ -849,8 +884,7 @@
       }
 
       objectAssign(
-        privates,
-        {
+        privates, {
           data: {},
           keys: keys,
           firstCallOfEach: true,
@@ -930,8 +964,7 @@
     };
 
     Olbi.prototype = objectAssign(
-      Object.create(Lbi.prototype),
-      {
+      Object.create(Lbi.prototype), {
         set: function (data, src) {
 
           if (!isObject(data)) {
@@ -1216,8 +1249,7 @@
 
       var privates = this.___r;
       objectAssign(
-        privates,
-        {
+        privates, {
           chain: parent,
           simplexPreferred: preferreds.DESCENDANT_CLASS,
           duplexPreferred: preferreds.DESCENDANT_NAME,
@@ -1228,8 +1260,7 @@
     };
 
     Plbi.prototype = objectAssign(
-      Object.create(Lbi.prototype),
-      {
+      Object.create(Lbi.prototype), {
         setData: function (data, src) {
 
           if (data != null && !isPrimitive(data)) {
@@ -1453,8 +1484,7 @@
     };
 
     Albi.prototype = objectAssign(
-      Object.create(Lbi.prototype),
-      {
+      Object.create(Lbi.prototype), {
 
         addEachReceiver: function (eachReceiver) {
           this.___r.eachReceivers.push(eachReceiver);
@@ -1660,12 +1690,12 @@
     var PlbiSimplex = function PlbiSimplex(plbi) {
 
       // privates
-      dpReadOnly(this, "___r",
-        {
+      dpReadOnly(this, "___r", {
           plbi: plbi,
           r: plbi.___r,
         },
-      /* enumerable */ false);
+        /* enumerable */
+        false);
 
     };
 
