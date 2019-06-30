@@ -110,11 +110,11 @@
         </p>
       </div>
 
-      <h2>Olbi を動作させるための基本的なステップ</h2>
+      <h2>基本的なステップ</h2>
       <div>
 
         <p>
-          Olbi を使いデータをHTMLタグにうめこむには、次の3つステップが必要です。
+          次の3ステップで、データをHTMLタグにうめこみます。
         </p>
 
         <ul>
@@ -124,7 +124,7 @@
         </ul>
 
         <p>
-          3つのステップについて、単純な例を使って説明します。
+          単純な例で3ステップを説明します。
         </p>
 
       </div>
@@ -194,9 +194,7 @@ var data = {
         <p>
           2番めのステップです。
           Olbi のデータ項目を Element に結びつけます。
-          Olbi は次のコードで、
-          セレクター文字列生成と Element 選択、
-          Element とデータ項目の結びつけをおこないます。
+          そのコードを示します。
         </p>
 
         <pre><code class="js">
@@ -204,13 +202,34 @@ var data = {
         </code></pre>
 
         <p>
-          セレクター文字列の生成は
-          <code class="hl javascript">to</code>プロパティの呼び出しでおこないます。
+          このコードは多くの暗黙的前提をおいていて、次の2つを行います。
+        </p>
+
+        <ul>
+          <li>セレクター文字列を生成し、Element 選択</li>
+          <li>データ項目をと Element への結びつけ</li>
+        </ul>
+
+        <p>
+          個々のメソッドチェーンが、
+          暗黙的前提でどのような意味になっているかを順に追います。
+        </p>
+
+        <h3>セレクター文字列生成と Element 選択</h3>
+
+        <p>
+          Olbi は Element 選択を
+          <code class="hl javascript">document.querySelectorAll()</code> メソッドで行います。
+          それを呼び出すため、引数にセレクター文字列を指定しなければなりません。
+          そのセレクター文字列と Element 選択は
+          <code class="hl javascript">to</code>プロパティの呼び出しでおこなっています。
+          セレクター文字列は基本的にデータ構造のパスになっています。
+          例のコードの
           <code class="hl javascript">to</code> プロパティの前にある、
-          <code class="hl javascript">party</code> プロパティと
-          <code class="hl javascript">person</code> プロパティ、
-          <code class="hl javascript">name</code> プロパティを元に
-          次のセレクター文字列が生成されます。
+          <code class="hl javascript">name</code> プロパティ、さらにその前の
+          <code class="hl javascript">person</code> プロパティ、その前の
+          <code class="hl javascript">party</code> プロパティから、
+          次のセレクター文字列が暗黙的に生成されます。
         </p>
 
         <pre><code class="js">
@@ -218,18 +237,49 @@ var data = {
         </code></pre>
 
         <p>
-          セレクター文字列はプロパティ名からクラスセレクター、
-          つまり、ドット "<code>.</code>" ではじまるセレクターを生成します。
-          注意点があり、セレクター文字列の
+          プロパティ名にドット "<code>.</code>" を連結して、クラスセレクターを生成します。
+          このセレクター文字列で
+          <code class="hl javascript">document.querySelectorAll()</code>
+          メソッドを呼び出すので、タグの例の
+          <code class="hl html">&lt;span class="name"&gt;&lt;/span&gt;</code>
+          Element を選択できます。
+        </p>
+
+        <p>
+          セレクター文字列の生成での注意点は
           <code class="hl javascript">".party"</code> と
-          <code class="hl javascript">".person"</code> のあいだにはスペースがありませんが、
+          <code class="hl javascript">".person"</code> のあいだにスペースはないが、
           <code class="hl javascript">".person"</code> と
           <code class="hl javascript">".name"</code> のあいだにはスペースがあるところです。
-          Olbi はプロパティの型が Object のときは、
-          親になる Object のプロパティと、
-          クラスセレクターを連結して、あいだのスペースはなしで生成します。
+          スペースのあるなしはプロパティの型で決まります。
+          プロパティ型が Object のときは、親のプロパティ名とスペースなしで生成されます。
           プロパティ型が String や Number、null のときは、
-          親になる Object のプロパティと、
+          親のプロパティ名とスペースありで生成されます。
+        </p>
+
+        <h3>スペースのありなしは名前空間と識別子で、わかりやすくするため</h3>
+
+        <p>
+          スペースのありなしをそのようにした意図は、
+          データ項目を結びつけたいタグを、
+          クラス属性で指定するときに、
+          わかりやすくするためです。
+          Object型のプロパティ名をすべて連結するのは、
+          名前空間とみなすことを目論んでいます。
+          対して、String や Number型、null のときは、
+          プロパティ名を識別子のようにあつかうことを目論んでいます。
+          名前空間にあたるタグを指定し、その中でユニークになるタグに、
+          データ項目を結びつけるという方針が、
+          わかりやすくなると、
+          目論んでいます。
+          例では、名前空間にあたるタグが
+          <code class="hl html">&lt;div class="party person"&gt;</code>
+          で、識別子にあたるタグが
+          <code class="hl html">&lt;span class="name"&gt;&lt;/span&gt;</code>
+          にあたります。
+        </p>
+
+        <p>
           クラスセレクターを子孫結合子(Descendant combinator)、
           あいだにスペースをはさんで生成します。
         </p>
