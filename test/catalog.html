@@ -31,6 +31,14 @@
       background-color: #eee;
     }
 
+
+    @media only screen and (min-width: 768px) {
+      .contents {
+        max-width: 768px;
+        margin-left: calc((100% - 768px) / 2);
+      }
+    }
+
     .bench {
       margin: 12px 0 12px 0;
       padding: 6px;
@@ -85,7 +93,7 @@
 </head>
 
 <body>
-  <div>
+  <div class="contents">
     <h1>Olbi</h1>
     <div>
 
