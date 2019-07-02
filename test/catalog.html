@@ -165,15 +165,7 @@ var data = {
         <p>
           最初のステップです。
           データ構造を Olbi へ宣言します。
-          Olbi はデータを扱うために、データ構造を要求します。
-          先に示したデータと同じ構造のオブジェクトリテラルを、
-          コンストラクタの引数へ指定し、
-          Olbi にデータ構造を宣言します。
-        </p>
-
-        <p>
-          Olbi コンストラクタは、受けっとったデータ構造と同じプロパティを、インスタンスに作成します。
-          作成したプロパティは、次のステップで使います。
+          そのコードを示します。
         </p>
 
         <pre><code class="js">
@@ -185,6 +177,20 @@ var data = {
             }
           });
         </code></pre>
+
+        <p>
+          Olbi はデータを扱うために、データ構造を要求します。
+          先に示したデータと同じ構造のオブジェクトリテラルを、
+          コンストラクタの引数へ指定し、
+          Olbi にデータ構造を宣言します。
+        </p>
+
+        <p>
+          Olbi コンストラクタは、受けっとったデータ構造と同じプロパティを、インスタンスに作成します。
+          作成したプロパティは、次のステップで使います。
+        </p>
+
+
 
       </div>
 
@@ -291,9 +297,9 @@ var data = {
           メソッド呼び出しで、データ項目の
           <code class="hl javascript">name</code>
           を選択した Element へ結びつけます。
-          正確にいうと、データ項目の
+          正確にいうと、データ項目
           <code class="hl javascript">name</code>
-          値を、選択した Element の
+          の値を、選択した Element の
           <code class="hl javascript">textContent</code>
           へ設定するように結びつけます。
         </p>
@@ -304,9 +310,49 @@ var data = {
       <div>
 
         <p>
-          TBD
+          3番め、最後のステップです。
+          データを Olbi へ設定します。
+          そのコードを示します。
         </p>
 
+        <pre><code class="js">
+          olbi.set({
+            party: {
+              person: {
+                name: "Ann",
+              }
+            }
+          });
+        </code></pre>
+
+        <p>
+          はじめに示したデータを指定して
+          <code class="hl javascript">olbi.set()</code>
+          を呼び出します。
+        </p>
+
+        <p>
+          データ項目
+          <code class="hl javascript">name</code>
+          と Element
+          <code class="hl html">&lt;span class="name"&gt;&lt;/span&gt;</code>
+          が結び付けられているため、データの
+          <code class="hl javascript">"Ann"</code>
+          がタグにうめこまれます。
+          タグは下のような状態になります。
+        </p>
+  
+        <pre><code class="html">
+          &lt;div class="party person"&gt;
+            &lt;span class="name"&gt;Ann&lt;/span&gt;
+          &lt;/div&gt;
+        </code></pre>
+
+        <p>
+          ステップの説明はここまでです。
+        </p>
+  
+  
       </div>
 
 
