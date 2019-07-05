@@ -8,6 +8,18 @@
   <!-- <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.8/highlight.min.js"></script> -->
   <script src="../olbi.js"></script>
   <style>
+    /*
+    宣言の順序
+    関連するプロパティは下記の順序でグルーピングすること。
+
+    1. Positioning（位置関係）
+    2. Box model（ボックスモデル）
+    3. Typographic（フォント関係）
+    4. Visual（見た目）
+
+    refs http://kia-king.com/code-guide/#css-syntax
+    */
+
     html {
       font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, メイリオ, Osaka, 'MS PGothic', arial, helvetica, sans-serif;
       font-size: 14px;
@@ -16,12 +28,6 @@
     body {
       margin: 0;
       padding: 0;
-    }
-
-    div {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
     }
 
     th,
@@ -43,30 +49,62 @@
       background-color: #eee;
     }
 
+    /* Debug
+     **************************************************************************/
+
+    /*      
+    .global {
+      border: 1px solid blue;
+    }
+    */
+    /* 
+    .menus {
+      background-color: rgba(255, 0, 0, 0.2);
+      border: 1px solid red;
+    }
+    */
+    /*  
+    .contents {
+      border: 1px solid green;
+    }
+    */
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+    }
+
     .global {
       min-height: 600px;
-      border: 1px solid blue;
+      background-color: #ddd;
     }
 
     /* Default: hides menus, contents width = 100%
      **************************************************************************/
     .menus {
       width: 256px;
+      height: 100%;
       min-height: 600px;
       position: fixed;
       left: -256px;
+      padding: 1rem;
       z-index: 1;
       display: inline-block;
-      background-color: rgba(255, 0, 0, 0.2);
-      border: 1px solid red;
+      overflow-y: auto;
+      background-color: #d3e3e7;
+      box-shadow: 0px 2px 5px hsla(0, 0%, 60%, 1);
       transition: 0.5s;
     }
 
     .contents {
       width: 100%;
+      /* height: 100%; */
       min-height: 600px;
+      padding: 1rem;
       display: inline-block;
-      border: 1px solid green;
+      /* overflow-y: auto; */
+      background-color: #eee;
+      box-shadow: 0px 2px 5px hsla(0, 0%, 60%, 1);
     }
 
     /* viewport-width >= 768px: hides menus, contents width = 768px
@@ -83,19 +121,25 @@
     @media only screen and (min-width: 1024px) {
 
       .menus {
+        left: calc(50% - 384px - 128px);
+      }
+
+      /* 
+      .menus {
         position: static;
         left: auto;
         z-index: auto;
         float: left;
         margin-left: calc(50% - 384px - 128px);
       }
+       */
 
       .menus-controls {
         display: none;
       }
 
       .contents {
-        margin-left: 0;
+        margin-left: calc(50% - 384px - 128px + 256px);
       }
 
       .contents-controls {
@@ -121,13 +165,15 @@
         <button class="menus-controls__close-button" type="button">Close</button>
       </div>
       <h1>Olbi</h1>
-      <li>
-        <ul>to</ul>
-        <ul>with</ul>
-      </li>
-
+      <ul>
+        <li><a href="#albi">Albi</a></li>
+        <li>
+          <ul>
+            <li><a href="#albi_each">each( func )</a></li>
+          </ul>
+        </li>
+      </ul>
     </div>
-
 
     <div class="contents">
       <div class="contents-controls">
@@ -142,9 +188,404 @@
         <p>Very useful knowledges</p>
       </div>
 
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <h2 id="albi">Albi</h2>
+      <h3 id="albi_each">each(func)</h3>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
+      <div>
+        <p>Greatful sentence</p>
+      </div>
 
 
-
+      <!-- /contents -->
     </div>
   </div>
 
