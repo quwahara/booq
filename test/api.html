@@ -1,0 +1,188 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <!-- <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.8/styles/github-gist.min.css"> -->
+  <!-- <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.8/highlight.min.js"></script> -->
+  <script src="../olbi.js"></script>
+  <style>
+    html {
+      font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, メイリオ, Osaka, 'MS PGothic', arial, helvetica, sans-serif;
+      font-size: 14px;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    div {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    th,
+    td,
+    div,
+    span {
+      font-size: 1rem;
+    }
+
+    pre {
+      margin: 0;
+    }
+
+    code.hl {
+      display: inline;
+    }
+
+    code.hljs {
+      background-color: #eee;
+    }
+
+    .global {
+      min-height: 600px;
+      border: 1px solid blue;
+    }
+
+    /* Default: hides menus, contents width = 100%
+     **************************************************************************/
+    .menus {
+      width: 256px;
+      min-height: 600px;
+      position: fixed;
+      left: -256px;
+      z-index: 1;
+      display: inline-block;
+      background-color: rgba(255, 0, 0, 0.2);
+      border: 1px solid red;
+      transition: 0.5s;
+    }
+
+    .contents {
+      width: 100%;
+      min-height: 600px;
+      display: inline-block;
+      border: 1px solid green;
+    }
+
+    /* viewport-width >= 768px: hides menus, contents width = 768px
+     **************************************************************************/
+    @media only screen and (min-width: 768px) {
+      .contents {
+        max-width: 768px;
+        margin-left: calc(50% - 384px);
+      }
+    }
+
+    /* viewport-width >= 1024px: menus width = 256px, contents width = 768px
+     **************************************************************************/
+    @media only screen and (min-width: 1024px) {
+
+      .menus {
+        position: static;
+        left: auto;
+        z-index: auto;
+        float: left;
+        margin-left: calc(50% - 384px - 128px);
+      }
+
+      .menus-controls {
+        display: none;
+      }
+
+      .contents {
+        margin-left: 0;
+      }
+
+      .contents-controls {
+        display: none;
+      }
+
+    }
+
+    .bench {
+      margin: 12px 0 12px 0;
+      padding: 6px;
+      background-color: #cff3cf;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="global">
+
+
+    <div class="menus">
+      <div class="menus-controls">
+        <button class="menus-controls__close-button" type="button">Close</button>
+      </div>
+      <h1>Olbi</h1>
+      <li>
+        <ul>to</ul>
+        <ul>with</ul>
+      </li>
+
+    </div>
+
+
+    <div class="contents">
+      <div class="contents-controls">
+        <button class="contents-controls__open-button" type="button">Menus</button>
+      </div>
+      <div class="diag">
+        <span>width: </span><span class="diag__width"></span>
+      </div>
+      <h1>The contents</h1>
+      <h2>The item</h2>
+      <div>
+        <p>Very useful knowledges</p>
+      </div>
+
+
+
+
+    </div>
+  </div>
+
+  <script>
+    window.onload = function () {
+      (function (diagWidth, contents) {
+        window.onresize = function () {
+          diagWidth.textContent = contents.clientWidth;
+        };
+      })(
+        document.querySelector(".diag__width"),
+        document.querySelector(".contents")
+      );
+
+      (function (menus) {
+        document.querySelector(".contents-controls__open-button").onclick = function () {
+          menus.style.left = "0px";
+        };
+        document.querySelector(".menus-controls__close-button").onclick = function () {
+          menus.style.left = "-256px";
+        };
+      })(
+        document.querySelector(".menus")
+      );
+
+      // hljs.initHighlighting();
+
+      // var hls = document.querySelectorAll("code.hl");
+      // for (var i = 0; i < hls.length; ++i) {
+      //   hljs.highlightBlock(hls.item(i));
+      // }
+    };
+  </script>
+
+
+
+
+
+</body>
+
+</html>
