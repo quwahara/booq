@@ -20,7 +20,7 @@
     refs http://kia-king.com/code-guide/#css-syntax
     */
 
-    html {
+    * {
       font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, メイリオ, Osaka, 'MS PGothic', arial, helvetica, sans-serif;
       font-size: 14px;
     }
@@ -58,7 +58,7 @@
     }
     */
     /* 
-    .menus {
+    .west {
       background-color: rgba(255, 0, 0, 0.2);
       border: 1px solid red;
     }
@@ -72,6 +72,23 @@
     * {
       box-sizing: border-box;
       margin: 0;
+      padding: 0;
+    }
+
+    .menu-button {
+      width: 44px;
+      height: 40px;
+      line-height: 0;
+      padding-top: 6px;
+      border: none;
+      text-align: center;
+      display: inline-block;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      /* display: inline; */
+      font-size: 46px;
+      background-color: rgba(255, 255, 255, 0);
     }
 
     .global {
@@ -79,16 +96,16 @@
       background-color: #ddd;
     }
 
-    /* Default: hides menus, contents width = 100%
+    /* Default: hides west, contents width = 100%
      **************************************************************************/
-    .menus {
+    .west {
       width: 256px;
       height: 100%;
       min-height: 600px;
       position: fixed;
       left: -256px;
       padding: 1rem;
-      z-index: 1;
+      z-index: 2000;
       display: inline-block;
       overflow-y: auto;
       background-color: #d3e3e7;
@@ -96,10 +113,39 @@
       transition: 0.5s;
     }
 
+    .north {
+      width: 100%;
+      height: 60px;
+      position: fixed;
+      padding-left: 14px;
+      padding-right: 14px;
+      /* padding: 10px 10px 10px 10px; */
+      display: table;
+      /* padding: 1rem; */
+      /* padding: 0px; */
+      z-index: 1000;
+      /* display: inline-block; */
+      /* overflow-y: auto; */
+      background-color: #ccc;
+      box-shadow: 0px 2px 5px rgb(51, 29, 29);
+    }
+
+    /* .north__item {
+      display: table-cell;
+      vertical-align: middle;
+    } */
+
+
+    .north__inner {
+      display: table-cell;
+      vertical-align: middle;
+    }
+
     .contents {
       width: 100%;
       /* height: 100%; */
       min-height: 600px;
+      margin-top: 60px;
       padding: 1rem;
       display: inline-block;
       /* overflow-y: auto; */
@@ -107,38 +153,38 @@
       box-shadow: 0px 2px 5px hsla(0, 0%, 60%, 1);
     }
 
-    /* viewport-width >= 768px: hides menus, contents width = 768px
+    /* viewport-width >= 768px: hides west, contents width = 768px
      **************************************************************************/
     @media only screen and (min-width: 768px) {
+      .north {
+        max-width: 768px;
+        margin-left: calc(50% - 384px);
+      }
+
       .contents {
         max-width: 768px;
         margin-left: calc(50% - 384px);
       }
     }
 
-    /* viewport-width >= 1024px: menus width = 256px, contents width = 768px
+    /* viewport-width >= 1024px: west width = 256px, contents width = 768px
      **************************************************************************/
     @media only screen and (min-width: 1024px) {
 
-      .menus {
-        left: calc(50% - 384px - 128px);
+      .west {
+        left: calc(50% - 512px);
       }
 
-      /* 
-      .menus {
-        position: static;
-        left: auto;
-        z-index: auto;
-        float: left;
-        margin-left: calc(50% - 384px - 128px);
+      .west-controls {
+        display: none;
       }
-       */
 
-      .menus-controls {
+      .north {
         display: none;
       }
 
       .contents {
+        margin-top: 0;
         margin-left: calc(50% - 384px - 128px + 256px);
       }
 
@@ -160,9 +206,9 @@
   <div class="global">
 
 
-    <div class="menus">
-      <div class="menus-controls">
-        <button class="menus-controls__close-button" type="button">Close</button>
+    <div class="west">
+      <div class="west-controls">
+        <button class="west-controls__close-button menu-button" type="button">&times;</button>
       </div>
       <h1>Olbi</h1>
       <ul>
@@ -175,10 +221,13 @@
       </ul>
     </div>
 
-    <div class="contents">
-      <div class="contents-controls">
-        <button class="contents-controls__open-button" type="button">Menus</button>
+    <div class="north">
+      <div class="north__inner contents-controls">
+        <img class="contents-controls__open-button" src="menu-29.png">
       </div>
+    </div>
+
+    <div class="contents">
       <div class="diag">
         <span>width: </span><span class="diag__width"></span>
       </div>
@@ -600,15 +649,15 @@
         document.querySelector(".contents")
       );
 
-      (function (menus) {
+      (function (west) {
         document.querySelector(".contents-controls__open-button").onclick = function () {
-          menus.style.left = "0px";
+          west.style.left = "0px";
         };
-        document.querySelector(".menus-controls__close-button").onclick = function () {
-          menus.style.left = "-256px";
+        document.querySelector(".west-controls__close-button").onclick = function () {
+          west.style.left = "-256px";
         };
       })(
-        document.querySelector(".menus")
+        document.querySelector(".west")
       );
 
       // hljs.initHighlighting();
