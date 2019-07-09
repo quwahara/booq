@@ -424,24 +424,24 @@
 
       // privates
       dpReadOnly(this, "___r", {
-          self: this,
-          chain: this,
-          ecol: new Ecol(),
-          struct: struct,
-          name: name || "",
-          index: isInt(index) ? index : null,
-          parent: parent || null,
-          data: null,
-          simplexPreferred: preferreds.CLASS,
-          duplexPreferred: preferreds.NAME,
-          extentSelector: "",
-          appending: "",
-          receivers: [],
-          predicates: [],
-          traceLink: null,
-          setDataRev: 0,
-          getDataRev: 0,
-        },
+        self: this,
+        chain: this,
+        ecol: new Ecol(),
+        struct: struct,
+        name: name || "",
+        index: isInt(index) ? index : null,
+        parent: parent || null,
+        data: null,
+        simplexPreferred: preferreds.CLASS,
+        duplexPreferred: preferreds.NAME,
+        extentSelector: "",
+        appending: "",
+        receivers: [],
+        predicates: [],
+        traceLink: null,
+        setDataRev: 0,
+        getDataRev: 0,
+      },
         /* enumerable */
         false);
 
@@ -1691,9 +1691,9 @@
 
       // privates
       dpReadOnly(this, "___r", {
-          plbi: plbi,
-          r: plbi.___r,
-        },
+        plbi: plbi,
+        r: plbi.___r,
+      },
         /* enumerable */
         false);
 
