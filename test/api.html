@@ -183,6 +183,15 @@
       margin-bottom: 0.0rem;
     }
 
+    .contents .params {
+      margin-top: 1rem;
+    }
+
+    .contents .param {
+      float: left;
+      margin-right: 1rem;
+    }
+
 
 
     .north {
@@ -289,6 +298,20 @@
       </div>
 
 
+      <!-- Ecol
+        ------------------------------------------------------------------------------->
+      <h1><a href="#Ecol">Ecol</a></h1>
+      <h2><a href="#Ecol-constructor">Constructor</a></h2>
+      <div class="west-items">
+        <div><a href="#Ecol-constructor-Ecol">Ecol</a></div>
+      </div>
+      <h2><a href="#Ecol-property">Property</a></h2>
+      <div>
+      </div>
+      <!-- /Ecol -->
+
+
+
       <!-- Olbi
         ------------------------------------------------------------------------------->
       <h1><a href="#Olbi">Olbi</a></h1>
@@ -299,16 +322,10 @@
       <h2><a href="#Olbi-property">Property</a></h2>
       <div>
       </div>
+      <!-- /Olbi -->
 
 
-      <ul>
-        <li><a href="#albi">Albi</a></li>
-        <li>
-          <ul>
-            <li><a href="#albi_each">each( func )</a></li>
-          </ul>
-        </li>
-      </ul>
+      <!-- /West -->
     </div>
 
     <div class="north">
@@ -320,6 +337,43 @@
     <!-- Contents
       ------------------------------------------------------------------------------->
     <div class="contents">
+
+
+      <!-- Ecol
+        ------------------------------------------------------------------------------->
+      <h1 id="Ecol">Ecol</h1>
+      <div class="summary">
+        <p>Ecol クラスは Element の選択します。選択した Element への操作を行いう。</p>
+      </div>
+      <h2 id="Ecol-constructor">Constructor</h2>
+      <div>
+        <div id="Ecol-constructor-Ecol">
+          <pre><code class="js">new Ecol([arg])</code></pre>
+          <div class="params">
+            <div>
+              <h5 class="param">[arg] String</h5>
+              <p>セレクター文字列。このパラメーターが指定されたら、このセレクター文字列で Element を選択する。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <h2 id="Ecol-methods">Methods</h2>
+      <div>
+        <div id="Ecol-methods-addClass">
+          <pre><code class="js">new addClass(className)</code></pre>
+          <div class="params">
+            <div>
+              <h5 class="param">className String</h5>
+              <p>この文字列を選択した Element の class へ追加する。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /Ecol -->
+
+
+      <!-- Olbi
+        ------------------------------------------------------------------------------->
       <h1 id="Olbi">Olbi</h1>
       <div class="summary">
         <p>Olbi クラスは Object Property 値を Element 内容へ反映する、かつ、Element 内容を Object Property 値へ反映する。</p>
@@ -338,6 +392,7 @@ new Olbi(struct)
         </div>
         <h4></h4>
         <p>Very useful knowledges</p>
+        <!-- /Olbi -->
       </div>
 
       <div>
