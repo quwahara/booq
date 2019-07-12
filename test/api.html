@@ -234,6 +234,10 @@
       box-shadow: 0px 2px 5px hsla(0, 0%, 60%, 1);
     }
 
+    .contents code.syntax {
+      font-size: 1.2rem;
+    }
+
     /* viewport-width >= 768px: hides west, contents width = 768px
      **************************************************************************/
     @media only screen and (min-width: 768px) {
@@ -352,7 +356,7 @@
           <div class="params">
             <div>
               <h5 class="param">[arg] String</h5>
-              <p>セレクター文字列。このパラメーターが指定されたら、このセレクター文字列で Element を選択する。</p>
+              <p>セレクター文字列。このパラメーターが指定されたら、このセレクター文字列で Element を選択します。</p>
             </div>
           </div>
         </div>
@@ -360,11 +364,24 @@
       <h2 id="Ecol-methods">Methods</h2>
       <div>
         <div id="Ecol-methods-addClass">
-          <pre><code class="js">new addClass(className)</code></pre>
+          <pre><code class="syntax js">addClass(className)</code></pre>
+          <div class="summary">
+            <p>選択した Element の class へ classの値を追加します。</p>
+          </div>
           <div class="params">
             <div>
               <h5 class="param">className String</h5>
-              <p>この文字列を選択した Element の class へ追加する。</p>
+              <p>この文字列を選択した Element の class へ追加します。</p>
+            </div>
+          </div>
+        </div>
+        <div id="Ecol-methods-addClass">
+          <pre><code class="syntax js">clear()</code></pre>
+          <div class="summary">
+            <p>Element の選択を破棄します。</p>
+          </div>
+          <div class="params">
+            <div>
             </div>
           </div>
         </div>
