@@ -20,6 +20,12 @@
     refs http://kia-king.com/code-guide/#css-syntax
     */
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     html {
       font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, メイリオ, Osaka, 'MS PGothic', arial, helvetica, sans-serif;
       font-size: 14px;
@@ -66,17 +72,6 @@
       background-color: #eee;
     }
 
-    h5>span.type {
-      color: #085770;
-    }
-
-    th,
-    td,
-    div,
-    span {
-      font-size: 1rem;
-    }
-
     a {
       color: inherit;
       text-decoration: none;
@@ -96,7 +91,6 @@
     }
 
     code.hljs {
-      border-radius: 5px;
       background-color: #eee;
     }
 
@@ -120,12 +114,6 @@
     }
     */
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
     .menu-button {
       width: 44px;
       height: 40px;
@@ -147,7 +135,8 @@
       background-color: #ddd;
     }
 
-    /* Default: hides west, contents width = 100%
+    /*
+     * Default: hides west, contents width = 100%
      **************************************************************************/
     .west {
       width: 256px;
@@ -239,33 +228,46 @@
       box-shadow: 0px 2px 5px hsla(0, 0%, 60%, 1);
     }
 
-    .contents pre.syntax {
+    /*
+     * section
+     **************************************************************************/
+
+    .section {
       margin-top: 0.8rem;
-      margin-bottom: 0.5rem;
+      margin-bottom: 2.0rem;
     }
 
-    .contents code.syntax {
+    .section__syntax {
       font-size: 1.6rem;
     }
 
-    .contents .summary {
+    .section__definition {
       margin-top: 0.8rem;
     }
 
-    .contents .params {
+    .section__subsection {
+      margin-top: 0.8rem;
+      padding-left: 0.8rem;
+    }
+
+    .subsection__signature {
+      display: inline-block;
+      padding: 0.5rem;
+      background-color: #eee;
+    }
+
+    .subsection__signature-name {
+      color: #333;
+    }
+
+    .subsection__signature-type {
+      color: #085770;
+    }
+
+    .subsection__definition {
       margin-top: 0.8rem;
     }
 
-    .contents .param {
-      float: left;
-      margin-right: 1rem;
-    }
-
-    .clause {
-      margin-top: 0.8rem;
-      margin-bottom: 0.8rem;
-      clear: both;
-    }
 
     /* viewport-width >= 768px: hides west, contents width = 768px
      **************************************************************************/
@@ -378,45 +380,100 @@
       <div class="summary">
         <p>Ecol クラスは Element を選択し保持します。保持した Element への操作を行います。</p>
       </div>
-      <h3 id="Ecol-constructor">Constructor</h3>
+
+      <h3 id="Ecol-constructor">Constructors</h3>
+
       <div>
-        <div id="Ecol-constructor-Ecol">
-          <pre class="syntax"><code class="syntax js">new Ecol([arg])</code></pre>
-          <div class="summary">
-            <p>コンストラクター。</p>
+        <div class="section" id="Ecol-constructor-Ecol">
+
+          <pre class="section__syntax"><code class="js">new Ecol([arg])</code></pre>
+
+          <div class="section__definition">
+            A constructor
           </div>
-          <div class="params">
-            <div>
-              <h5 class="param">[arg] <span class="type">String</span></h5>
-              <p>セレクター文字列。このパラメーターが指定されたら、このセレクター文字列で Element を選択します。</p>
+
+          <div class="section__subsection subsection">
+
+            <h4>Parameters</h4>
+
+            <div class="subsection__paragraph">
+              <div class="subsection__signature">
+                <span class="subsection__signature-name">[arg]</span>
+                <span class="subsection__signature-type">String</span>
+              </div>
+              <div class="subsection__definition">
+                セレクター文字列。このパラメーターが指定されたら、このセレクター文字列で Element を選択します。</div>
             </div>
+
           </div>
+
         </div>
       </div>
+
       <h3 id="Ecol-methods">Methods</h3>
+
       <div>
-        <div class="clause" id="Ecol-methods-addClass">
-          <pre><code class="syntax js">addClass(className)</code></pre>
-          <div class="summary">
-            <p>選択した Element の class へ classの値を追加します。</p>
+        <div class="section" id="Ecol-methods-addClass">
+
+          <pre class="section__syntax"><code class="js">addClass(className)</code></pre>
+
+          <div class="section__definition">
+            選択した Element の class へ classの値を追加します。
           </div>
-          <div class="params">
-            <div>
-              <h5 class="param">className <span class="type">String</span></h5>
-              <p>この文字列を選択した Element の class へ追加します。</p>
+
+          <div class="section__subsection subsection">
+
+            <h4>Parameters</h4>
+
+            <div class="subsection__paragraph">
+              <div class="subsection__signature">
+                <span class="subsection__signature-name">className</span>
+                <span class="subsection__signature-type">String</span>
+              </div>
+              <div class="subsection__definition">
+                この文字列を選択した Element の class へ追加します。
+              </div>
+            </div>
+
+          </div>
+
+          <div class="section__subsection subsection">
+
+            <h4>Returns</h4>
+
+            <div class="subsection__signature">
+              <span class="subsection__signature-type">Ecol</span>
+            </div>
+            <div class="subsection__definition">
+              A reference to this instance.
             </div>
           </div>
+
         </div>
-        <div class="clause" id="Ecol-methods-addClass">
-          <pre><code class="syntax js">clear()</code></pre>
-          <div class="summary">
+
+        <div class="section" id="Ecol-methods-clear">
+
+          <pre class="section__syntax"><code class="js">clear()</code></pre>
+
+          <div class="section__definition">
             <p>Element の選択を破棄します。</p>
           </div>
-          <div class="params">
-            <div>
+
+          <div class="section__subsection subsection">
+
+            <h4>Returns</h4>
+
+            <div class="subsection__signature">
+              <span class="subsection__signature-type">Ecol</span>
+            </div>
+            <div class="subsection__definition">
+              A reference to this instance.
             </div>
           </div>
+
         </div>
+
+
       </div>
       <!-- /Ecol -->
 
